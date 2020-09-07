@@ -1,12 +1,9 @@
+const config = require('./config.js');
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const token = 'NzQ5MDM5MTIzODkzMDU5NjI1.X0mLCw.DvEtdNs-jHaf8czmdfkZizAdQJc';
-const BOOST_REQUEST_BACKEND_CHANNEL_ID = '751971313668718705';
-const BOOST_REQUEST_CHANNEL_ID = '719639847316357180';
 const reactionArray = ['👎', '👍', '💩', '❌'];
 const boostRequestsBySignupMessageId = new Map();
-
-client.login(token);
+client.login(config.TOKEN);
 client.on('ready', () => {
 	console.log('client online!');
 
@@ -50,7 +47,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 client.on('message', async message => {
 	console.log(message.content);
 	// If User is not a bot AND is messsaging in BoostRequest Channel
-	if (!message.author.bot && message.channel.id === BOOST_REQUEST_CHANNEL_ID) {
+	if (!message.author.bot && message.channel.id === config.BOOST_REQUEST_CHANNEL_ID) {
 		// Create embed in the Backend Channel
 		const signupMessage = await BREmbed(message);
 		boostRequestsBySignupMessageId.set(signupMessage.id, {
@@ -73,7 +70,7 @@ async function BREmbed(brMessage) {
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
 	// Send embed to BoostRequest backend THEN add the Thumbsup Icon
-	const message = await client.channels.cache.get(BOOST_REQUEST_BACKEND_CHANNEL_ID).send(exampleEmbed);
+	const message = await client.channels.cache.get(config.BOOST_REQUEST_BACKEND_CHANNEL_ID).send(exampleEmbed);
 	shuffle(reactionArray);
 	const reactPromises = reactionArray.map(emoji => message.react(emoji));
 	await Promise.all(reactPromises);
@@ -93,7 +90,7 @@ function sendEmbed(embedUser, requesterId, winnerName) {
 			{ name: embedUser.username, value: 'Please message <@' + requesterId + '>' })
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
-	client.channels.cache.get(BOOST_REQUEST_BACKEND_CHANNEL_ID).send(selectionBRBEmbed);
+	client.channels.cache.get(config.BOOST_REQUEST_BACKEND_CHANNEL_ID).send(selectionBRBEmbed);
 
 	// Make Embed post here
 	const selectionBREmbed = new Discord.MessageEmbed()
@@ -104,7 +101,7 @@ function sendEmbed(embedUser, requesterId, winnerName) {
 			{ name: 'Your advertiser has been chosen.', value:'They will message you shortly <@' + requesterId + '>.' })
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
-	client.channels.cache.get(BOOST_REQUEST_CHANNEL_ID).send(selectionBREmbed);
+	client.channels.cache.get(config.BOOST_REQUEST_CHANNEL_ID).send(selectionBREmbed);
 }
 
 function shuffle(array) {
