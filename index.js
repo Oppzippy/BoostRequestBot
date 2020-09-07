@@ -3,7 +3,7 @@ const client = new Discord.Client();
 const token = 'NzQ5MDM5MTIzODkzMDU5NjI1.X0mLCw.DvEtdNs-jHaf8czmdfkZizAdQJc';
 const BOOST_REQUEST_BACKEND_CHANNEL_ID = '751971313668718705';
 const BOOST_REQUEST_CHANNEL_ID = '719639847316357180';
-const reactionArray = ['👎', '👍', `💩`, '❌'];
+const reactionArray = ['👎', '👍', '💩', '❌'];
 const boostRequestsBySignupMessageId = new Map();
 
 client.login(token);
@@ -64,7 +64,7 @@ client.on('message', async message => {
 async function BREmbed(brMessage) {
 	// Variable to eaily add hyperlink to the original message.
 	const ref = 'https://discordapp.com/channels/' + brMessage.guild.id + '/' + brMessage.channel.id + '/' + brMessage.id;
-	const messagelink = "[" + brMessage.content + "](" + ref + ')';
+	const messagelink = '[' + brMessage.content + '](' + ref + ')';
 	const exampleEmbed = new Discord.MessageEmbed()
 		.setColor('#0000FF')
 		.setTitle('New Boost Request')
