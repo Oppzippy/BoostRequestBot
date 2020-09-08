@@ -1,7 +1,7 @@
 const config = require('./config.js');
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const reactionArray = ['👎', '👍', '💩', '❌'];
+const reactionArray = ['👍'];
 const boostRequestsBySignupMessageId = new Map();
 client.login(config.TOKEN);
 client.on('ready', () => {
@@ -20,7 +20,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 	// if user is not the bot + reaction was in backend channel + Confirm reaction is Thumbs Up
 	const signupMessage = boostRequestsBySignupMessageId.get(reaction.message.id);
 	const guildMember = reaction.message.guild.members.cache.get(user.id);
-
+	console.log(user.username + ' reacted');
 	if (signupMessage && !user.bot && reaction.emoji.name === '👍' && !reaction.message.reactions.cache.has('✅')) {
 		// TODO: Allow all advertisers to react after two minutes.
 		// Don't forget to look over existing reactions again in case
@@ -80,7 +80,7 @@ async function BREmbed(brMessage) {
 
 function sendEmbed(embedUser, requesterId, winnerName) {
 	// Make Embed post here
-	console.log(winnerName + 'won!');
+	console.log(winnerName + ' won!');
 	const selectionBRBEmbed = new Discord.MessageEmbed()
 
 		.setColor('#FF0000')
