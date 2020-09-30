@@ -60,7 +60,7 @@ client.on('message', async message => {
 		// Create embed in the Backend Channel
 		const signupMessage = await BREmbed(message);
 		const buyerDiscordName = message.embeds.length >= 1
-			? message.embeds[0].fields.find(field => field.name.toLowerCase().includes('battletag')).value
+			? message.embeds[0].fields.find(field => field.name.toLowerCase().includes('battletag'))?.value
 			: undefined;
 		boostRequestsBySignupMessageId.set(signupMessage.id, {
 			channelId: message.channel.id,
@@ -109,7 +109,7 @@ async function sendEmbed(embedUser, requesterId, winnerName, { notifyBuyer, buye
 			name: embedUser.username,
 			value: requestUser && !requestUser.bot
 				? `Please message <@!${requesterId}>.`
-				: `Please message ${buyerDiscordName} (btag).`,
+				: `Please message ${buyerDiscordName} (battletag).`,
 		})
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
