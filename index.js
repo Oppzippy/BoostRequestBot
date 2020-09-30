@@ -6,7 +6,6 @@ const boostRequestsBySignupMessageId = new Map();
 client.login(config.TOKEN);
 client.on('ready', () => {
 	console.log('client online!');
-
 });
 
 // TODO: Edit first embed to get of 2nd embed
@@ -22,6 +21,9 @@ client.on('messageReactionAdd', async (reaction, user) => {
 	const guildMember = reaction.message.guild.members.cache.get(user.id);
 	console.log(user.username + ' reacted');
 	if (signupMessage && !user.bot && reaction.emoji.name === '👍' && !reaction.message.reactions.cache.has('✅')) {
+		const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(
+			chan => chan.id == signupMessage.channelId,
+		);
 		// TODO: Allow all advertisers to react after two minutes.
 		// Don't forget to look over existing reactions again in case
 		// a regular advertiser reacted before the two minutes.
@@ -31,13 +33,19 @@ client.on('messageReactionAdd', async (reaction, user) => {
 				const winnerName = user.username;
 				console.log(winnerName + ' won!');
 				// remove reactions.
-				await reaction.message.reactions.removeAll().catch(error => console.error('Failed to clear reactions: ', error));
+				await reaction.message.reactions.removeAll().catch(
+					error => console.error('Failed to clear reactions: ', error),
+				);
 				await reaction.message.react('✅');
 				console.log(reaction.message.reactions.cache.has('✅'));
-				sendEmbed(user, signupMessage.requesterId, winnerName);
+				await sendEmbed(user, signupMessage.requesterId, winnerName, {
+					buyerChannel: boostRequestChannel.id,
+					notifyBuyer: boostRequestChannel.notifyBuyer,
+					buyerDiscordName: signupMessage.buyerDiscordName,
+				});
 			}
 			catch (error) {
-				console.error('One of the emojis failed to react.');
+				console.error('One of the emojis failed to react.', error);
 			}
 		}
 	}
@@ -46,13 +54,19 @@ client.on('messageReactionAdd', async (reaction, user) => {
 // Event Catcher when users send a message
 client.on('message', async message => {
 	console.log(message.content);
+	const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(chan => chan.id == message.channel.id);
 	// If User is not a bot AND is messsaging in BoostRequest Channel
-	if (!message.author.bot && message.channel.id === config.BOOST_REQUEST_CHANNEL_ID) {
+	if (boostRequestChannel && (!message.author.bot || !boostRequestChannel.notifyBuyer)) {
 		// Create embed in the Backend Channel
 		const signupMessage = await BREmbed(message);
+		const buyerDiscordName = message.embeds.length >= 1
+			? message.embeds[0].fields.find(field => field.name.toLowerCase().includes('discord')).value
+			: undefined;
 		boostRequestsBySignupMessageId.set(signupMessage.id, {
+			channelId: message.channel.id,
 			requesterId: message.author.id,
 			createdAt: message.createdAt,
+			buyerDiscordName: buyerDiscordName,
 		});
 	}
 });
@@ -66,9 +80,14 @@ async function BREmbed(brMessage) {
 		.setColor('#0000FF')
 		.setTitle('New Boost Request')
 		.setThumbnail(brMessage.author.displayAvatarURL())
-		.addFields({ name: brMessage.author.username, value: messagelink })
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
+	if (brMessage.embeds.length >= 1) {
+		exampleEmbed.addFields(brMessage.embeds[0].fields);
+	}
+	else {
+		exampleEmbed.addFields({ name: brMessage.author.username, value: messagelink });
+	}
 	// Send embed to BoostRequest backend THEN add the Thumbsup Icon
 	const message = await client.channels.cache.get(config.BOOST_REQUEST_BACKEND_CHANNEL_ID).send(exampleEmbed);
 	shuffle(reactionArray);
@@ -78,30 +97,35 @@ async function BREmbed(brMessage) {
 }
 
 
-function sendEmbed(embedUser, requesterId, winnerName) {
+async function sendEmbed(embedUser, requesterId, winnerName, { notifyBuyer, buyerChannel, buyerDiscordName }) {
 	// Make Embed post here
 	console.log(winnerName + ' won!');
+	const requestUser = await client.users.fetch(requesterId).catch(() => null);
 	const selectionBRBEmbed = new Discord.MessageEmbed()
-
 		.setColor('#FF0000')
 		.setTitle('And the fastest clicker is...')
 		.setThumbnail(embedUser.displayAvatarURL())
-		.addFields(
-			{ name: embedUser.username, value: 'Please message <@' + requesterId + '>' })
+		.addFields({
+			name: embedUser.username,
+			value: requestUser && !requestUser.bot
+				? `Please message <@!${requesterId}>.`
+				: `Please message ${buyerDiscordName} (Discord).`,
+		})
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
 	client.channels.cache.get(config.BOOST_REQUEST_BACKEND_CHANNEL_ID).send(selectionBRBEmbed);
-
-	// Make Embed post here
-	const selectionBREmbed = new Discord.MessageEmbed()
-		.setColor('#00FF00')
-		.setTitle('Huokan Boosting Community Boost Request')
-		.setThumbnail('https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png')
-		.addFields(
-			{ name: 'Your advertiser has been chosen.', value:'They will message you shortly <@' + requesterId + '>.' })
-		.setTimestamp()
-		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
-	client.channels.cache.get(config.BOOST_REQUEST_CHANNEL_ID).send(selectionBREmbed);
+	if (notifyBuyer) {
+		// Make Embed post here
+		const selectionBREmbed = new Discord.MessageEmbed()
+			.setColor('#00FF00')
+			.setTitle('Huokan Boosting Community Boost Request')
+			.setThumbnail('https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png')
+			.addFields(
+				{ name: 'Your advertiser has been chosen.', value:'They will message you shortly <@' + requesterId + '>.' })
+			.setTimestamp()
+			.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
+		client.channels.cache.get(buyerChannel).send(selectionBREmbed);
+	}
 }
 
 function shuffle(array) {
