@@ -20,7 +20,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 	const signupMessage = boostRequestsBySignupMessageId.get(reaction.message.id);
 	const guildMember = reaction.message.guild.members.cache.get(user.id);
 	console.log(user.username + ' reacted');
-	if (signupMessage && !user.bot && reaction.emoji.name === '👍' && !reaction.message.reactions.cache.has('✅')) {
+	if (signupMessage && !user.bot && reaction.emoji.name === '👍') {
 		const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(
 			chan => chan.id == signupMessage.channelId,
 		);
@@ -42,6 +42,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 					buyerChannel: boostRequestChannel.id,
 					notifyBuyer: boostRequestChannel.notifyBuyer,
 					buyerDiscordName: signupMessage.buyerDiscordName,
+					backendId: boostRequestChannel.backendId,
 				});
 			}
 			catch (error) {
@@ -53,12 +54,19 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
 // Event Catcher when users send a message
 client.on('message', async message => {
+	if (message.author.equals(client.user)) return;
 	console.log(message.content);
 	const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(chan => chan.id == message.channel.id);
 	// If User is not a bot AND is messsaging in BoostRequest Channel
 	if (boostRequestChannel && (!message.author.bot || !boostRequestChannel.notifyBuyer)) {
 		// Create embed in the Backend Channel
-		const signupMessage = await BREmbed(message);
+		const signupMessage = boostRequestChannel.useBuyerMessage
+			? message
+			: await BREmbed(message, boostRequestChannel.backendId);
+		shuffle(reactionArray);
+		const reactPromises = reactionArray.map(emoji => signupMessage.react(emoji));
+		await Promise.all(reactPromises);
+
 		const buyerDiscordName = message.embeds.length >= 1
 			? message.embeds[0].fields.find(field => field.name.toLowerCase().includes('battletag'))?.value
 			: undefined;
@@ -72,7 +80,7 @@ client.on('message', async message => {
 });
 
 
-async function BREmbed(brMessage) {
+async function BREmbed(brMessage, channelId) {
 	// Variable to eaily add hyperlink to the original message.
 	const ref = 'https://discordapp.com/channels/' + brMessage.guild.id + '/' + brMessage.channel.id + '/' + brMessage.id;
 	const messagelink = '[' + brMessage.content + '](' + ref + ')';
@@ -89,15 +97,12 @@ async function BREmbed(brMessage) {
 		exampleEmbed.addFields({ name: brMessage.author.username, value: messagelink });
 	}
 	// Send embed to BoostRequest backend THEN add the Thumbsup Icon
-	const message = await client.channels.cache.get(config.BOOST_REQUEST_BACKEND_CHANNEL_ID).send(exampleEmbed);
-	shuffle(reactionArray);
-	const reactPromises = reactionArray.map(emoji => message.react(emoji));
-	await Promise.all(reactPromises);
+	const message = await client.channels.cache.get(channelId).send(exampleEmbed);
 	return message;
 }
 
 
-async function sendEmbed(embedUser, requesterId, winnerName, { notifyBuyer, buyerChannel, buyerDiscordName }) {
+async function sendEmbed(embedUser, requesterId, winnerName, { notifyBuyer, backendId, buyerChannel, buyerDiscordName }) {
 	// Make Embed post here
 	console.log(winnerName + ' won!');
 	const requestUser = await client.users.fetch(requesterId).catch(() => null);
@@ -113,7 +118,7 @@ async function sendEmbed(embedUser, requesterId, winnerName, { notifyBuyer, buye
 		})
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
-	client.channels.cache.get(config.BOOST_REQUEST_BACKEND_CHANNEL_ID).send(selectionBRBEmbed);
+	client.channels.cache.get(backendId).send(selectionBRBEmbed);
 	if (notifyBuyer) {
 		// Make Embed post here
 		const selectionBREmbed = new Discord.MessageEmbed()
