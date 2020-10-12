@@ -21,34 +21,22 @@ client.on('messageReactionAdd', async (reaction, user) => {
 	const guildMember = reaction.message.guild.members.cache.get(user.id);
 	console.log(user.username + ' reacted');
 	if (signupMessage && !user.bot && reaction.emoji.name === '👍') {
-		const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(
-			chan => chan.id == signupMessage.channelId,
-		);
-		// TODO: Allow all advertisers to react after two minutes.
-		// Don't forget to look over existing reactions again in case
-		// a regular advertiser reacted before the two minutes.
-		if (guildMember.roles.cache.some(role => role.name === 'Elite Advertiser')) {
-			boostRequestsBySignupMessageId.delete(reaction.message.id);
-			try {
-				const winnerName = user.username;
-				console.log(winnerName + ' won!');
-				// remove reactions.
-				await reaction.message.reactions.removeAll().catch(
-					error => console.error('Failed to clear reactions: ', error),
-				);
-				await reaction.message.react('✅');
-				console.log(reaction.message.reactions.cache.has('✅'));
-				await sendEmbed(user, signupMessage.requesterId, winnerName, {
-					buyerChannel: boostRequestChannel.id,
-					notifyBuyer: boostRequestChannel.notifyBuyer,
-					buyerDiscordName: signupMessage.buyerDiscordName,
-					backendId: boostRequestChannel.backendId,
-				});
-			}
-			catch (error) {
-				console.error('One of the emojis failed to react.', error);
-			}
+		if (
+			signupMessage.isClaimableByAdvertisers ||
+			guildMember.roles.cache.some(role => role.name === 'Elite Advertiser')
+		) {
+			setWinner(reaction.message, user);
 		}
+		else {
+			signupMessage.queuedAdvertiserIds.add(user.id);
+		}
+	}
+});
+
+client.on('messageReactionRemove', (reaction, user) => {
+	const boostRequest = boostRequestsBySignupMessageId.get(reaction.message.id);
+	if (boostRequest) {
+		boostRequest.queuedAdvertiserIds.delete(user.id);
 	}
 });
 
@@ -70,14 +58,76 @@ client.on('message', async message => {
 		const buyerDiscordName = message.embeds.length >= 1
 			? message.embeds[0].fields.find(field => field.name.toLowerCase().includes('battletag'))?.value
 			: undefined;
-		boostRequestsBySignupMessageId.set(signupMessage.id, {
+		const boostRequest = {
 			channelId: message.channel.id,
 			requesterId: message.author.id,
 			createdAt: message.createdAt,
+			backendChannelId: boostRequestChannel.backendId,
 			buyerDiscordName: buyerDiscordName,
-		});
+			isClaimableByAdvertisers: false,
+			queuedAdvertiserIds: new Set(),
+			signupMessageId: signupMessage.id,
+			buyerMessageId: message.id,
+		};
+		addTimers(boostRequest);
+		boostRequestsBySignupMessageId.set(signupMessage.id, boostRequest);
 	}
 });
+
+function addTimers(boostRequest) {
+	boostRequest.timeoutIds = [
+		setTimeout(async () => {
+			boostRequest.isClaimableByAdvertisers = true;
+			if (boostRequest.queuedAdvertiserIds.size >= 1) {
+				try {
+					const userId = boostRequest.queuedAdvertiserIds.values().next().value;
+					const user = await client.users.fetch(userId);
+					const channel = await client.channels.fetch(boostRequest.backendChannelId);
+					const signupMessage = await channel.messages.fetch(boostRequest.signupMessageId);
+					await setWinner(signupMessage, user);
+				}
+				catch (err) {
+					console.error(err);
+				}
+			}
+		}, 60000),
+		setTimeout(() => {
+			boostRequestsBySignupMessageId.delete(boostRequest.signupMessageId);
+		}, 259200000),
+	];
+}
+
+async function setWinner(message, winner) {
+	const signupMessage = boostRequestsBySignupMessageId.get(message.id);
+	if (!signupMessage) {
+		return;
+	}
+	boostRequestsBySignupMessageId.delete(message.id);
+	signupMessage.timeoutIds.forEach(timeoutId => clearTimeout(timeoutId));
+	const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(
+		chan => chan.id == signupMessage.channelId,
+	);
+
+	try {
+		const winnerName = winner.username;
+		console.log(winnerName + ' won!');
+		// remove reactions.
+		await message.reactions.removeAll().catch(
+			error => console.error('Failed to clear reactions: ', error),
+		);
+		await message.react('✅');
+		console.log(message.reactions.cache.has('✅'));
+		await sendEmbed(winner, signupMessage.requesterId, winnerName, {
+			buyerChannel: boostRequestChannel.id,
+			notifyBuyer: boostRequestChannel.notifyBuyer,
+			buyerDiscordName: signupMessage.buyerDiscordName,
+			backendId: boostRequestChannel.backendId,
+		});
+	}
+	catch (error) {
+		console.error('One of the emojis failed to react.', error);
+	}
+}
 
 
 async function BREmbed(brMessage, channelId) {
