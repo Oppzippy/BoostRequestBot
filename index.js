@@ -108,10 +108,12 @@ function addTimers(boostRequest) {
 				}
 			}
 		}, 60000),
+		// 1 minute
 		setTimeout(() => {
 			console.log('Deleting expired boost request.');
 			boostRequestsBySignupMessageId.delete(boostRequest.signupMessageId);
 		}, 259200000),
+		// 72 hours
 	];
 }
 
