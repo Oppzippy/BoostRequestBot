@@ -151,7 +151,6 @@ async function setWinner(message, winner) {
 
 async function BREmbed(brMessage, channelId) {
 	// Variable to eaily add hyperlink to the original message.
-	const messagelink = brMessage.content;
 	const exampleEmbed = new Discord.MessageEmbed()
 		.setColor('#0000FF')
 		.setTitle('New Boost Request')
@@ -162,7 +161,7 @@ async function BREmbed(brMessage, channelId) {
 		exampleEmbed.addFields(brMessage.embeds[0].fields);
 	}
 	else {
-		exampleEmbed.addFields({ name: brMessage.author.username, value: messagelink });
+		exampleEmbed.addFields({ name: `${brMessage.author.username}#${brMessage.author.discriminator}`, value: brMessage.content });
 	}
 	// Send embed to BoostRequest backend THEN add the Thumbsup Icon
 	const message = await (await client.channels.fetch(channelId)).send(exampleEmbed);
