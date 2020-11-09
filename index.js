@@ -151,8 +151,7 @@ async function setWinner(message, winner) {
 
 async function BREmbed(brMessage, channelId) {
 	// Variable to eaily add hyperlink to the original message.
-	const ref = 'https://discordapp.com/channels/' + brMessage.guild.id + '/' + brMessage.channel.id + '/' + brMessage.id;
-	const messagelink = '[' + brMessage.content + '](' + ref + ')';
+	const messagelink = brMessage.content;
 	const exampleEmbed = new Discord.MessageEmbed()
 		.setColor('#0000FF')
 		.setTitle('New Boost Request')
