@@ -18,7 +18,7 @@ client.on('ready', () => {
 client.on('messageReactionAdd', async (reaction, user) => {
 	// if user is not the bot + reaction was in backend channel + Confirm reaction is Thumbs Up
 	const signupMessage = boostRequestsBySignupMessageId.get(reaction.message.id);
-	const guildMember = reaction.message.guild.members.cache.get(user.id);
+	const guildMember = await reaction.message.guild.members.fetch(user.id);
 	console.log(user.username + ' reacted');
 	if (signupMessage && !user.bot && reaction.emoji.name === '👍') {
 		if (
@@ -67,10 +67,27 @@ client.on('message', async message => {
 			isClaimableByAdvertisers: false,
 			queuedAdvertiserIds: new Set(),
 			signupMessageId: signupMessage.id,
-			buyerMessageId: message.id,
+			buyerMessageId: boostRequestChannel.useBuyerMessage ? message.id : undefined,
 		};
 		addTimers(boostRequest);
 		boostRequestsBySignupMessageId.set(signupMessage.id, boostRequest);
+		if (!boostRequestChannel.useBuyerMessage) {
+			if (message.deletable) {
+				message.delete();
+			}
+			const dmChannel = message.author.dmChannel ?? await message.author.createDM();
+			const embed = new Discord.MessageEmbed()
+				.setTitle('Huokan Boosting Community Boost Request')
+				.setDescription(message.content)
+				.setThumbnail(message.author.avatarURL())
+				.setAuthor(`${message.author.username}#${message.author.discriminator}`)
+				.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png')
+				.setTimestamp();
+			dmChannel.send(
+				'Please wait while we find an advertiser to complete your request.',
+				embed,
+			);
+		}
 	}
 });
 
@@ -117,8 +134,7 @@ async function setWinner(message, winner) {
 		);
 		await message.react('✅');
 		console.log(message.reactions.cache.has('✅'));
-		await sendEmbed(winner, signupMessage.requesterId, winnerName, {
-			buyerChannel: boostRequestChannel.id,
+		await sendEmbed(winner, signupMessage.requesterId, {
 			notifyBuyer: boostRequestChannel.notifyBuyer,
 			buyerDiscordName: signupMessage.buyerDiscordName,
 			backendId: boostRequestChannel.backendId,
@@ -147,14 +163,13 @@ async function BREmbed(brMessage, channelId) {
 		exampleEmbed.addFields({ name: brMessage.author.username, value: messagelink });
 	}
 	// Send embed to BoostRequest backend THEN add the Thumbsup Icon
-	const message = await client.channels.cache.get(channelId).send(exampleEmbed);
+	const message = await (await client.channels.fetch(channelId)).send(exampleEmbed);
 	return message;
 }
 
 
-async function sendEmbed(embedUser, requesterId, winnerName, { notifyBuyer, backendId, buyerChannel, buyerDiscordName }) {
+async function sendEmbed(embedUser, requesterId, { notifyBuyer, backendId, buyerDiscordName }) {
 	// Make Embed post here
-	console.log(winnerName + ' won!');
 	const requestUser = await client.users.fetch(requesterId).catch(() => null);
 	const selectionBRBEmbed = new Discord.MessageEmbed()
 		.setColor('#FF0000')
@@ -163,23 +178,25 @@ async function sendEmbed(embedUser, requesterId, winnerName, { notifyBuyer, back
 		.addFields({
 			name: embedUser.username,
 			value: requestUser && !requestUser.bot
-				? `Please message <@!${requesterId}>.`
+				? `Please message <@${requesterId}>.`
 				: `Please message ${buyerDiscordName} (battletag).`,
 		})
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
-	client.channels.cache.get(backendId).send(selectionBRBEmbed);
+	await (await client.channels.fetch(backendId)).send(selectionBRBEmbed);
 	if (notifyBuyer) {
 		// Make Embed post here
 		const selectionBREmbed = new Discord.MessageEmbed()
 			.setColor('#00FF00')
 			.setTitle('Huokan Boosting Community Boost Request')
-			.setThumbnail('https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png')
+			.setThumbnail(embedUser.avatarURL())
 			.addFields(
-				{ name: 'Your advertiser has been chosen.', value:'They will message you shortly <@' + requesterId + '>.' })
+				{ name: 'An advertiser has been found.', value: `<@${embedUser.id}> (${embedUser.username}#${embedUser.discriminator}) will reach out to you shortly. Anyone else that messages you regarding this boost request is not from Huokan and may attempt to scam you.` })
 			.setTimestamp()
 			.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
-		client.channels.cache.get(buyerChannel).send(selectionBREmbed);
+		const requester = await client.users.fetch(requesterId);
+		const dmChannel = requester.dmChannel || await requester.createDM();
+		await dmChannel.send(selectionBREmbed);
 	}
 }
 
