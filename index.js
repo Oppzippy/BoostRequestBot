@@ -137,7 +137,6 @@ async function setWinner(message, winner) {
 			console.error('Failed to clear reactions: ', err);
 		}
 		await message.react('✅');
-		console.log(message.reactions.cache.has('✅'));
 		await sendEmbed(winner, signupMessage.requesterId, {
 			notifyBuyer: boostRequestChannel.notifyBuyer,
 			buyerDiscordName: signupMessage.buyerDiscordName,
