@@ -74,9 +74,6 @@ client.on('message', async message => {
 		addTimers(boostRequest);
 		boostRequestsBySignupMessageId.set(signupMessage.id, boostRequest);
 		if (!boostRequestChannel.useBuyerMessage) {
-			if (message.deletable) {
-				message.delete();
-			}
 			const dmChannel = message.author.dmChannel ?? await message.author.createDM();
 			const embed = new Discord.MessageEmbed()
 				.setTitle('Huokan Boosting Community Boost Request')
