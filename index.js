@@ -18,15 +18,15 @@ client.on('ready', () => {
 client.on('messageReactionAdd', async (reaction, user) => {
 	// if user is not the bot + reaction was in backend channel + Confirm reaction is Thumbs Up
 	const signupMessage = boostRequestsBySignupMessageId.get(reaction.message.id);
-	const guildMember = await reaction.message.guild.members.fetch(user.id);
+	const guildMember = await reaction.message.guild.members.fetch(user);
 	if (signupMessage && !user.bot && reaction.emoji.name === '👍') {
 		const isEliteAdvertiser = guildMember.roles.cache.some(role => role.name === 'Elite Advertiser');
-		console.log(`${user.username} reacted (${isEliteAdvertiser ? '' : 'not '} elite advertiser)`);
+		console.log(`${user.username} reacted (${isEliteAdvertiser ? '' : 'not '}elite advertiser)`);
 		if (
 			signupMessage.isClaimableByAdvertisers ||
 			isEliteAdvertiser
 		) {
-			setWinner(reaction.message, user);
+			await setWinner(reaction.message, user);
 		}
 		else {
 			signupMessage.queuedAdvertiserIds.add(user.id);
@@ -68,7 +68,6 @@ client.on('message', async message => {
 			isClaimableByAdvertisers: false,
 			queuedAdvertiserIds: new Set(),
 			signupMessageId: signupMessage.id,
-			buyerMessageId: boostRequestChannel.useBuyerMessage ? message.id : undefined,
 		};
 		addTimers(boostRequest);
 		boostRequestsBySignupMessageId.set(signupMessage.id, boostRequest);
@@ -84,7 +83,7 @@ client.on('message', async message => {
 				.setAuthor(`${message.author.username}#${message.author.discriminator}`)
 				.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png')
 				.setTimestamp();
-			dmChannel.send(
+			await dmChannel.send(
 				'Please wait while we find an advertiser to complete your request.',
 				embed,
 			);
@@ -110,6 +109,7 @@ function addTimers(boostRequest) {
 			}
 		}, 60000),
 		setTimeout(() => {
+			console.log('Deleting expired boost request.');
 			boostRequestsBySignupMessageId.delete(boostRequest.signupMessageId);
 		}, 259200000),
 	];
