@@ -129,9 +129,12 @@ async function setWinner(message, winner) {
 		const winnerName = winner.username;
 		console.log(winnerName + ' won!');
 		// remove reactions.
-		await message.reactions.removeAll().catch(
-			error => console.error('Failed to clear reactions: ', error),
-		);
+		try {
+			await message.reactions.removeAll();
+		}
+		catch (err) {
+			console.error('Failed to clear reactions: ', err);
+		}
 		await message.react('✅');
 		console.log(message.reactions.cache.has('✅'));
 		await sendEmbed(winner, signupMessage.requesterId, {
