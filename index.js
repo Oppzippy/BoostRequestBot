@@ -19,11 +19,12 @@ client.on('messageReactionAdd', async (reaction, user) => {
 	// if user is not the bot + reaction was in backend channel + Confirm reaction is Thumbs Up
 	const signupMessage = boostRequestsBySignupMessageId.get(reaction.message.id);
 	const guildMember = await reaction.message.guild.members.fetch(user.id);
-	console.log(user.username + ' reacted');
 	if (signupMessage && !user.bot && reaction.emoji.name === '👍') {
+		const isEliteAdvertiser = guildMember.roles.cache.some(role => role.name === 'Elite Advertiser');
+		console.log(`${user.username} reacted (${isEliteAdvertiser ? '' : 'not '} elite advertiser)`);
 		if (
 			signupMessage.isClaimableByAdvertisers ||
-			guildMember.roles.cache.some(role => role.name === 'Elite Advertiser')
+			isEliteAdvertiser
 		) {
 			setWinner(reaction.message, user);
 		}
