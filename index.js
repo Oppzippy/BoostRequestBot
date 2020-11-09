@@ -16,9 +16,11 @@ client.on('ready', () => {
 
 // Event Catcher when users react to messages
 client.on('messageReactionAdd', async (reaction, user) => {
-	// if user is not the bot + reaction was in backend channel + Confirm reaction is Thumbs Up
+	console.log(`${user.username} reacted, doing checks`);
 	const signupMessage = boostRequestsBySignupMessageId.get(reaction.message.id);
 	const guildMember = await reaction.message.guild.members.fetch(user);
+	console.log(`${signupMessage ? 'signupMessage is defined.' : 'Signup message is undefined! ' + reaction.message.id}`);
+
 	if (signupMessage && !user.bot && reaction.emoji.name === '👍') {
 		const isEliteAdvertiser = guildMember.roles.cache.some(role => role.name === 'Elite Advertiser');
 		console.log(`${user.username} reacted (${isEliteAdvertiser ? '' : 'not '}elite advertiser)`);
