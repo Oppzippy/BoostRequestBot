@@ -1,6 +1,8 @@
 const config = require('./config.js');
 const Discord = require('discord.js');
-const client = new Discord.Client();
+const client = new Discord.Client({
+	partials: ['MESSAGE', 'USER', 'REACTION'],
+});
 const reactionArray = ['👍'];
 const boostRequestsBySignupMessageId = new Map();
 client.login(config.TOKEN);
@@ -16,6 +18,12 @@ client.on('ready', () => {
 
 // Event Catcher when users react to messages
 client.on('messageReactionAdd', async (reaction, user) => {
+	if (reaction.partial) {
+		await reaction.fetch();
+	}
+	if (user.partial) {
+		await user.fetch();
+	}
 	console.log(`${user.username} reacted, doing checks`);
 	const signupMessage = boostRequestsBySignupMessageId.get(reaction.message.id);
 	const guildMember = await reaction.message.guild.members.fetch(user);
@@ -36,15 +44,21 @@ client.on('messageReactionAdd', async (reaction, user) => {
 	}
 });
 
-client.on('messageReactionRemove', (reaction, user) => {
+client.on('messageReactionRemove', async (reaction, user) => {
+	if (reaction.partial) {
+		await reaction.fetch();
+	}
 	const boostRequest = boostRequestsBySignupMessageId.get(reaction.message.id);
 	if (boostRequest) {
-		boostRequest.queuedAdvertiserIds.delete(user.id);
+		await boostRequest.queuedAdvertiserIds.delete(user.id);
 	}
 });
 
 // Event Catcher when users send a message
 client.on('message', async message => {
+	if (message.partial) {
+		await message.fetch();
+	}
 	if (message.author.equals(client.user)) return;
 	console.log(message.content);
 	const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(chan => chan.id == message.channel.id);
