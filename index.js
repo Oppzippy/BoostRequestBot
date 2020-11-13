@@ -1,7 +1,7 @@
 const config = require('./config.js');
 const Discord = require('discord.js');
 const client = new Discord.Client({
-	partials: ['MESSAGE', 'USER', 'REACTION'],
+	partials: ['MESSAGE', 'USER', 'REACTION', 'GUILD_MEMBER'],
 });
 const reactionArray = ['👍'];
 const boostRequestsBySignupMessageId = new Map();
@@ -18,11 +18,18 @@ client.on('ready', () => {
 
 // Event Catcher when users react to messages
 client.on('messageReactionAdd', async (reaction, user) => {
-	if (reaction.partial) {
-		await reaction.fetch();
+	try {
+		if (reaction.partial) {
+			await reaction.fetch();
+		}
+		if (user.partial) {
+			await user.fetch();
+		}
+
 	}
-	if (user.partial) {
-		await user.fetch();
+	catch (err) {
+		console.error(reaction.id, user.id, err);
+		return;
 	}
 	console.log(`${user.username} reacted, doing checks`);
 	const signupMessage = boostRequestsBySignupMessageId.get(reaction.message.id);
@@ -84,6 +91,7 @@ client.on('message', async message => {
 			isClaimableByAdvertisers: false,
 			queuedAdvertiserIds: new Set(),
 			signupMessageId: signupMessage.id,
+			message: message.content,
 		};
 		addTimers(boostRequest);
 		boostRequestsBySignupMessageId.set(signupMessage.id, boostRequest);
@@ -155,11 +163,7 @@ async function setWinner(message, winner) {
 			console.error('Failed to clear reactions: ', err);
 		}
 		await message.react('✅');
-		await sendEmbed(winner, signupMessage.requesterId, {
-			notifyBuyer: boostRequestChannel.notifyBuyer,
-			buyerDiscordName: signupMessage.buyerDiscordName,
-			backendId: boostRequestChannel.backendId,
-		});
+		await sendEmbed(winner, signupMessage, boostRequestChannel);
 	}
 	catch (error) {
 		console.error('One of the emojis failed to react.', error);
@@ -187,21 +191,24 @@ async function BREmbed(brMessage, channelId) {
 }
 
 
-async function sendEmbed(embedUser, requesterId, { notifyBuyer, backendId, buyerDiscordName }) {
+async function sendEmbed(embedUser, { requesterId, buyerDiscordName, message }, { notifyBuyer, backendId }) {
 	// Make Embed post here
 	const requestUser = await client.users.fetch(requesterId).catch(() => null);
+	const isRealUser = requestUser && !requestUser.bot;
 	const selectionBRBEmbed = new Discord.MessageEmbed()
 		.setColor('#FF0000')
-		.setTitle('And the fastest clicker is...')
 		.setThumbnail(embedUser.displayAvatarURL())
-		.addFields({
-			name: embedUser.username,
-			value: requestUser && !requestUser.bot
-				? `Please message <@${requesterId}>.`
-				: `Please message ${buyerDiscordName} (battletag).`,
-		})
+		.setTitle('An advertiser has been selected.')
+		.setDescription(
+			`<@${embedUser.id}> ${isRealUser ? 'will handle the following boost request.' : 'has been selected to handle a boost request.'} ` + (isRealUser
+				? `Please message <@${requesterId}> (${requestUser.tag}).`
+				: `Please message ${buyerDiscordName} (battletag).`),
+		)
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
+	if (isRealUser) {
+		selectionBRBEmbed.addField('Boost Request', message);
+	}
 	await (await client.channels.fetch(backendId)).send(selectionBRBEmbed);
 	if (notifyBuyer) {
 		// Make Embed post here
