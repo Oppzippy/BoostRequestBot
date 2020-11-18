@@ -1,0 +1,1 @@
+new Map([["778750088125481004",{"channelId":"757852342321414214","requesterId":"191587255557554177","createdAt":new Date("2020-11-18T22:34:48.500Z"),"backendChannelId":"757862249846276138","buyerDiscordName":undefined,"isClaimableByAdvertisers":false,"queuedAdvertiserIds":new Set(["191587255557554177"]),"signupMessageId":"778750088125481004","message":"test"}]])

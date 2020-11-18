@@ -1,14 +1,46 @@
 const config = require('./config.js');
+const fs = require('fs');
 const Discord = require('discord.js');
+const serialize = require('serialize-javascript');
 const client = new Discord.Client({
 	partials: ['MESSAGE', 'USER', 'REACTION', 'GUILD_MEMBER'],
 });
 const reactionArray = ['👍'];
 const boostRequestsBySignupMessageId = new Map();
+const boostRequestTimeouts = new Map();
 client.login(config.TOKEN);
+let areBoostRequestsLoaded = false;
 client.on('ready', () => {
 	console.log('client online!');
+	if (!areBoostRequestsLoaded) {
+		areBoostRequestsLoaded = true;
+		loadBoostRequests();
+	}
 });
+
+function loadBoostRequests() {
+	fs.readFile(`${__dirname}/boost-requests.js`, (err, loadedBoostRequests) => {
+		if (err) {
+			console.error('Failed to load boost requests', err);
+			return;
+		}
+		try {
+			const boostRequests = eval(`(${loadedBoostRequests.toString()})`);
+			boostRequests.forEach((boostRequest, key) => {
+				boostRequestsBySignupMessageId.set(key, boostRequest);
+				addTimers(boostRequest);
+			});
+		}
+		catch (err) {
+			console.error('Failed to parse boost requests', err);
+		}
+	});
+}
+
+function saveBoostRequests() {
+	const serialziedBoostRequests = serialize(boostRequestsBySignupMessageId, { unsafe: true, ignoreFunction: true });
+	fs.writeFileSync(`${__dirname}/boost-requests.js`, serialziedBoostRequests);
+}
 
 // TODO: Edit first embed to get of 2nd embed
 // TODO: Clean up embeds
@@ -143,7 +175,7 @@ async function sendBuyerWaitingMessage(message) {
 }
 
 function addTimers(boostRequest) {
-	boostRequest.timeoutIds = [
+	boostRequestTimeouts.set(boostRequest, [
 		setTimeout(async () => {
 			boostRequest.isClaimableByAdvertisers = true;
 			if (boostRequest.queuedAdvertiserIds.size >= 1) {
@@ -158,14 +190,14 @@ function addTimers(boostRequest) {
 					console.error(err);
 				}
 			}
-		}, 60000),
+		}, Math.max(0, 60000 - (new Date() - boostRequest.createdAt))),
 		// 1 minute
 		setTimeout(() => {
 			console.log('Deleting expired boost request.');
 			boostRequestsBySignupMessageId.delete(boostRequest.signupMessageId);
 		}, 259200000),
 		// 72 hours
-	];
+	]);
 }
 
 async function setWinner(message, winner) {
@@ -174,7 +206,7 @@ async function setWinner(message, winner) {
 		return;
 	}
 	boostRequestsBySignupMessageId.delete(message.id);
-	signupMessage.timeoutIds.forEach(timeoutId => clearTimeout(timeoutId));
+	boostRequestTimeouts.get(signupMessage).forEach(timeoutId => clearTimeout(timeoutId));
 	const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(
 		chan => chan.id == signupMessage.channelId,
 	);
@@ -256,3 +288,15 @@ async function sendEmbed(embedUser, { requesterId, buyerDiscordName, message }, 
 function shuffle(array) {
 	array.sort(() => Math.random() - 0.5);
 }
+
+let destroyed = false;
+function destroy() {
+	if (!destroyed) {
+		destroyed = true;
+		client.destroy();
+		saveBoostRequests();
+	}
+}
+
+process.on('SIGINT', destroy);
+process.on('SIGTERM', destroy);
