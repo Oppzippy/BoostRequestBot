@@ -72,6 +72,11 @@ client.on('message', async message => {
 	// If User is not a bot AND is messsaging in BoostRequest Channel
 	if (boostRequestChannel && (!message.author.bot || !boostRequestChannel.notifyBuyer)) {
 		// Create embed in the Backend Channel
+		if (!boostRequestChannel.useBuyerMessage) {
+			if (!(await sendBuyerWaitingMessage(message))) {
+				return;
+			}
+		}
 		const signupMessage = boostRequestChannel.useBuyerMessage
 			? message
 			: await BREmbed(message, boostRequestChannel.backendId);
@@ -95,25 +100,47 @@ client.on('message', async message => {
 		};
 		addTimers(boostRequest);
 		boostRequestsBySignupMessageId.set(signupMessage.id, boostRequest);
-		if (!boostRequestChannel.useBuyerMessage) {
-			if (message.deletable) {
-				message.delete();
-			}
-			const dmChannel = message.author.dmChannel ?? await message.author.createDM();
-			const embed = new Discord.MessageEmbed()
-				.setTitle('Huokan Boosting Community Boost Request')
-				.setDescription(message.content)
-				.setThumbnail(message.author.avatarURL())
-				.setAuthor(`${message.author.username}#${message.author.discriminator}`)
-				.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png')
-				.setTimestamp();
-			await dmChannel.send(
-				'Please wait while we find an advertiser to complete your request.',
-				embed,
-			);
-		}
 	}
 });
+
+async function sendBuyerWaitingMessage(message) {
+	const embed = new Discord.MessageEmbed()
+		.setTitle('Huokan Boosting Community Boost Request')
+		.setDescription(message.content)
+		.setThumbnail(message.author.avatarURL())
+		.setAuthor(`${message.author.username}#${message.author.discriminator}`)
+		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png')
+		.setTimestamp();
+	try {
+		const dmChannel = message.author.dmChannel ?? await message.author.createDM();
+		await dmChannel.send(
+			'Please wait while we find an advertiser to complete your request.',
+			embed,
+		);
+		if (message.deletable) {
+			await message.delete();
+		}
+	}
+	catch (err) {
+		if (err.code === 50007) {
+			// Cannot send messages to this user
+			const reply = await message.reply('I can\'t DM you! Please allow DMs from server members by right clicking the server and enabling "Allow direct messages from server members." in Privacy Settings, and then post your message again.');
+			setTimeout(() => {
+				message.delete().catch(() => {
+					// ignore
+				});
+				reply.delete().catch(() => {
+					// ignore
+				});
+			}, 30000);
+		}
+		else {
+			console.error(err);
+		}
+		return false;
+	}
+	return true;
+}
 
 function addTimers(boostRequest) {
 	boostRequest.timeoutIds = [
