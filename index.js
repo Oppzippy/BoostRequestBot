@@ -235,14 +235,13 @@ async function BREmbed(brMessage, channelId) {
 	const exampleEmbed = new Discord.MessageEmbed()
 		.setColor('#0000FF')
 		.setTitle('New Boost Request')
-		.setThumbnail(brMessage.author.displayAvatarURL())
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
 	if (brMessage.embeds.length >= 1) {
 		exampleEmbed.addFields(brMessage.embeds[0].fields);
 	}
 	else {
-		exampleEmbed.addFields({ name: `${brMessage.author.username}#${brMessage.author.discriminator}`, value: brMessage.content });
+		exampleEmbed.setDescription(brMessage.content);
 	}
 	// Send embed to BoostRequest backend THEN add the Thumbsup Icon
 	const message = await (await client.channels.fetch(channelId)).send(exampleEmbed);
@@ -256,19 +255,30 @@ async function sendEmbed(embedUser, { requesterId, buyerDiscordName, message }, 
 	const isRealUser = requestUser && !requestUser.bot;
 	const selectionBRBEmbed = new Discord.MessageEmbed()
 		.setColor('#FF0000')
-		.setThumbnail(embedUser.displayAvatarURL())
-		.setTitle('An advertiser has been selected.')
+		.setThumbnail(requestUser?.displayAvatarURL())
+		.setTitle('You have been selected to handle a boost request.')
 		.setDescription(
-			`<@${embedUser.id}> ${isRealUser ? 'will handle the following boost request.' : 'has been selected to handle a boost request.'} ` + (isRealUser
-				? `Please message <@${requesterId}> (${requestUser.tag}).`
-				: `Please message ${buyerDiscordName} (battletag).`),
+			isRealUser ?
+				`Please message <@${requesterId}> (${requestUser.tag}).` :
+				`Please message ${buyerDiscordName} (battletag).`,
 		)
 		.setTimestamp()
 		.setFooter('Huokan Boosting Community', 'https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png');
 	if (isRealUser) {
 		selectionBRBEmbed.addField('Boost Request', message);
 	}
-	await (await client.channels.fetch(backendId)).send(selectionBRBEmbed);
+	try {
+		await embedUser.send(selectionBRBEmbed);
+	}
+	catch (err) {
+		if (err.code === 50007) {
+			// Cannot send messages to this user
+			const backendChannel = await client.channels.fetch(backendId);
+			selectionBRBEmbed.setTitle(`${embedUser.nickname ?? embedUser.tag} has been chosen to handle a boost request.`);
+			selectionBRBEmbed.setDescription(`<@${embedUser.id}>, I can't DM you. Please allow DMs from server members by right clicking the server and enabling "Allow direct messages from server members." in Privacy Settings.\n\n${selectionBRBEmbed.description}`);
+			await backendChannel.send(selectionBRBEmbed);
+		}
+	}
 	if (notifyBuyer) {
 		// Make Embed post here
 		const selectionBREmbed = new Discord.MessageEmbed()
