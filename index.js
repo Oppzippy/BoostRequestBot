@@ -294,7 +294,16 @@ async function sendEmbed(
     // Make Embed post here
     const requestUser = await client.users.fetch(requesterId).catch(() => null);
     const isRealUser = requestUser && !requestUser.bot;
-    const selectionBRBEmbed = new Discord.MessageEmbed()
+    const announcementEmbed = new Discord.MessageEmbed()
+        .setColor("#FF0000")
+        .setThumbnail(embedUser?.displayAvatarURL())
+        .setTitle("An advertiser has been selected.")
+        .setDescription(
+            isRealUser
+                ? `<@${embedUser.id}> will handle the following boost request.`
+                : `<@${embedUser.id}> will handle ${buyerDiscordName}'s boost request.`
+        );
+    const advertiserDMEmbed = new Discord.MessageEmbed()
         .setColor("#FF0000")
         .setThumbnail(requestUser?.displayAvatarURL())
         .setTitle("You have been selected to handle a boost request.")
@@ -309,25 +318,21 @@ async function sendEmbed(
             "https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png"
         );
     if (isRealUser) {
-        selectionBRBEmbed.addField("Boost Request", message);
+        advertiserDMEmbed.addField("Boost Request", message);
+        announcementEmbed.addField("Boost Request", message);
     }
     try {
-        await embedUser.send(selectionBRBEmbed);
+        await embedUser.send(advertiserDMEmbed);
     } catch (err) {
         if (err.code === 50007) {
             // Cannot send messages to this user
-            const backendChannel = await client.channels.fetch(backendId);
-            selectionBRBEmbed.setTitle(
-                `${
-                    embedUser.nickname ?? embedUser.tag
-                } has been chosen to handle a boost request.`
+            announcementEmbed.setDescription(
+                `<@${embedUser.id}>, I can't DM you. Please allow DMs from server members by right clicking the server and enabling "Allow direct messages from server members." in Privacy Settings.\n\n${advertiserDMEmbed.description}`
             );
-            selectionBRBEmbed.setDescription(
-                `<@${embedUser.id}>, I can't DM you. Please allow DMs from server members by right clicking the server and enabling "Allow direct messages from server members." in Privacy Settings.\n\n${selectionBRBEmbed.description}`
-            );
-            await backendChannel.send(selectionBRBEmbed);
         }
     }
+    const backendChannel = await client.channels.fetch(backendId);
+    await backendChannel.send(announcementEmbed);
     if (notifyBuyer) {
         // Make Embed post here
         const selectionBREmbed = new Discord.MessageEmbed()
