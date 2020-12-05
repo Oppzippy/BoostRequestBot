@@ -283,6 +283,17 @@ async function BREmbed(brMessage, channelId) {
     const message = await (await client.channels.fetch(channelId)).send(
         exampleEmbed
     );
+
+    if (brMessage.embeds.length == 0) {
+        exampleEmbed.addField(
+            "Requested By",
+            `<@${brMessage.id}> ${brMessage.author.tag}`
+        );
+        client.channels
+            .fetch(config.logChannel)
+            .then((channel) => channel.send(exampleEmbed))
+            .catch(console.error);
+    }
     return message;
 }
 
