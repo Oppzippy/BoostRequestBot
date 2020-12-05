@@ -8,7 +8,7 @@ const client = new Discord.Client({
 const reactionArray = ["👍"];
 const boostRequestsBySignupMessageId = new Map();
 const boostRequestTimeouts = new Map();
-client.login(config.TOKEN);
+client.login(config.token);
 let areBoostRequestsLoaded = false;
 client.on("ready", () => {
     console.log("client online!");
@@ -116,7 +116,7 @@ client.on("message", async (message) => {
     }
     if (message.author.equals(client.user)) return;
     console.log(message.content);
-    const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(
+    const boostRequestChannel = config.boostRequestChannelId.find(
         (chan) => chan.id == message.channel.id
     );
     // If User is not a bot AND is messsaging in BoostRequest Channel
@@ -244,7 +244,7 @@ async function setWinner(message, winner) {
     boostRequestTimeouts
         .get(signupMessage)
         .forEach((timeoutId) => clearTimeout(timeoutId));
-    const boostRequestChannel = config.BOOST_REQUEST_CHANNEL_ID.find(
+    const boostRequestChannel = config.boostRequestChannelId.find(
         (chan) => chan.id == signupMessage.channelId
     );
 
