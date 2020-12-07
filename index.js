@@ -5,6 +5,16 @@ const serialize = require("serialize-javascript");
 const client = new Discord.Client({
     partials: ["MESSAGE", "USER", "REACTION", "GUILD_MEMBER"],
 });
+const advertiserRoles = ["Heroic Advertiser"];
+const eliteAdvertiserRoles = [
+    "Elite Advertiser",
+    "Supreme Advertiser",
+    "Monster Advertiser",
+    "Titan Advertiser",
+    "Legendary Advertiser",
+    "Demigod Advertiser",
+    "Pantheon Advertiser",
+];
 const reactionArray = ["👍"];
 const boostRequestsBySignupMessageId = new Map();
 const boostRequestTimeouts = new Map();
@@ -67,31 +77,24 @@ client.on("messageReactionAdd", async (reaction, user) => {
         console.error(reaction.id, user.id, err);
         return;
     }
-    console.log(`${user.username} reacted, doing checks`);
     const signupMessage = boostRequestsBySignupMessageId.get(
         reaction.message.id
     );
     const guildMember = await reaction.message.guild.members.fetch(user);
-    console.log(
-        `${
-            signupMessage
-                ? "signupMessage is defined."
-                : "Signup message is undefined! " + reaction.message.id
-        }`
-    );
 
     if (signupMessage && !user.bot && reaction.emoji.name === "👍") {
-        const isEliteAdvertiser = guildMember.roles.cache.some(
-            (role) => role.name === "Elite Advertiser"
+        const isAdvertiser = guildMember.roles.cache.some((role) =>
+            advertiserRoles.includes(role.name)
         );
-        console.log(
-            `${user.username} reacted (${
-                isEliteAdvertiser ? "" : "not "
-            }elite advertiser)`
+        const isEliteAdvertiser = guildMember.roles.cache.some((role) =>
+            eliteAdvertiserRoles.includes(role.name)
         );
-        if (signupMessage.isClaimableByAdvertisers || isEliteAdvertiser) {
+        if (
+            (signupMessage.isClaimableByAdvertisers && isAdvertiser) ||
+            isEliteAdvertiser
+        ) {
             await setWinner(reaction.message, user);
-        } else {
+        } else if (isAdvertiser) {
             signupMessage.queuedAdvertiserIds.add(user.id);
         }
     }
