@@ -7,6 +7,8 @@ const client = new Discord.Client({
 });
 const advertiserRoles = ["Heroic Advertiser"];
 const eliteAdvertiserRoles = [
+    "Advertiser Trainer",
+    "Support Team",
     "Elite Advertiser",
     "Supreme Advertiser",
     "Monster Advertiser",
