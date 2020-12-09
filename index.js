@@ -5,7 +5,7 @@ const serialize = require("serialize-javascript");
 const client = new Discord.Client({
     partials: ["MESSAGE", "USER", "REACTION", "GUILD_MEMBER"],
 });
-const advertiserRoles = ["Heroic Advertiser", "Senior Advertiser"];
+const advertiserRoles = ["Heroic Advertiser"];
 const eliteAdvertiserRoles = [
     "Elite Advertiser",
     "Supreme Advertiser",
@@ -74,7 +74,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
             await user.fetch();
         }
     } catch (err) {
-        console.log("messageReactionAdd", reaction.id, user.id, err);
+        console.error(reaction.id, user.id, err);
         return;
     }
     const signupMessage = boostRequestsBySignupMessageId.get(
