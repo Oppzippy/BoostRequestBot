@@ -101,8 +101,12 @@ client.on("messageReactionAdd", async (reaction, user) => {
 });
 
 client.on("messageReactionRemove", async (reaction, user) => {
-    if (reaction.partial) {
-        await reaction.fetch();
+    try {
+        if (reaction.partial) {
+            await reaction.fetch();
+        }
+    } catch (err) {
+        return;
     }
     const boostRequest = boostRequestsBySignupMessageId.get(
         reaction.message.id
@@ -114,8 +118,12 @@ client.on("messageReactionRemove", async (reaction, user) => {
 
 // Event Catcher when users send a message
 client.on("message", async (message) => {
-    if (message.partial) {
-        await message.fetch();
+    try {
+        if (message.partial) {
+            await message.fetch();
+        }
+    } catch (err) {
+        return;
     }
     if (message.author.equals(client.user)) return;
     console.log(message.content);
