@@ -43,6 +43,10 @@ function loadBoostRequests() {
                     `(${loadedBoostRequests.toString()})`
                 );
                 boostRequests.forEach((boostRequest, key) => {
+                    // XXX Backwards compatibility, remove after all requests expire (3 days)
+                    if (!boostRequest.queuedAdvertisers) {
+                        boostRequest.queuedAdvertisers = [];
+                    }
                     boostRequestsBySignupMessageId.set(key, boostRequest);
                     addTimers(boostRequest);
                 });
@@ -79,12 +83,12 @@ client.on("messageReactionAdd", async (reaction, user) => {
         console.error(reaction.id, user.id, err);
         return;
     }
-    const signupMessage = boostRequestsBySignupMessageId.get(
+    const boostRequest = boostRequestsBySignupMessageId.get(
         reaction.message.id
     );
     const guildMember = await reaction.message.guild.members.fetch(user);
 
-    if (signupMessage && !user.bot && reaction.emoji.name === "👍") {
+    if (boostRequest && !user.bot && reaction.emoji.name === "👍") {
         const isAdvertiser = guildMember.roles.cache.some((role) =>
             advertiserRoles.includes(role.name)
         );
@@ -92,12 +96,15 @@ client.on("messageReactionAdd", async (reaction, user) => {
             eliteAdvertiserRoles.includes(role.name)
         );
         if (
-            (signupMessage.isClaimableByAdvertisers && isAdvertiser) ||
-            isEliteAdvertiser
+            (boostRequest.isClaimableByAdvertisers && isAdvertiser) ||
+            (boostRequest.isClaimableByEliteAdvertisers && isEliteAdvertiser)
         ) {
             await setWinner(reaction.message, user);
-        } else if (isAdvertiser) {
-            signupMessage.queuedAdvertiserIds.add(user.id);
+        } else if (isAdvertiser || isEliteAdvertiser) {
+            boostRequest.queuedAdvertisers.push({
+                id: user.id,
+                isElite: isEliteAdvertiser,
+            });
         }
     }
 });
@@ -114,7 +121,9 @@ client.on("messageReactionRemove", async (reaction, user) => {
         reaction.message.id
     );
     if (boostRequest) {
-        await boostRequest.queuedAdvertiserIds.delete(user.id);
+        boostRequest.queuedAdvertisers = boostRequest.queuedAdvertisers.filter(
+            (advertiser) => advertiser.id !== user.id
+        );
     }
 });
 
@@ -165,7 +174,7 @@ client.on("message", async (message) => {
             backendChannelId: boostRequestChannel.backendId,
             buyerDiscordName: buyerDiscordName,
             isClaimableByAdvertisers: false,
-            queuedAdvertiserIds: new Set(),
+            queuedAdvertisers: [],
             signupMessageId: signupMessage.id,
             message: message.content,
         };
@@ -220,12 +229,35 @@ async function sendBuyerWaitingMessage(message) {
 function addTimers(boostRequest) {
     boostRequestTimeouts.set(boostRequest, [
         setTimeout(async () => {
+            boostRequest.isClaimableByEliteAdvertisers = true;
+            const advertisers = boostRequest.queuedAdvertisers.filter(
+                (advertiser) => advertiser.isElite
+            );
+            if (advertisers.length > 0) {
+                const winner =
+                    advertisers[Math.floor(Math.random() * advertisers.length)];
+                const user = await client.users.fetch(winner.id);
+                const channel = await client.channels.fetch(
+                    boostRequest.backendChannelId
+                );
+                const signupMessage = await channel.messages.fetch(
+                    boostRequest.signupMessageId
+                );
+                await setWinner(signupMessage, user);
+            }
+        }, Math.max(0, 20000 - (new Date() - boostRequest.createdAt))),
+        setTimeout(async () => {
             boostRequest.isClaimableByAdvertisers = true;
-            if (boostRequest.queuedAdvertiserIds.size >= 1) {
+            if (boostRequest.queuedAdvertisers.length >= 1) {
                 try {
-                    const userId = boostRequest.queuedAdvertiserIds
-                        .values()
-                        .next().value;
+                    const chosenAdvertiser =
+                        boostRequest.queuedAdvertisers[
+                            Math.floor(
+                                Math.random() *
+                                    boostRequest.queuedAdvertisers.length
+                            )
+                        ];
+                    const userId = chosenAdvertiser.id;
                     const user = await client.users.fetch(userId);
                     const channel = await client.channels.fetch(
                         boostRequest.backendChannelId
