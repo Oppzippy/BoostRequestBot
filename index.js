@@ -229,25 +229,32 @@ async function sendBuyerWaitingMessage(message) {
 function addTimers(boostRequest) {
     boostRequestTimeouts.set(boostRequest, [
         setTimeout(async () => {
-            boostRequest.isClaimableByEliteAdvertisers = true;
             const advertisers = boostRequest.queuedAdvertisers.filter(
                 (advertiser) => advertiser.isElite
             );
-            if (advertisers.length > 0) {
-                const winner =
-                    advertisers[Math.floor(Math.random() * advertisers.length)];
-                const user = await client.users.fetch(winner.id);
-                const channel = await client.channels.fetch(
-                    boostRequest.backendChannelId
-                );
-                const signupMessage = await channel.messages.fetch(
-                    boostRequest.signupMessageId
-                );
-                await setWinner(signupMessage, user);
+            if (advertisers.length >= 1) {
+                try {
+                    const winner =
+                        advertisers[
+                            Math.floor(Math.random() * advertisers.length)
+                        ];
+                    const user = await client.users.fetch(winner.id);
+                    const channel = await client.channels.fetch(
+                        boostRequest.backendChannelId
+                    );
+                    const signupMessage = await channel.messages.fetch(
+                        boostRequest.signupMessageId
+                    );
+                    await setWinner(signupMessage, user);
+                } catch (err) {
+                    console.error(err);
+                    boostRequest.isClaimableByEliteAdvertisers = true;
+                }
+            } else {
+                boostRequest.isClaimableByEliteAdvertisers = true;
             }
         }, Math.max(0, 20000 - (new Date() - boostRequest.createdAt))),
         setTimeout(async () => {
-            boostRequest.isClaimableByAdvertisers = true;
             if (boostRequest.queuedAdvertisers.length >= 1) {
                 try {
                     const chosenAdvertiser =
@@ -268,7 +275,10 @@ function addTimers(boostRequest) {
                     await setWinner(signupMessage, user);
                 } catch (err) {
                     console.error(err);
+                    boostRequest.isClaimableByAdvertisers = true;
                 }
+            } else {
+                boostRequest.isClaimableByAdvertisers = true;
             }
         }, Math.max(0, 60000 - (new Date() - boostRequest.createdAt))),
         // 1 minute
