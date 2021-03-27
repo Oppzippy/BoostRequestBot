@@ -6,17 +6,18 @@ const client = new Discord.Client({
     partials: ["MESSAGE", "USER", "REACTION", "GUILD_MEMBER"],
 });
 const advertiserRoles = ["Heroic Advertiser"];
-const eliteAdvertiserRoles = [
-    "Advertiser Trainer",
-    "Support Team",
-    "Elite Advertiser",
-    "Supreme Advertiser",
-    "Monster Advertiser",
-    "Titan Advertiser",
-    "Legendary Advertiser",
-    "Demigod Advertiser",
-    "Pantheon Advertiser",
-];
+const eliteAdvertiserWeights = {
+    "Advertiser Trainer": 1,
+    "Support Team": 1,
+    "Elite Advertiser": 1,
+    "Supreme Advertiser": 1.5,
+    "Monster Advertiser": 2.5,
+    "Titan Advertiser": 3.5,
+    "Legendary Advertiser": 3.5,
+    "Demigod Advertiser": 6.5,
+    "Pantheon Advertiser": 8,
+    "The Eternal Advertiser": 10,
+};
 const reactionArray = ["👍"];
 const boostRequestsBySignupMessageId = new Map();
 const boostRequestTimeouts = new Map();
@@ -92,18 +93,28 @@ client.on("messageReactionAdd", async (reaction, user) => {
         const isAdvertiser = guildMember.roles.cache.some((role) =>
             advertiserRoles.includes(role.name)
         );
-        const isEliteAdvertiser = guildMember.roles.cache.some((role) =>
-            eliteAdvertiserRoles.includes(role.name)
+        const eliteAvertiserRole = guildMember.roles.cache.reduce(
+            (best, current) => {
+                if (current.name in eliteAdvertiserWeights) {
+                    return (eliteAdvertiserWeights[best] ?? -Infinity) >
+                        eliteAdvertiserWeights[current.name]
+                        ? best
+                        : current.name;
+                }
+                return best;
+            },
+            null
         );
         if (
             (boostRequest.isClaimableByAdvertisers && isAdvertiser) ||
-            (boostRequest.isClaimableByEliteAdvertisers && isEliteAdvertiser)
+            (boostRequest.isClaimableByEliteAdvertisers && eliteAvertiserRole)
         ) {
             await setWinner(reaction.message, user);
-        } else if (isAdvertiser || isEliteAdvertiser) {
+        } else if (isAdvertiser || eliteAdvertiserWeights) {
             boostRequest.queuedAdvertisers.push({
                 id: user.id,
-                isElite: isEliteAdvertiser,
+                isElite: eliteAvertiserRole !== null,
+                weight: eliteAdvertiserWeights[eliteAvertiserRole],
             });
         }
     }
@@ -233,11 +244,8 @@ function addTimers(boostRequest) {
                 (advertiser) => advertiser.isElite
             );
             if (advertisers.length >= 1) {
+                const winner = getRandomAdvertiserWeighted(advertisers);
                 try {
-                    const winner =
-                        advertisers[
-                            Math.floor(Math.random() * advertisers.length)
-                        ];
                     const user = await client.users.fetch(winner.id);
                     const channel = await client.channels.fetch(
                         boostRequest.backendChannelId
@@ -417,6 +425,21 @@ async function sendEmbed(
         const requester = await client.users.fetch(requesterId);
         const dmChannel = requester.dmChannel || (await requester.createDM());
         await dmChannel.send(selectionBREmbed);
+    }
+}
+
+function getRandomAdvertiserWeighted(advertisers) {
+    const totalWeight = advertisers.reduce(
+        (total, advertiser) => total + (advertiser.weight ?? 1),
+        0
+    );
+    const chosenOffset = Math.random() * totalWeight;
+    let sum = 0;
+    for (const advertiser of advertisers) {
+        sum += advertiser.weight ?? 1;
+        if (chosenOffset < sum) {
+            return advertiser;
+        }
     }
 }
 
