@@ -10,13 +10,13 @@ const eliteAdvertiserWeights = {
     "Advertiser Trainer": 1,
     "Support Team": 1,
     "Elite Advertiser": 1,
-    "Supreme Advertiser": 1.5,
+    "Supreme Advertiser": 1.75,
     "Monster Advertiser": 2.5,
-    "Titan Advertiser": 3.5,
-    "Legendary Advertiser": 3.5,
-    "Demigod Advertiser": 6.5,
-    "Pantheon Advertiser": 6.5,
-    "The Eternal Advertiser": 6.5,
+    "Titan Advertiser": 3.25,
+    "Legendary Advertiser": 4,
+    "Demigod Advertiser": 5,
+    "Pantheon Advertiser": 5,
+    "The Eternal Advertiser": 5,
 };
 const reactionArray = ["👍"];
 const boostRequestsBySignupMessageId = new Map();
