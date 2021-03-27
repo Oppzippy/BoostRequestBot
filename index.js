@@ -15,8 +15,8 @@ const eliteAdvertiserWeights = {
     "Titan Advertiser": 3.5,
     "Legendary Advertiser": 3.5,
     "Demigod Advertiser": 6.5,
-    "Pantheon Advertiser": 8,
-    "The Eternal Advertiser": 10,
+    "Pantheon Advertiser": 6.5,
+    "The Eternal Advertiser": 6.5,
 };
 const reactionArray = ["👍"];
 const boostRequestsBySignupMessageId = new Map();
@@ -441,6 +441,7 @@ function getRandomAdvertiserWeighted(advertisers) {
             return advertiser;
         }
     }
+    return advertisers[advertisers.length - 1];
 }
 
 function shuffle(array) {
