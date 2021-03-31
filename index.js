@@ -1,6 +1,8 @@
 const config = require("./config.js");
 const fs = require("fs");
 const Discord = require("discord.js");
+const low = require("lowdb");
+const FileSync = require("lowdb/adapters/FileSync");
 const serialize = require("serialize-javascript");
 const client = new Discord.Client({
     partials: ["MESSAGE", "USER", "REACTION", "GUILD_MEMBER"],
@@ -18,9 +20,18 @@ const eliteAdvertiserWeights = {
     "Pantheon Advertiser": 5,
     "The Eternal Advertiser": 5,
 };
-const reactionArray = ["👍"];
+const reactionArray = ["👍", "⏭"];
 const boostRequestsBySignupMessageId = new Map();
 const boostRequestTimeouts = new Map();
+
+const db = low(
+    new FileSync("db.json", {
+        defaultValue: {
+            stealCredits: {},
+        },
+    })
+);
+
 client.login(config.token);
 let areBoostRequestsLoaded = false;
 client.on("ready", () => {
@@ -89,33 +100,51 @@ client.on("messageReactionAdd", async (reaction, user) => {
     );
     const guildMember = await reaction.message.guild.members.fetch(user);
 
-    if (boostRequest && !user.bot && reaction.emoji.name === "👍") {
-        const isAdvertiser = guildMember.roles.cache.some((role) =>
-            advertiserRoles.includes(role.name)
-        );
-        const eliteAvertiserRole = guildMember.roles.cache.reduce(
-            (best, current) => {
-                if (current.name in eliteAdvertiserWeights) {
-                    return (eliteAdvertiserWeights[best] ?? -Infinity) >
-                        eliteAdvertiserWeights[current.name]
-                        ? best
-                        : current.name;
+    if (boostRequest && !user.bot) {
+        if (reaction.emoji.name === "👍") {
+            const isAdvertiser = guildMember.roles.cache.some((role) =>
+                advertiserRoles.includes(role.name)
+            );
+            const eliteAvertiserRole = guildMember.roles.cache.reduce(
+                (best, current) => {
+                    if (current.name in eliteAdvertiserWeights) {
+                        return (eliteAdvertiserWeights[best] ?? -Infinity) >
+                            eliteAdvertiserWeights[current.name]
+                            ? best
+                            : current.name;
+                    }
+                    return best;
+                },
+                null
+            );
+            if (
+                (boostRequest.isClaimableByAdvertisers && isAdvertiser) ||
+                (boostRequest.isClaimableByEliteAdvertisers &&
+                    eliteAvertiserRole)
+            ) {
+                await setWinner(reaction.message, user);
+            } else if (isAdvertiser || eliteAdvertiserWeights) {
+                boostRequest.queuedAdvertisers.push({
+                    id: user.id,
+                    isElite: eliteAvertiserRole !== null,
+                    weight: eliteAdvertiserWeights[eliteAvertiserRole],
+                });
+            }
+        } else if (reaction.emoji.name == "⏭") {
+            let availableSteals = db.get("stealCredits").get([user.id], 0);
+            if (availableSteals > 0) {
+                availableSteals--;
+                db.get("stealCredits").set([user.id], availableSteals).write();
+                const dmChannel = user.dmChannel ?? (await user.createDM());
+                await setWinner(reaction.message, user);
+                try {
+                    await dmChannel.send(
+                        `You used a boost request steal. You have ${availableSteals} steals remaining.`
+                    );
+                } catch (err) {
+                    // they're blocking dms
                 }
-                return best;
-            },
-            null
-        );
-        if (
-            (boostRequest.isClaimableByAdvertisers && isAdvertiser) ||
-            (boostRequest.isClaimableByEliteAdvertisers && eliteAvertiserRole)
-        ) {
-            await setWinner(reaction.message, user);
-        } else if (isAdvertiser || eliteAdvertiserWeights) {
-            boostRequest.queuedAdvertisers.push({
-                id: user.id,
-                isElite: eliteAvertiserRole !== null,
-                weight: eliteAdvertiserWeights[eliteAvertiserRole],
-            });
+            }
         }
     }
 });
@@ -166,7 +195,6 @@ client.on("message", async (message) => {
         const signupMessage = boostRequestChannel.useBuyerMessage
             ? message
             : await BREmbed(message, boostRequestChannel.backendId);
-        shuffle(reactionArray);
         const reactPromises = reactionArray.map((emoji) =>
             signupMessage.react(emoji)
         );
@@ -191,6 +219,40 @@ client.on("message", async (message) => {
         };
         addTimers(boostRequest);
         boostRequestsBySignupMessageId.set(signupMessage.id, boostRequest);
+    } else {
+        // Command
+        const [command, ...args] = message.content.split(" ");
+        if (command == "!boostrequestcredit" && args.length >= 2) {
+            const [userQuery, credits] = args;
+            const user = await findUser(userQuery, message.guild.id);
+            if (!user) {
+                message.reply(`User "${userQuery}" not found`);
+                return;
+            }
+            let numCredits;
+            try {
+                numCredits = parseInt(credits);
+            } catch (err) {
+                message.reply(`Invalid integer: ${numCredits}`);
+            }
+            const existingCredits = db
+                .get("stealCredits")
+                .get([user.id], 0)
+                .value();
+            const newCredits = existingCredits + numCredits;
+            db.get("stealCredits").set([user.id], newCredits).write();
+            await message.reply(
+                `${user.tag} now has ${newCredits} boost request steal credits.`
+            );
+            const dmChannel = user.dmChannel ?? (await user.createDM());
+            try {
+                await dmChannel.send(
+                    `You were granted ${numCredits} boost request steal credits. You have ${newCredits} total credits.`
+                );
+            } catch (err) {
+                // they're blocking dms
+            }
+        }
     }
 });
 
@@ -446,6 +508,35 @@ function getRandomAdvertiserWeighted(advertisers) {
 
 function shuffle(array) {
     array.sort(() => Math.random() - 0.5);
+}
+
+async function findUser(userQuery, guildId) {
+    if (/^[0-9]+$/g.test(userQuery)) {
+        try {
+            return await client.users.fetch(userQuery);
+        } catch (err) {
+            // continue
+        }
+    }
+    try {
+        if (userQuery.includes("#")) {
+            const usernameUser = client.users.cache.find(
+                (user) => user.tag.toLowerCase() == userQuery.toLowerCase()
+            );
+            if (usernameUser) {
+                return usernameUser;
+            }
+        }
+        const guild = await client.guilds.fetch(guildId);
+        const nicknameUser = guild.members.cache.find(
+            (member) =>
+                (member.nickname ?? member.user.username).toLowerCase() ==
+                userQuery
+        )?.user;
+        return nicknameUser;
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 let destroyed = false;

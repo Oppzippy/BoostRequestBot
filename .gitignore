@@ -1,3 +1,4 @@
 node_modules
 config.js
 boost-requests.js
+db.json
