@@ -536,20 +536,22 @@ async function findUser(userQuery, guildId) {
     }
     try {
         if (userQuery.includes("#")) {
-            const usernameUser = client.users.cache.find(
+            const usernameUsers = client.users.cache.filter(
                 (user) => user.tag.toLowerCase() == userQuery.toLowerCase()
             );
-            if (usernameUser) {
-                return usernameUser;
+            if (usernameUsers.size == 1) {
+                return usernameUsers.first();
             }
         }
         const guild = await client.guilds.fetch(guildId);
-        const nicknameUser = guild.members.cache.find(
+        const nicknameUsers = guild.members.cache.filter(
             (member) =>
                 (member.nickname ?? member.user.username).toLowerCase() ==
-                userQuery
-        )?.user;
-        return nicknameUser;
+                userQuery.toLowerCase()
+        );
+        if (nicknameUsers.size == 1) {
+            return nicknameUsers.first().user;
+        }
     } catch (err) {
         console.error(err);
     }
