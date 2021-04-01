@@ -7,6 +7,10 @@ const serialize = require("serialize-javascript");
 const client = new Discord.Client({
     partials: ["MESSAGE", "USER", "REACTION", "GUILD_MEMBER"],
 });
+const admins = new Set([
+    "410635076842422293", // Iman
+    "191587255557554177", // Oppy
+]);
 const advertiserRoles = ["Heroic Advertiser"];
 const eliteAdvertiserWeights = {
     "Advertiser Trainer": 1,
@@ -232,7 +236,11 @@ client.on("message", async (message) => {
     } else {
         // Command
         const [command, ...args] = message.content.split(" ");
-        if (command == "!boostrequestcredit" && args.length >= 2) {
+        if (
+            command == "!boostrequestcredit" &&
+            args.length >= 2 &&
+            admins.has(message.author.id)
+        ) {
             const [userQuery, credits] = args;
             const user = await findUser(userQuery, message.guild.id);
             if (!user) {
@@ -516,10 +524,6 @@ function getRandomAdvertiserWeighted(advertisers) {
         }
     }
     return advertisers[advertisers.length - 1];
-}
-
-function shuffle(array) {
-    array.sort(() => Math.random() - 0.5);
 }
 
 async function findUser(userQuery, guildId) {
