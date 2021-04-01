@@ -27,7 +27,7 @@ const boostRequestTimeouts = new Map();
 const db = low(
     new FileSync("db.json", {
         defaultValue: {
-            stealCredits: {},
+            instantBoostRequestCredits: {},
         },
     })
 );
@@ -101,22 +101,28 @@ client.on("messageReactionAdd", async (reaction, user) => {
     const guildMember = await reaction.message.guild.members.fetch(user);
 
     if (boostRequest && !user.bot) {
-        if (reaction.emoji.name === "👍") {
-            const isAdvertiser = guildMember.roles.cache.some((role) =>
-                advertiserRoles.includes(role.name)
-            );
-            const eliteAvertiserRole = guildMember.roles.cache.reduce(
-                (best, current) => {
-                    if (current.name in eliteAdvertiserWeights) {
-                        return (eliteAdvertiserWeights[best] ?? -Infinity) >
-                            eliteAdvertiserWeights[current.name]
-                            ? best
-                            : current.name;
-                    }
-                    return best;
-                },
-                null
-            );
+        const isAdvertiser = guildMember.roles.cache.some((role) =>
+            advertiserRoles.includes(role.name)
+        );
+        const eliteAvertiserRole = guildMember.roles.cache.reduce(
+            (best, current) => {
+                if (current.name in eliteAdvertiserWeights) {
+                    return (eliteAdvertiserWeights[best] ?? -Infinity) >
+                        eliteAdvertiserWeights[current.name]
+                        ? best
+                        : current.name;
+                }
+                return best;
+            },
+            null
+        );
+        if (
+            reaction.emoji.name === "👍" ||
+            (reaction.emoji.name == "⏭" &&
+                ((isAdvertiser && boostRequest.isClaimableByAdvertisers) ||
+                    (eliteAvertiserRole &&
+                        boostRequest.isClaimableByEliteAdvertisers)))
+        ) {
             if (
                 (boostRequest.isClaimableByAdvertisers && isAdvertiser) ||
                 (boostRequest.isClaimableByEliteAdvertisers &&
@@ -131,15 +137,19 @@ client.on("messageReactionAdd", async (reaction, user) => {
                 });
             }
         } else if (reaction.emoji.name == "⏭") {
-            let availableSteals = db.get("stealCredits").get([user.id], 0);
-            if (availableSteals > 0) {
-                availableSteals--;
-                db.get("stealCredits").set([user.id], availableSteals).write();
+            let availableCredits = db
+                .get("instantBoostRequestCredits")
+                .get([user.id], 0);
+            if (availableCredits > 0) {
+                availableCredits--;
+                db.get("instantBoostRequestCredits")
+                    .set([user.id], availableCredits)
+                    .write();
                 const dmChannel = user.dmChannel ?? (await user.createDM());
                 await setWinner(reaction.message, user);
                 try {
                     await dmChannel.send(
-                        `You used a boost request steal. You have ${availableSteals} steals remaining.`
+                        `You used an instant boost request. You have ${availableCredits} credits remaining.`
                     );
                 } catch (err) {
                     // they're blocking dms
@@ -236,18 +246,20 @@ client.on("message", async (message) => {
                 message.reply(`Invalid integer: ${numCredits}`);
             }
             const existingCredits = db
-                .get("stealCredits")
+                .get("instantBoostRequestCredits")
                 .get([user.id], 0)
                 .value();
             const newCredits = existingCredits + numCredits;
-            db.get("stealCredits").set([user.id], newCredits).write();
+            db.get("instantBoostRequestCredits")
+                .set([user.id], newCredits)
+                .write();
             await message.reply(
-                `${user.tag} now has ${newCredits} boost request steal credits.`
+                `${user.tag} now has ${newCredits} instant boost request credits.`
             );
             const dmChannel = user.dmChannel ?? (await user.createDM());
             try {
                 await dmChannel.send(
-                    `You were granted ${numCredits} boost request steal credits. You have ${newCredits} total credits.`
+                    `You were granted ${numCredits} instant boost request credits. You have ${newCredits} total credits.`
                 );
             } catch (err) {
                 // they're blocking dms
