@@ -40,7 +40,9 @@ func main() {
 	}
 	defer discord.Close()
 
-	boost_request.NewBoostRequestManager(discord, db)
+	brm := boost_request.NewBoostRequestManager(discord, db)
+
+	defer brm.Destroy()
 
 	err = discord.Open()
 	if err != nil {
@@ -48,6 +50,6 @@ func main() {
 	}
 
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-sc
 }

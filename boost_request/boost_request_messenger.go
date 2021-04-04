@@ -9,14 +9,23 @@ import (
 )
 
 type BoostRequestMessenger struct {
-	waitGroup               sync.WaitGroup
-	messagesPendingDeletion sync.Map
-	destroyed               bool
+	Destroyed bool
+	waitGroup *sync.WaitGroup
+	quit      chan struct{}
 }
 
 var FOOTER = &discordgo.MessageEmbedFooter{
 	Text:    "Huokan Boosting Community",
 	IconURL: "https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png",
+}
+
+func NewBoostRequestMessenger() *BoostRequestMessenger {
+	brm := BoostRequestMessenger{
+		Destroyed: false,
+		waitGroup: new(sync.WaitGroup),
+		quit:      make(chan struct{}),
+	}
+	return &brm
 }
 
 func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discordgo.Session, br *BoostRequest) (*discordgo.Message, error) {
@@ -28,6 +37,13 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discor
 		Timestamp:   time.Now().Format(time.RFC3339),
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
+	discord.MessageReactionAdd(message.ChannelID, message.ID, ACCEPT_EMOJI)
+	discord.MessageReactionAdd(message.ChannelID, message.ID, STEAL_EMOJI)
+
 	return message, err
 }
 
@@ -36,14 +52,7 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *disco
 	if err != nil {
 		return nil, err
 	}
-	dmChannel, err := discord.UserChannelCreate(requester.ID)
-	if err != nil {
-		restErr, ok := err.(discordgo.RESTError)
-		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(discord, br.Channel.FrontendChannelID, requester.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
-		}
-		return nil, err
-	}
+	dmChannel, _ := discord.UserChannelCreate(requester.ID)
 	message, err := discord.ChannelMessageSendComplex(dmChannel.ID, &discordgo.MessageSend{
 		Content: "Please wait while we find an advertiser to complete your request.",
 		Embed: &discordgo.MessageEmbed{
@@ -58,6 +67,13 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *disco
 			},
 		},
 	})
+	if err != nil {
+		restErr, ok := err.(*discordgo.RESTError)
+		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
+			messenger.sendTemporaryMessage(discord, br.Channel.FrontendChannelID, requester.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
+		}
+		return nil, err
+	}
 	return message, err
 }
 
@@ -145,32 +161,27 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 }
 
 func (messenger *BoostRequestMessenger) Destroy(discord *discordgo.Session) {
-	messenger.destroyed = true
-	messenger.waitGroup.Wait()
-	messenger.messagesPendingDeletion.Range(func(_, value interface{}) bool {
-		message, ok := value.(*discordgo.Message)
-		if ok {
-			discord.ChannelMessageDelete(message.ChannelID, message.ID)
-		}
-		return true
-	})
+	if !messenger.Destroyed {
+		messenger.Destroyed = true
+		close(messenger.quit)
+		messenger.waitGroup.Wait()
+	}
 }
 
 func (messenger *BoostRequestMessenger) sendTemporaryMessage(discord *discordgo.Session, channelID string, content string) {
 	message, err := discord.ChannelMessageSend(channelID, content)
 	if err == nil {
-		messenger.messagesPendingDeletion.Store(message.ID, message)
+		messenger.waitGroup.Add(1)
 		go func() {
-			time.Sleep(30 * time.Second)
-			messenger.waitGroup.Add(1)
-			defer messenger.waitGroup.Done()
-			if !messenger.destroyed {
-				err := discord.ChannelMessageDelete(message.ChannelID, message.ID)
-				if err != nil {
-					log.Println("Error deleting temporary message", err)
-				}
-				messenger.messagesPendingDeletion.Delete(message.ID)
+			select {
+			case <-time.After(30 * time.Second):
+			case <-messenger.quit:
 			}
+			err := discord.ChannelMessageDelete(message.ChannelID, message.ID)
+			if err != nil {
+				log.Println("Error deleting temporary message", err)
+			}
+			messenger.waitGroup.Done()
 		}()
 	} else {
 		log.Println("Error sending temporary message", err)

@@ -19,7 +19,7 @@ CREATE TABLE boost_request (
 	requester_id VARCHAR(50) NOT NULL,
 	advertiser_id VARCHAR(50) NULL,
 	backend_message_id VARCHAR(50) NOT NULL UNIQUE,
+	message TEXT NOT NULL
 	created_at DATETIME NOT NULL,
 	deleted_at DATETIME NULL
-	message TEXT NOT NULL
 );
