@@ -16,7 +16,7 @@ var ErrBoostRequestNotFound = errors.New("boost request not found")
 
 func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, backendMessageID string) (*BoostRequest, error) {
 	return repo.getBoostRequest(
-		"WHERE brc.backend_channel_id = ? AND br.backend_message_id = ?",
+		"WHERE brc.backend_channel_id = ? AND br.backend_message_id = ? AND deleted_at IS NULL",
 		backendChannelID,
 		backendMessageID,
 	)
@@ -25,7 +25,7 @@ func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, bac
 func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*BoostRequest, error) {
 	row := repo.db.QueryRow(`SELECT
 		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message,
-		brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.notifies_buyer
+		brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM boost_request br
 		INNER JOIN boost_request_channel brc ON br.boost_request_channel_id = brc.id `+where,
 		args...,
@@ -36,7 +36,7 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 	br.Channel = &brc
 	err := row.Scan(
 		&br.ID, &br.RequesterID, &br.RequesterID, &br.AdvertiserID, &br.BackendMessageID, &br.Message,
-		&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.NotifiesBuyer,
+		&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
 	)
 	if err == sql.ErrNoRows {
 		return nil, ErrBoostRequestNotFound
@@ -77,7 +77,7 @@ func (repo dbRepository) InsertBoostRequest(br *BoostRequest) error {
 func (repo dbRepository) ResolveBoostRequest(br *BoostRequest) error {
 	var resolvedAt *string = nil
 	if br.IsResolved {
-		timeStr := br.ResolvedAt.Format(time.RFC3339)
+		timeStr := br.ResolvedAt.UTC().Format(time.RFC3339)
 		resolvedAt = &timeStr
 	}
 	_, err := repo.db.Exec(

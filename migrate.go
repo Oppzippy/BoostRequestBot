@@ -1,21 +1,28 @@
 package main
 
 import (
-	"database/sql"
+	"embed"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/database/mysql"
+	"github.com/johejo/golang-migrate-extra/source/iofs"
 )
 
-func MigrateUp(db *sql.DB) error {
-	driver, err := mysql.WithInstance(db, &mysql.Config{})
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+func MigrateUp(dbURL string) error {
+	fs, err := iofs.New(migrationFS, "migrations")
 	if err != nil {
 		return err
 	}
-	m, err := migrate.NewWithDatabaseInstance("file:///migrations", "mysql", driver)
+	m, err := migrate.NewWithSourceInstance("iofs", fs, dbURL)
 	if err != nil {
 		return err
 	}
 	err = m.Up()
-	return err
+	if err != nil && err != migrate.ErrNoChange {
+		return err
+	}
+	return nil
 }

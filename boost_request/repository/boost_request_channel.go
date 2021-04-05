@@ -6,5 +6,5 @@ type BoostRequestChannel struct {
 	FrontendChannelID string
 	BackendChannelID  string
 	UsesBuyerMessage  bool
-	NotifiesBuyer     bool
+	SkipsBuyerDM      bool
 }

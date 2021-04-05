@@ -42,7 +42,7 @@ func (brm *BoostRequestManager) Destroy() {
 func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	if !message.Author.Bot && message.GuildID != "" {
 		brc, err := brm.repo.GetBoostRequestChannelByFrontendChannelID(message.GuildID, message.ChannelID)
-		if err != nil {
+		if err != nil && err != repository.ErrBoostRequestChannelNotFound {
 			log.Println("Error fetching boost request channel", err)
 			return
 		}
