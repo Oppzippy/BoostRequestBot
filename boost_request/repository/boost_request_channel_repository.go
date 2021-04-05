@@ -8,6 +8,7 @@ import (
 
 type BoostRequestChannelRepository interface {
 	GetBoostRequestChannelByFrontendChannelID(guildID string, frontendChannelID string) (*BoostRequestChannel, error)
+	InsertBoostRequestChannel(brc *BoostRequestChannel) error
 }
 
 var ErrBoostRequestChannelNotFound = errors.New("boost request channel not found")
@@ -59,7 +60,11 @@ func (repo dbRepository) InsertBoostRequestChannel(brc *BoostRequestChannel) err
 			uses_buyer_message,
 			skips_buyer_dm,
 			created_at
-		) VALUES (?, ?, ?, ?, ?, ?)`,
+		) VALUES (?, ?, ?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE
+			backend_channel_id = VALUES(backend_channel_id),
+			uses_buyer_message = VALUES(uses_buyer_message),
+			skips_buyer_dm = VALUES(skips_buyer_dm)`,
 		brc.GuildID,
 		brc.FrontendChannelID,
 		brc.BackendChannelID,
