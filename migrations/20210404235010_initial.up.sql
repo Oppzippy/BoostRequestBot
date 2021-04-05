@@ -6,7 +6,6 @@ CREATE TABLE boost_request_channel (
 	uses_buyer_message TINYINT(1) NOT NULL,
 	skips_buyer_dm TINYINT(1) NOT NULL,
 	created_at DATETIME NOT NULL,
-	deleted_at DATETIME NULL,
 	UNIQUE boost_request_channel_unique (guild_id, frontend_channel_id),
 	INDEX boost_request_channel_backend_channel_index (backend_channel_id)
 );
@@ -19,7 +18,7 @@ CREATE TABLE boost_request (
 	backend_message_id VARCHAR(50) NOT NULL,
 	message TEXT NOT NULL,
 	created_at DATETIME NOT NULL,
-	resolved_at DATETIME NOT NULL,
+	resolved_at DATETIME NULL,
 	deleted_at DATETIME NULL,
 	UNIQUE boost_request_unique (backend_message_id)
 );

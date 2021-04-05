@@ -9,13 +9,15 @@ import (
 type BoostRequestChannelRepository interface {
 	GetBoostRequestChannelByFrontendChannelID(guildID string, frontendChannelID string) (*BoostRequestChannel, error)
 	InsertBoostRequestChannel(brc *BoostRequestChannel) error
+	DeleteBoostRequestChannel(brc *BoostRequestChannel) error
+	DeleteBoostRequestChannelsInGuild(guildID string) error
 }
 
 var ErrBoostRequestChannelNotFound = errors.New("boost request channel not found")
 
 func (repo dbRepository) GetBoostRequestChannelByFrontendChannelID(guildID string, frontendChannelID string) (*BoostRequestChannel, error) {
 	brc, err := repo.getBoostRequestChannel(
-		"WHERE guild_id = ? AND frontend_channel_id = ? AND deleted_at IS NULL",
+		"WHERE guild_id = ? AND frontend_channel_id = ?",
 		guildID,
 		frontendChannelID,
 	)
@@ -70,7 +72,7 @@ func (repo dbRepository) InsertBoostRequestChannel(brc *BoostRequestChannel) err
 		brc.BackendChannelID,
 		usesBuyerMessage,
 		skipsBuyerDM,
-		time.Now().UTC().Format(time.RFC3339),
+		time.Now().UTC(),
 	)
 	if err != nil {
 		return err
@@ -81,4 +83,14 @@ func (repo dbRepository) InsertBoostRequestChannel(brc *BoostRequestChannel) err
 	}
 	brc.ID = id
 	return nil
+}
+
+func (repo dbRepository) DeleteBoostRequestChannel(brc *BoostRequestChannel) error {
+	_, err := repo.db.Exec("DELETE FROM boost_request_channel WHERE id = ?", brc.ID)
+	return err
+}
+
+func (repo dbRepository) DeleteBoostRequestChannelsInGuild(guildID string) error {
+	_, err := repo.db.Exec("DELETE FROM boost_request_channel WHERE guild_id = ?", guildID)
+	return err
 }

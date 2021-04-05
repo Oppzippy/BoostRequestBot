@@ -11,7 +11,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"github.com/lus/dgc"
 	"github.com/oppzippy/BoostRequestBot/boost_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -30,7 +32,7 @@ func main() {
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_DATABASE"),
 	)
-	db, err := sql.Open("mysql", dataSourceName)
+	db, err := sql.Open("mysql", dataSourceName+"?parseTime=true")
 	if err != nil {
 		log.Fatalln("Error connecting to database", err)
 	}
@@ -64,8 +66,38 @@ func main() {
 		log.Fatalln("Error connecting to discord", err)
 	}
 
+	registerCommands(discord, repo)
+
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
 	log.Println("Stopping bot")
+}
+
+func registerCommands(discord *discordgo.Session, repo repository.Repository) {
+	router := dgc.Create(&dgc.Router{
+		Prefixes: []string{
+			"!",
+		},
+		IgnorePrefixCase: true,
+		BotsAllowed:      false,
+		Commands: []*dgc.Command{
+			&commands.MainCommand,
+		},
+		Middlewares: []dgc.Middleware{},
+	})
+	router.RegisterMiddleware(func(next dgc.ExecutionHandler) dgc.ExecutionHandler {
+		return func(ctx *dgc.Ctx) {
+			ctx.CustomObjects.Set("repo", repo)
+			next(ctx)
+		}
+	})
+	router.RegisterMiddleware(func(next dgc.ExecutionHandler) dgc.ExecutionHandler {
+		return func(ctx *dgc.Ctx) {
+			// TODO check permissions
+			next(ctx)
+		}
+	})
+
+	router.Initialize(discord)
 }

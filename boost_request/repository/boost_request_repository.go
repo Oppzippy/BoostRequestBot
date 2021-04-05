@@ -16,7 +16,7 @@ var ErrBoostRequestNotFound = errors.New("boost request not found")
 
 func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, backendMessageID string) (*BoostRequest, error) {
 	return repo.getBoostRequest(
-		"WHERE brc.backend_channel_id = ? AND br.backend_message_id = ? AND deleted_at IS NULL",
+		"WHERE brc.backend_channel_id = ? AND br.backend_message_id = ? AND br.deleted_at IS NULL",
 		backendChannelID,
 		backendMessageID,
 	)
@@ -24,7 +24,7 @@ func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, bac
 
 func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*BoostRequest, error) {
 	row := repo.db.QueryRow(`SELECT
-		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message,
+		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.resolved_at,
 		brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM boost_request br
 		INNER JOIN boost_request_channel brc ON br.boost_request_channel_id = brc.id `+where,
@@ -34,15 +34,21 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 	var br BoostRequest
 	var brc BoostRequestChannel
 	br.Channel = &brc
+	var advertiserID sql.NullString
+	var resolvedAt sql.NullTime
 	err := row.Scan(
-		&br.ID, &br.RequesterID, &br.RequesterID, &br.AdvertiserID, &br.BackendMessageID, &br.Message,
+		&br.ID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &resolvedAt,
 		&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
 	)
-	if err == sql.ErrNoRows {
-		return nil, ErrBoostRequestNotFound
-	} else if err != nil {
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrBoostRequestNotFound
+		}
 		return nil, err
 	}
+
+	br.AdvertiserID = advertiserID.String
+	br.IsResolved = resolvedAt.Valid
 	return &br, nil
 }
 
@@ -54,8 +60,8 @@ func (repo dbRepository) InsertBoostRequest(br *BoostRequest) error {
 	}
 	res, err := repo.db.Exec(
 		`INSERT INTO boost_request
-			(boost_request_channel_id, requester_id, backend_message_id, message, created_at)
-			VALUES (?, ?, ?, ?, ?)`,
+			(boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, created_at)
+			VALUES (?, ?, ?, ?, ?, ?)`,
 		br.Channel.ID,
 		br.RequesterID,
 		advertiserID,

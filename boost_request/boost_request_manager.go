@@ -58,17 +58,19 @@ func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, mess
 }
 
 func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session, event *discordgo.MessageReactionAdd) {
-	br, err := brm.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.MessageID)
-	if err != nil {
-		log.Println("Error fetching boost request", err)
-		return
-	}
-	if br != nil {
-		switch event.Emoji.Name {
-		case ACCEPT_EMOJI:
-			brm.addAdvertiserToBoostRequest(br, event.UserID)
-		case STEAL_EMOJI:
-			// TODO not implemented
+	if event.UserID != discord.State.User.ID {
+		br, err := brm.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.MessageID)
+		if err != nil && err != repository.ErrBoostRequestNotFound {
+			log.Println("Error fetching boost request", err)
+			return
+		}
+		if br != nil {
+			switch event.Emoji.Name {
+			case ACCEPT_EMOJI:
+				brm.addAdvertiserToBoostRequest(br, event.UserID)
+			case STEAL_EMOJI:
+				// TODO not implemented
+			}
 		}
 	}
 }
@@ -104,7 +106,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(brc *repository.BoostRequestC
 }
 
 // Best is defined as the role with the highest weight
-func (brm *BoostRequestManager) GetBestRolePrivileges(roles []string) *AdvertiserPrivileges {
+func (brm *BoostRequestManager) GetBestRolePrivileges(roles []string) (AdvertiserPrivileges, bool) {
 	var bestPrivileges *AdvertiserPrivileges = nil
 	for _, role := range roles {
 		value, ok := brm.privileges.Load(role)
@@ -117,8 +119,10 @@ func (brm *BoostRequestManager) GetBestRolePrivileges(roles []string) *Advertise
 			}
 		}
 	}
-	privileges := *bestPrivileges
-	return &privileges
+	if bestPrivileges == nil {
+		return AdvertiserPrivileges{}, false
+	}
+	return *bestPrivileges, true
 }
 
 func (brm *BoostRequestManager) addAdvertiserToBoostRequest(br *repository.BoostRequest, userID string) {
@@ -127,8 +131,8 @@ func (brm *BoostRequestManager) addAdvertiserToBoostRequest(br *repository.Boost
 		log.Println("Error fetching guild member", err)
 		return
 	}
-	privileges := brm.GetBestRolePrivileges(guildMember.Roles)
-	if privileges != nil {
+	_, ok := brm.GetBestRolePrivileges(guildMember.Roles)
+	if ok {
 		// TODO add user to waitlist
 	}
 }
