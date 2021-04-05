@@ -12,10 +12,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"github.com/oppzippy/BoostRequestBot/boost_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
 func main() {
-
+	log.Println("Starting bot")
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file", err)
@@ -34,13 +35,19 @@ func main() {
 	}
 	defer db.Close()
 
+	err = MigrateUp(db)
+	if err != nil {
+		log.Fatal("Error running database migrations", err)
+	}
+
 	discord, err := discordgo.New("Bot " + os.Getenv("DISCORD_TOKEN"))
 	if err != nil {
 		log.Fatal("Error creating discord connection", err)
 	}
 	defer discord.Close()
 
-	brm := boost_request.NewBoostRequestManager(discord, db)
+	repo := repository.NewDBRepository(db)
+	brm := boost_request.NewBoostRequestManager(discord, repo)
 
 	defer brm.Destroy()
 
@@ -48,8 +55,15 @@ func main() {
 	if err != nil {
 		log.Fatal("Error connecting to discord", err)
 	}
+	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Connect) {
+		log.Println("Connected to discord")
+	})
+	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Disconnect) {
+		log.Println("Disconnected from discord")
+	})
 
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
+	log.Println("Stopping bot")
 }

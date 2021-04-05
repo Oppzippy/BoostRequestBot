@@ -81,7 +81,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(brc *repository.BoostRequestC
 			Channel:     brc,
 			RequesterID: requesterID,
 			Message:     request,
-			CreatedAt:   &createdAt,
+			CreatedAt:   createdAt,
 		}
 		br = &boostRequest
 	}
