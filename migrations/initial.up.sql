@@ -21,5 +21,6 @@ CREATE TABLE boost_request (
 	backend_message_id VARCHAR(50) NOT NULL UNIQUE,
 	message TEXT NOT NULL
 	created_at DATETIME NOT NULL,
+	resolved_at DATETIME NOT NULL,
 	deleted_at DATETIME NULL
 );

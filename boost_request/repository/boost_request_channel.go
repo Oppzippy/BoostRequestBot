@@ -1,7 +1,7 @@
-package boost_request
+package repository
 
 type BoostRequestChannel struct {
-	ID                int
+	ID                int64
 	GuildID           string
 	FrontendChannelID string
 	BackendChannelID  string

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
 type BoostRequestMessenger struct {
@@ -28,7 +29,7 @@ func NewBoostRequestMessenger() *BoostRequestMessenger {
 	return &brm
 }
 
-func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discordgo.Session, br *BoostRequest) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
 	message, err := discord.ChannelMessageSendEmbed(br.Channel.BackendChannelID, &discordgo.MessageEmbed{
 		Color:       0x0000FF,
 		Title:       "New Boost Request",
@@ -47,7 +48,7 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discor
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *discordgo.Session, br *BoostRequest) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
 	requester, err := discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
@@ -77,7 +78,7 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *disco
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(discord *discordgo.Session, br *BoostRequest) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
 	advertiser, err := discord.User(br.AdvertiserID)
 
 	if err != nil {
@@ -96,7 +97,7 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(disco
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discord *discordgo.Session, br *BoostRequest) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
 	requester, err := discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
@@ -127,7 +128,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discor
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(discord *discordgo.Session, br *BoostRequest) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
 	requester, err := discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
