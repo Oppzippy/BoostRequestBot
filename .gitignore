@@ -1,5 +1,4 @@
-.env
-node_modules
-config.js
-boost-requests.js
-db.json
+/.env
+/node_modules
+/config.js
+/vendor
