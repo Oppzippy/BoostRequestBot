@@ -2,7 +2,9 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"log"
 	"time"
 )
 
@@ -24,7 +26,7 @@ func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, bac
 
 func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*BoostRequest, error) {
 	row := repo.db.QueryRow(`SELECT
-		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.resolved_at,
+		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.resolved_at,
 		brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM boost_request br
 		INNER JOIN boost_request_channel brc ON br.boost_request_channel_id = brc.id `+where,
@@ -35,8 +37,9 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 	var brc BoostRequestChannel
 	var advertiserID sql.NullString
 	var resolvedAt sql.NullTime
+	var embedFieldsJSON sql.NullString
 	err := row.Scan(
-		&br.ID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &resolvedAt,
+		&br.ID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &resolvedAt,
 		&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
 	)
 	if err != nil {
@@ -46,6 +49,12 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 		return nil, err
 	}
 
+	if embedFieldsJSON.Valid {
+		err := json.Unmarshal([]byte(embedFieldsJSON.String), &br.EmbedFields)
+		if err != nil {
+			log.Println("Error parsing embed field json", err)
+		}
+	}
 	br.Channel = brc
 	br.AdvertiserID = advertiserID.String
 	br.IsResolved = resolvedAt.Valid
@@ -54,19 +63,30 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 
 // Inserts the boost request into the database and updates the ID field to match the newly inserted row's id
 func (repo dbRepository) InsertBoostRequest(br *BoostRequest) error {
-	var advertiserID *string = nil
+	var advertiserID *string
 	if br.AdvertiserID != "" {
 		advertiserID = &br.AdvertiserID
 	}
+	var embedFieldsJSON *string
+	if br.EmbedFields != nil {
+		embedFieldsJSONBytes, err := json.Marshal(br.EmbedFields)
+		if err != nil {
+			log.Println("Error marshalling embed field json", err)
+		} else {
+			s := string(embedFieldsJSONBytes)
+			embedFieldsJSON = &s
+		}
+	}
 	res, err := repo.db.Exec(
 		`INSERT INTO boost_request
-			(boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, created_at)
-			VALUES (?, ?, ?, ?, ?, ?)`,
+			(boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		br.Channel.ID,
 		br.RequesterID,
 		advertiserID,
 		br.BackendMessageID,
 		br.Message,
+		embedFieldsJSON,
 		br.CreatedAt,
 	)
 	if err != nil {
@@ -87,7 +107,7 @@ func (repo dbRepository) ResolveBoostRequest(br *BoostRequest) error {
 	}
 	_, err := repo.db.Exec(
 		`UPDATE boost_request SET
-			advertiser_id = ?
+			advertiser_id = ?,
 			resolved_at = ?
 			WHERE id = ?`,
 		br.AdvertiserID,

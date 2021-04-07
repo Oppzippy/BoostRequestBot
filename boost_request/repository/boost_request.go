@@ -2,7 +2,15 @@ package repository
 
 import (
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
+
+type MessageEmbedField struct {
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Inline bool   `json:"inline"`
+}
 
 type BoostRequest struct {
 	ID               int64
@@ -11,7 +19,38 @@ type BoostRequest struct {
 	AdvertiserID     string
 	BackendMessageID string
 	Message          string
+	EmbedFields      []*MessageEmbedField
 	CreatedAt        time.Time
 	IsResolved       bool
 	ResolvedAt       time.Time
+}
+
+func FromDiscordEmbedFields(fields []*discordgo.MessageEmbedField) []*MessageEmbedField {
+	if fields == nil {
+		return nil
+	}
+	newFields := make([]*MessageEmbedField, len(fields))
+	for i, field := range fields {
+		newFields[i] = &MessageEmbedField{
+			Name:   field.Name,
+			Value:  field.Value,
+			Inline: field.Inline,
+		}
+	}
+	return newFields
+}
+
+func ToDiscordEmbedFields(fields []*MessageEmbedField) []*discordgo.MessageEmbedField {
+	if fields == nil {
+		return nil
+	}
+	newFields := make([]*discordgo.MessageEmbedField, len(fields))
+	for i, field := range fields {
+		newFields[i] = &discordgo.MessageEmbedField{
+			Name:   field.Name,
+			Value:  field.Value,
+			Inline: field.Inline,
+		}
+	}
+	return newFields
 }

@@ -38,13 +38,6 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discor
 		Timestamp:   time.Now().Format(time.RFC3339),
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	discord.MessageReactionAdd(message.ChannelID, message.ID, ACCEPT_EMOJI)
-	discord.MessageReactionAdd(message.ChannelID, message.ID, STEAL_EMOJI)
-
 	return message, err
 }
 
@@ -89,12 +82,7 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(disco
 		Color:       0xFF0000,
 		Title:       "An advertiser has been selected.",
 		Description: advertiser.Mention() + " will handle the following boost request.",
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:  "Boost Request",
-				Value: br.Message,
-			},
-		},
+		Fields:      messenger.formatBoostRequest(br),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: advertiser.AvatarURL(""),
 		},
@@ -160,14 +148,9 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 		Color:       0xFF0000,
 		Title:       "You have been selected to handle a boost request.",
 		Description: "Please message " + requester.Mention() + " " + requester.String(),
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:  "Boost Request",
-				Value: br.Message,
-			},
-		},
-		Footer:    footer,
-		Timestamp: time.Now().Format(time.RFC3339),
+		Fields:      messenger.formatBoostRequest(br),
+		Footer:      footer,
+		Timestamp:   time.Now().Format(time.RFC3339),
 	})
 
 	return message, err
@@ -177,10 +160,15 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 func (messenger *BoostRequestMessenger) SendLogChannelMessage(
 	discord *discordgo.Session, br *repository.BoostRequest, channelID string,
 ) (*discordgo.Message, error) {
+	if br.EmbedFields != nil {
+		// TODO return an error
+		return nil, nil
+	}
 	user, err := discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
 	}
+
 	embed := &discordgo.MessageEmbed{
 		Color:       0x0000FF,
 		Title:       "New Boost Request",
@@ -224,4 +212,19 @@ func (messenger *BoostRequestMessenger) sendTemporaryMessage(discord *discordgo.
 	} else {
 		log.Println("Error sending temporary message", err)
 	}
+}
+
+func (messenger *BoostRequestMessenger) formatBoostRequest(br *repository.BoostRequest) []*discordgo.MessageEmbedField {
+	var fields []*discordgo.MessageEmbedField
+	if br.EmbedFields != nil {
+		fields = repository.ToDiscordEmbedFields(br.EmbedFields)
+	} else {
+		fields = []*discordgo.MessageEmbedField{
+			{
+				Name:  "Boost Request",
+				Value: br.Message,
+			},
+		}
+	}
+	return fields
 }

@@ -9,8 +9,9 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-const ACCEPT_EMOJI = "👍"
-const STEAL_EMOJI = "⏭"
+const AcceptEmoji = "👍"
+const StealEmoji = "⏭"
+const ResolvedEmoji = "✅"
 
 type BoostRequestManager struct {
 	discord        *discordgo.Session
@@ -39,19 +40,21 @@ func (brm *BoostRequestManager) Destroy() {
 	brm.messenger.Destroy(brm.discord)
 }
 
-func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, message *discordgo.MessageCreate) {
-	if !message.Author.Bot && message.GuildID != "" {
-		brc, err := brm.repo.GetBoostRequestChannelByFrontendChannelID(message.GuildID, message.ChannelID)
+func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, event *discordgo.MessageCreate) {
+	if event.Author.ID != discord.State.User.ID && event.GuildID != "" {
+		brc, err := brm.repo.GetBoostRequestChannelByFrontendChannelID(event.GuildID, event.ChannelID)
 		if err != nil && err != repository.ErrBoostRequestChannelNotFound {
 			log.Println("Error fetching boost request channel", err)
 			return
 		}
 		if brc != nil {
-			err := discord.ChannelMessageDelete(message.ChannelID, message.ID)
-			if err != nil {
-				log.Println("Error deleting message", err)
+			if !brc.UsesBuyerMessage {
+				err := discord.ChannelMessageDelete(event.ChannelID, event.ID)
+				if err != nil {
+					log.Println("Error deleting message", err)
+				}
 			}
-			_, err = brm.CreateBoostRequest(brc, message.Author.ID, message.Content)
+			_, err = brm.CreateBoostRequest(brc, event.Author.ID, event.Message)
 			if err != nil {
 				log.Println("Error creating boost request", err)
 				return
@@ -69,32 +72,49 @@ func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session,
 		}
 		if br != nil {
 			switch event.Emoji.Name {
-			case ACCEPT_EMOJI:
+			case AcceptEmoji:
 				brm.addAdvertiserToBoostRequest(br, event.UserID)
-			case STEAL_EMOJI:
+			case StealEmoji:
 				// TODO not implemented
 			}
 		}
 	}
 }
 
-func (brm *BoostRequestManager) CreateBoostRequest(brc *repository.BoostRequestChannel, requesterID string, request string) (*repository.BoostRequest, error) {
+func (brm *BoostRequestManager) CreateBoostRequest(
+	brc *repository.BoostRequestChannel, requesterID string, message *discordgo.Message,
+) (*repository.BoostRequest, error) {
 	createdAt := time.Now().UTC()
+
+	var embedFields []*discordgo.MessageEmbedField
+	if len(message.Embeds) == 1 {
+		embedFields = message.Embeds[0].Fields
+	}
 	br := &repository.BoostRequest{
 		Channel:     *brc,
 		RequesterID: requesterID,
-		Message:     request,
+		Message:     message.Content,
+		EmbedFields: repository.FromDiscordEmbedFields(embedFields),
 		CreatedAt:   createdAt,
 	}
 
-	message, err := brm.messenger.SendBackendSignupMessage(brm.discord, br)
-	if err != nil {
-		return nil, err
+	var backendMessage *discordgo.Message
+	if brc.UsesBuyerMessage {
+		backendMessage = message
+	} else {
+		var err error
+		backendMessage, err = brm.messenger.SendBackendSignupMessage(brm.discord, br)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	br.BackendMessageID = message.ID
+	brm.discord.MessageReactionAdd(backendMessage.ChannelID, backendMessage.ID, AcceptEmoji)
+	brm.discord.MessageReactionAdd(backendMessage.ChannelID, backendMessage.ID, StealEmoji)
 
-	err = brm.repo.InsertBoostRequest(br)
+	br.BackendMessageID = backendMessage.ID
+
+	err := brm.repo.InsertBoostRequest(br)
 	if err != nil {
 		return nil, err
 	}
@@ -148,18 +168,28 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	br.AdvertiserID = userID
 	br.IsResolved = true
 	br.ResolvedAt = time.Now()
-	brm.repo.ResolveBoostRequest(&br)
-	_, err := brm.messenger.SendBackendAdvertiserChosenMessage(brm.discord, &br)
+	err := brm.repo.ResolveBoostRequest(&br)
+	if err != nil {
+		log.Println("Error resolving boost request", err)
+	}
+	err = brm.discord.MessageReactionsRemoveAll(br.Channel.BackendChannelID, br.BackendMessageID)
+	if err != nil {
+		log.Println("Error removing all reactions", err)
+	}
+	brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, ResolvedEmoji)
+	_, err = brm.messenger.SendBackendAdvertiserChosenMessage(brm.discord, &br)
 	if err != nil {
 		log.Println("Error sending message to boost request backend", err)
 	}
-	brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
-	if err != nil {
-		log.Println("Error sending advertsier chosen DM to advertiser", err)
-	}
-	brm.messenger.SendAdvertiserChosenDMToRequester(brm.discord, &br)
-	if err != nil {
-		log.Println("Error sending advertiser chosen DM to requester", err)
+	if br.Channel.SkipsBuyerDM {
+		_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
+		if err != nil {
+			log.Println("Error sending advertsier chosen DM to advertiser", err)
+		}
+		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(brm.discord, &br)
+		if err != nil {
+			log.Println("Error sending advertiser chosen DM to requester", err)
+		}
 	}
 }
 
