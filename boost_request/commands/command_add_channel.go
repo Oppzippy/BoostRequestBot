@@ -12,9 +12,8 @@ import (
 var addChannelCommand = dgc.Command{
 	Name:        "addchannel",
 	Description: "Registers a channel for the bot to watch for boost requests.",
-	Usage:       "!boostrequest addchannel <frontend-channel> <backend-channel>",
+	Usage:       "!boostrequest addchannel <#frontend-channel> <#backend-channel>",
 	Example:     "!boostrequest addchannel #boost-request-frontend #boost-request-backend",
-	Flags:       []string{"ADMIN"},
 	IgnoreCase:  true,
 	Handler:     addChannelHandler,
 }

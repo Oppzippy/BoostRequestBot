@@ -33,7 +33,6 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 
 	var br BoostRequest
 	var brc BoostRequestChannel
-	br.Channel = &brc
 	var advertiserID sql.NullString
 	var resolvedAt sql.NullTime
 	err := row.Scan(
@@ -47,6 +46,7 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 		return nil, err
 	}
 
+	br.Channel = brc
 	br.AdvertiserID = advertiserID.String
 	br.IsResolved = resolvedAt.Valid
 	return &br, nil
@@ -81,10 +81,9 @@ func (repo dbRepository) InsertBoostRequest(br *BoostRequest) error {
 }
 
 func (repo dbRepository) ResolveBoostRequest(br *BoostRequest) error {
-	var resolvedAt *string = nil
+	var resolvedAt *time.Time
 	if br.IsResolved {
-		timeStr := br.ResolvedAt.UTC().Format(time.RFC3339)
-		resolvedAt = &timeStr
+		resolvedAt = &br.ResolvedAt
 	}
 	_, err := repo.db.Exec(
 		`UPDATE boost_request SET

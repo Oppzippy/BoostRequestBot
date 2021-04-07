@@ -13,18 +13,18 @@ const ACCEPT_EMOJI = "👍"
 const STEAL_EMOJI = "⏭"
 
 type BoostRequestManager struct {
-	discord    *discordgo.Session
-	repo       repository.Repository
-	messenger  *BoostRequestMessenger
-	privileges *sync.Map
+	discord        *discordgo.Session
+	repo           repository.Repository
+	messenger      *BoostRequestMessenger
+	activeRequests *sync.Map
 }
 
 func NewBoostRequestManager(discord *discordgo.Session, repo repository.Repository) *BoostRequestManager {
 	brm := BoostRequestManager{
-		discord:    discord,
-		repo:       repo,
-		messenger:  NewBoostRequestMessenger(),
-		privileges: new(sync.Map),
+		discord:        discord,
+		repo:           repo,
+		messenger:      NewBoostRequestMessenger(),
+		activeRequests: new(sync.Map),
 	}
 
 	discord.Identify.Intents |= discordgo.IntentsGuildMessages | discordgo.IntentsGuildMessageReactions
@@ -80,7 +80,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(brc *repository.BoostRequestC
 	var br *repository.BoostRequest
 	{
 		boostRequest := repository.BoostRequest{
-			Channel:     brc,
+			Channel:     *brc,
 			RequesterID: requesterID,
 			Message:     request,
 			CreatedAt:   createdAt,
@@ -101,38 +101,67 @@ func (brm *BoostRequestManager) CreateBoostRequest(brc *repository.BoostRequestC
 	}
 
 	brm.messenger.SendBoostRequestCreatedDM(brm.discord, br)
+	brm.activeRequests.Store(br.BackendMessageID, newActiveRequest(*br, brm.setWinner))
 
 	return br, nil
 }
 
 // Best is defined as the role with the highest weight
-func (brm *BoostRequestManager) GetBestRolePrivileges(roles []string) (AdvertiserPrivileges, bool) {
-	var bestPrivileges *AdvertiserPrivileges = nil
+func (brm *BoostRequestManager) GetBestRolePrivileges(guildID string, roles []string) *repository.AdvertiserPrivileges {
+	var bestPrivileges *repository.AdvertiserPrivileges = nil
 	for _, role := range roles {
-		value, ok := brm.privileges.Load(role)
-		if ok {
-			privileges, ok := value.(*AdvertiserPrivileges)
-			if ok && privileges != nil {
-				if bestPrivileges == nil || privileges.Weight > bestPrivileges.Weight {
-					bestPrivileges = privileges
-				}
+		privileges, err := brm.repo.GetAdvertiserPrivilegesForRole(guildID, role)
+		if err != nil {
+			log.Println("Error fetching privileges", err)
+		}
+		if privileges != nil {
+			if bestPrivileges == nil || privileges.Weight > bestPrivileges.Weight {
+				bestPrivileges = privileges
 			}
 		}
 	}
-	if bestPrivileges == nil {
-		return AdvertiserPrivileges{}, false
-	}
-	return *bestPrivileges, true
+
+	return bestPrivileges
 }
 
 func (brm *BoostRequestManager) addAdvertiserToBoostRequest(br *repository.BoostRequest, userID string) {
+	// TODO cache roles
 	guildMember, err := brm.discord.GuildMember(br.Channel.GuildID, userID)
 	if err != nil {
 		log.Println("Error fetching guild member", err)
 		return
 	}
-	_, ok := brm.GetBestRolePrivileges(guildMember.Roles)
-	if ok {
-		// TODO add user to waitlist
+	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
+	if privileges != nil {
+		brm.signUp(br, userID, privileges)
 	}
+}
+
+func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID string) {
+	brm.activeRequests.Delete(br.BackendMessageID)
+	br.AdvertiserID = userID
+	br.IsResolved = true
+	br.ResolvedAt = time.Now()
+	brm.repo.ResolveBoostRequest(&br)
+	_, err := brm.messenger.SendBackendAdvertiserChosenMessage(brm.discord, &br)
+	if err != nil {
+		log.Println("Error sending message to boost request backend", err)
+	}
+	brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
+	if err != nil {
+		log.Println("Error sending advertsier chosen DM to advertiser", err)
+	}
+	brm.messenger.SendAdvertiserChosenDMToRequester(brm.discord, &br)
+	if err != nil {
+		log.Println("Error sending advertiser chosen DM to requester", err)
+	}
+}
+
+func (brm *BoostRequestManager) signUp(br *repository.BoostRequest, userID string, privileges *repository.AdvertiserPrivileges) {
+	req, ok := brm.activeRequests.Load(br.BackendMessageID)
+	if !ok {
+		return
+	}
+	r := req.(*activeRequest)
+	r.AddSignup(userID, *privileges)
 }

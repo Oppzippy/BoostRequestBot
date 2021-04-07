@@ -6,7 +6,7 @@ import (
 
 type BoostRequest struct {
 	ID               int64
-	Channel          *BoostRequestChannel
+	Channel          BoostRequestChannel
 	RequesterID      string
 	AdvertiserID     string
 	BackendMessageID string

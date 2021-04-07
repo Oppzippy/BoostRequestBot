@@ -7,6 +7,7 @@ import (
 type Repository interface {
 	BoostRequestChannelRepository
 	BoostRequestRepository
+	AdvertiserPrivilegesRepository
 }
 
 type dbRepository struct {

@@ -10,7 +10,7 @@ import (
 var removeChannelCommand = dgc.Command{
 	Name:        "removechannel",
 	Description: "Stops watching (unregisters) a boost request channel.",
-	Usage:       "!boostrequest removechannel <frontend-channel>",
+	Usage:       "!boostrequest removechannel <#frontend-channel>",
 	Example:     "!boostrequest removechannel #boost-request-frontend",
 	IgnoreCase:  true,
 	Handler:     removeChannelHandler,

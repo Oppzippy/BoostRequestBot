@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/go-sql-driver/mysql"
@@ -19,6 +21,7 @@ import (
 
 func main() {
 	log.Println("Starting bot")
+	rand.Seed(time.Now().UnixNano())
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalln("Error loading .env file", err)
