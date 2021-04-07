@@ -8,6 +8,7 @@ type Repository interface {
 	BoostRequestChannelRepository
 	BoostRequestRepository
 	AdvertiserPrivilegesRepository
+	LogChannelRepository
 }
 
 type dbRepository struct {

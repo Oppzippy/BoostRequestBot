@@ -16,6 +16,8 @@ var MainCommand = dgc.Command{
 		&removeChannelsCommand,
 		&setPrivilegesCommand,
 		&removePrivilegesCommand,
+		&setLogChannelCommand,
+		&removeLogChannelCommand,
 	},
 
 	Handler: mainCommandHandler,

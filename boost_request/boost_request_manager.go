@@ -47,12 +47,15 @@ func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, mess
 			return
 		}
 		if brc != nil {
-			_, err := brm.CreateBoostRequest(brc, message.Author.ID, message.Content)
+			err := discord.ChannelMessageDelete(message.ChannelID, message.ID)
+			if err != nil {
+				log.Println("Error deleting message", err)
+			}
+			_, err = brm.CreateBoostRequest(brc, message.Author.ID, message.Content)
 			if err != nil {
 				log.Println("Error creating boost request", err)
 				return
 			}
-			discord.ChannelMessageDelete(message.ChannelID, message.ID)
 		}
 	}
 }
@@ -77,15 +80,11 @@ func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session,
 
 func (brm *BoostRequestManager) CreateBoostRequest(brc *repository.BoostRequestChannel, requesterID string, request string) (*repository.BoostRequest, error) {
 	createdAt := time.Now().UTC()
-	var br *repository.BoostRequest
-	{
-		boostRequest := repository.BoostRequest{
-			Channel:     *brc,
-			RequesterID: requesterID,
-			Message:     request,
-			CreatedAt:   createdAt,
-		}
-		br = &boostRequest
+	br := &repository.BoostRequest{
+		Channel:     *brc,
+		RequesterID: requesterID,
+		Message:     request,
+		CreatedAt:   createdAt,
 	}
 
 	message, err := brm.messenger.SendBackendSignupMessage(brm.discord, br)
@@ -102,6 +101,13 @@ func (brm *BoostRequestManager) CreateBoostRequest(brc *repository.BoostRequestC
 
 	brm.messenger.SendBoostRequestCreatedDM(brm.discord, br)
 	brm.activeRequests.Store(br.BackendMessageID, newActiveRequest(*br, brm.setWinner))
+
+	logChannel, err := brm.repo.GetLogChannel(brc.GuildID)
+	if err != nil {
+		log.Println("Error fetching log channel", err)
+	} else if logChannel != "" {
+		brm.messenger.SendLogChannelMessage(brm.discord, br, logChannel)
+	}
 
 	return br, nil
 }

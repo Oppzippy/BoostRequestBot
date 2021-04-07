@@ -15,7 +15,7 @@ type BoostRequestMessenger struct {
 	quit      chan struct{}
 }
 
-var FOOTER = &discordgo.MessageEmbedFooter{
+var footer = &discordgo.MessageEmbedFooter{
 	Text:    "Huokan Boosting Community",
 	IconURL: "https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png",
 }
@@ -34,7 +34,7 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discor
 		Color:       0x0000FF,
 		Title:       "New Boost Request",
 		Description: br.Message,
-		Footer:      FOOTER,
+		Footer:      footer,
 		Timestamp:   time.Now().Format(time.RFC3339),
 	})
 
@@ -62,7 +62,7 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *disco
 				Name: requester.String(),
 			},
 			Description: br.Message,
-			Footer:      FOOTER,
+			Footer:      footer,
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
 				URL: requester.AvatarURL(""),
 			},
@@ -119,7 +119,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discor
 		Color:       0x00FF00,
 		Title:       "Huokan Boosting Community Boost Request",
 		Description: advertiser.Mention() + " (" + advertiser.String() + ") will reach out to you shortly. Anyone else that messages you regarding this boost request is not from Huokan and may attempt to scam you.",
-		Footer:      FOOTER,
+		Footer:      footer,
 		Timestamp:   time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: advertiser.AvatarURL(""),
@@ -154,10 +154,35 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 		Color:       0xFF0000,
 		Title:       "You have been selected to handle a boost request.",
 		Description: "Please message " + requester.Mention() + " (" + requester.String() + ")\n**Boost Request**\n" + br.Message,
-		Footer:      FOOTER,
+		Footer:      footer,
 		Timestamp:   time.Now().Format(time.RFC3339),
 	})
 
+	return message, err
+}
+
+// Logs the creation of a boost request to a channel only moderators can view
+func (messenger *BoostRequestMessenger) SendLogChannelMessage(
+	discord *discordgo.Session, br *repository.BoostRequest, channelID string,
+) (*discordgo.Message, error) {
+	user, err := discord.User(br.RequesterID)
+	if err != nil {
+		return nil, err
+	}
+	embed := &discordgo.MessageEmbed{
+		Color:       0x0000FF,
+		Title:       "New Boost Request",
+		Description: br.Message,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:  "Requested By",
+				Value: user.Mention() + " " + user.String(),
+			},
+		},
+		Footer:    footer,
+		Timestamp: time.Now().Format(time.RFC3339),
+	}
+	message, err := discord.ChannelMessageSendEmbed(channelID, embed)
 	return message, err
 }
 
