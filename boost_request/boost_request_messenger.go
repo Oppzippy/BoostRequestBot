@@ -88,7 +88,13 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(disco
 	message, err := discord.ChannelMessageSendEmbed(br.Channel.BackendChannelID, &discordgo.MessageEmbed{
 		Color:       0xFF0000,
 		Title:       "An advertiser has been selected.",
-		Description: advertiser.Mention() + " will handle the following boost request.\n**Boost Request**\n" + br.Message,
+		Description: advertiser.Mention() + " will handle the following boost request.",
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:  "Boost Request",
+				Value: br.Message,
+			},
+		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: advertiser.AvatarURL(""),
 		},
@@ -153,9 +159,15 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
 		Color:       0xFF0000,
 		Title:       "You have been selected to handle a boost request.",
-		Description: "Please message " + requester.Mention() + " (" + requester.String() + ")\n**Boost Request**\n" + br.Message,
-		Footer:      footer,
-		Timestamp:   time.Now().Format(time.RFC3339),
+		Description: "Please message " + requester.Mention() + " " + requester.String(),
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:  "Boost Request",
+				Value: br.Message,
+			},
+		},
+		Footer:    footer,
+		Timestamp: time.Now().Format(time.RFC3339),
 	})
 
 	return message, err
