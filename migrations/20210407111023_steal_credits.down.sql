@@ -1,0 +1,1 @@
+DROP TABLE boost_request_steal_credits;

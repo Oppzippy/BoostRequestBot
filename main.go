@@ -16,6 +16,7 @@ import (
 	"github.com/lus/dgc"
 	"github.com/oppzippy/BoostRequestBot/boost_request"
 	"github.com/oppzippy/BoostRequestBot/boost_request/commands"
+	"github.com/oppzippy/BoostRequestBot/boost_request/middleware"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -51,6 +52,7 @@ func main() {
 		log.Fatalln("Error creating discord connection", err)
 	}
 	defer discord.Close()
+	discord.Identify.Intents = discordgo.IntentsNone
 
 	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Connect) {
 		log.Println("Connected to discord")
@@ -95,12 +97,9 @@ func registerCommands(discord *discordgo.Session, repo repository.Repository) {
 			next(ctx)
 		}
 	})
-	router.RegisterMiddleware(func(next dgc.ExecutionHandler) dgc.ExecutionHandler {
-		return func(ctx *dgc.Ctx) {
-			// TODO check permissions
-			next(ctx)
-		}
-	})
+	adminOnlyMiddleware := middleware.AdminOnlyMiddleware{}
+	router.RegisterMiddleware(adminOnlyMiddleware.Exec)
+	router.RegisterMiddleware(middleware.GuildOnlyMiddleware)
 
 	router.Initialize(discord)
 }
