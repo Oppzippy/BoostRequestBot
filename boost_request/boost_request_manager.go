@@ -181,7 +181,7 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	if err != nil {
 		log.Println("Error sending message to boost request backend", err)
 	}
-	if br.Channel.SkipsBuyerDM {
+	if !br.Channel.SkipsBuyerDM {
 		_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
 		if err != nil {
 			log.Println("Error sending advertsier chosen DM to advertiser", err)
