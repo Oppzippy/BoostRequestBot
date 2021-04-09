@@ -14,6 +14,7 @@ var removePrivilegesCommand = dgc.Command{
 	Example:     "!boostrequest removeprivileges @Advertiser",
 	IgnoreCase:  true,
 	Handler:     removePrivilegesHandler,
+	Flags:       []string{"ADMIN", "GUILD"},
 }
 
 func removePrivilegesHandler(ctx *dgc.Ctx) {

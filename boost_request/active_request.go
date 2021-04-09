@@ -55,16 +55,21 @@ func (r *activeRequest) AddSignup(userID string, privileges repository.Advertise
 	}
 }
 
-func (r *activeRequest) SetAdvertiser(userID string) {
+func (r *activeRequest) SetAdvertiser(userID string) (ok bool) {
 	r.mutex.Lock()
-	r.setAdvertiserWithoutLocking(userID)
+	ok = r.setAdvertiserWithoutLocking(userID)
 	r.mutex.Unlock()
+	return ok
 }
 
-func (r *activeRequest) setAdvertiserWithoutLocking(userID string) {
-	close(r.quit)
-	r.inactive = true
-	r.AdvertiserChosenCallback(r.boostRequest, userID)
+func (r *activeRequest) setAdvertiserWithoutLocking(userID string) (ok bool) {
+	ok = !r.inactive
+	if ok {
+		close(r.quit)
+		r.inactive = true
+		r.AdvertiserChosenCallback(r.boostRequest, userID)
+	}
+	return ok
 }
 
 // mutex should be locked before calling this method

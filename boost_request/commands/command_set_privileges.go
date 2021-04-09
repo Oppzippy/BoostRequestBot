@@ -15,6 +15,7 @@ var setPrivilegesCommand = dgc.Command{
 	Example:     "!boostrequest setprivileges @Advertiser 1.0 60",
 	IgnoreCase:  true,
 	Handler:     setPrivilegesHandler,
+	Flags:       []string{"ADMIN", "GUILD"},
 }
 
 func setPrivilegesHandler(ctx *dgc.Ctx) {

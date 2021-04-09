@@ -15,6 +15,7 @@ var setStealCreditsCommand = dgc.Command{
 	Example:     "!boostrequest setcredits @JohnDoe 5",
 	IgnoreCase:  true,
 	Handler:     setStealCreditsHandler,
+	Flags:       []string{"ADMIN", "GUILD"},
 }
 
 func setStealCreditsHandler(ctx *dgc.Ctx) {

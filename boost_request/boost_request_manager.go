@@ -75,7 +75,7 @@ func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session,
 			case AcceptEmoji:
 				brm.addAdvertiserToBoostRequest(br, event.UserID)
 			case StealEmoji:
-				// TODO not implemented
+				brm.stealBoostRequest(br, event.UserID)
 			}
 		}
 	}
@@ -161,6 +161,41 @@ func (brm *BoostRequestManager) addAdvertiserToBoostRequest(br *repository.Boost
 	if privileges != nil {
 		brm.signUp(br, userID, privileges)
 	}
+}
+
+func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, userID string) (ok bool) {
+	credits, err := brm.repo.GetStealCreditsForUser(br.Channel.GuildID, userID)
+	if err != nil {
+		log.Println("Error fetching steal credits", err)
+		return false
+	}
+	if credits <= 0 {
+		return false
+	}
+
+	guildMember, err := brm.discord.GuildMember(br.Channel.GuildID, userID)
+	if err != nil {
+		log.Println("Error fetching guild member", err)
+		return false
+	}
+	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
+	if privileges == nil {
+		return
+	}
+
+	req, ok := brm.activeRequests.Load(br.BackendMessageID)
+	if !ok {
+		return false
+	}
+	r := req.(*activeRequest)
+	ok = r.SetAdvertiser(userID)
+	if ok {
+		err := brm.repo.AdjustStealCreditsForUser(br.Channel.GuildID, userID, repository.OperationSubtract, 1)
+		if err != nil {
+			log.Println("Error subtracting boost request credits after use", err)
+		}
+	}
+	return ok
 }
 
 func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID string) {

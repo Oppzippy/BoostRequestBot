@@ -7,7 +7,6 @@ var MainCommand = dgc.Command{
 	Description: "Boost request bot administration commands.",
 	Usage:       "!boostrequest <command>",
 	Example:     "!boostrequest removechannels",
-	Flags:       []string{"ADMIN", "GUILD"},
 	IgnoreCase:  true,
 
 	SubCommands: []*dgc.Command{
@@ -20,6 +19,7 @@ var MainCommand = dgc.Command{
 		&removeLogChannelCommand,
 		&addStealCreditsCommand,
 		&setStealCreditsCommand,
+		&checkStealCreditsCommand,
 	},
 
 	Handler: mainCommandHandler,

@@ -14,6 +14,7 @@ var setLogChannelCommand = dgc.Command{
 	Example:     "!boostrequest logchannel #boost-request-log",
 	IgnoreCase:  true,
 	Handler:     setLogChannelHandler,
+	Flags:       []string{"ADMIN", "GUILD"},
 }
 
 func setLogChannelHandler(ctx *dgc.Ctx) {

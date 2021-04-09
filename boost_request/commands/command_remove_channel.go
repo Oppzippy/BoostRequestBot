@@ -14,6 +14,7 @@ var removeChannelCommand = dgc.Command{
 	Example:     "!boostrequest removechannel #boost-request-frontend",
 	IgnoreCase:  true,
 	Handler:     removeChannelHandler,
+	Flags:       []string{"ADMIN", "GUILD"},
 }
 
 func removeChannelHandler(ctx *dgc.Ctx) {

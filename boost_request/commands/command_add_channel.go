@@ -16,6 +16,7 @@ var addChannelCommand = dgc.Command{
 	Example:     "!boostrequest addchannel #boost-request-frontend #boost-request-backend",
 	IgnoreCase:  true,
 	Handler:     addChannelHandler,
+	Flags:       []string{"ADMIN", "GUILD"},
 }
 
 func addChannelHandler(ctx *dgc.Ctx) {

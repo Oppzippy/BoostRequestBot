@@ -14,6 +14,7 @@ var removeLogChannelCommand = dgc.Command{
 	Example:     "!boostrequest removelogchannel",
 	IgnoreCase:  true,
 	Handler:     removeLogChannelHandler,
+	Flags:       []string{"ADMIN", "GUILD"},
 }
 
 func removeLogChannelHandler(ctx *dgc.Ctx) {
