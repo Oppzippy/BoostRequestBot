@@ -26,7 +26,7 @@ func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, bac
 
 func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*BoostRequest, error) {
 	row := repo.db.QueryRow(`SELECT
-		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.resolved_at,
+		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.created_at, br.resolved_at,
 		brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM boost_request br
 		INNER JOIN boost_request_channel brc ON br.boost_request_channel_id = brc.id `+where,
@@ -39,7 +39,7 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 	var resolvedAt sql.NullTime
 	var embedFieldsJSON sql.NullString
 	err := row.Scan(
-		&br.ID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &resolvedAt,
+		&br.ID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &br.CreatedAt, &resolvedAt,
 		&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
 	)
 	if err != nil {

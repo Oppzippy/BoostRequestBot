@@ -188,8 +188,11 @@ func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, u
 		return false
 	}
 	r := req.(*activeRequest)
+	endTime := br.CreatedAt.Add(time.Duration(privileges.Delay) * time.Second)
+	now := time.Now()
 	ok = r.SetAdvertiser(userID)
-	if ok {
+	// Don't subtract steal credits if the 👍 button would have had the same effect
+	if ok && now.Before(endTime) {
 		err := brm.repo.AdjustStealCreditsForUser(br.Channel.GuildID, userID, repository.OperationSubtract, 1)
 		if err != nil {
 			log.Println("Error subtracting boost request credits after use", err)
