@@ -25,7 +25,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalln("Error loading .env file", err)
+		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	dataSourceName := fmt.Sprintf(
@@ -38,18 +38,18 @@ func main() {
 	)
 	db, err := sql.Open("mysql", dataSourceName+"?parseTime=true")
 	if err != nil {
-		log.Fatalln("Error connecting to database", err)
+		log.Fatalf("Error connecting to database: %v", err)
 	}
 	defer db.Close()
 
 	err = MigrateUp("mysql://" + dataSourceName + "?multiStatements=true")
 	if err != nil {
-		log.Fatalln("Error running database migrations", err)
+		log.Fatalf("Error running database migrations: %v", err)
 	}
 
 	discord, err := discordgo.New("Bot " + os.Getenv("DISCORD_TOKEN"))
 	if err != nil {
-		log.Fatalln("Error creating discord connection", err)
+		log.Fatalf("Error creating discord connection: %v", err)
 	}
 	defer discord.Close()
 	discord.Identify.Intents = discordgo.IntentsNone
@@ -68,7 +68,7 @@ func main() {
 
 	err = discord.Open()
 	if err != nil {
-		log.Fatalln("Error connecting to discord", err)
+		log.Fatalf("Error connecting to discord: %v", err)
 	}
 
 	registerCommands(discord, repo)

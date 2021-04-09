@@ -36,13 +36,13 @@ func removeChannelHandler(ctx *dgc.Ctx) {
 			respondText(ctx, "<#"+channelID+"> is not a boost request frontend.")
 			return
 		}
-		log.Println("Error fetching boost request channel", err)
+		log.Printf("Error fetching boost request channel: %v", err)
 		respondText(ctx, genericError)
 		return
 	}
 	err = repo.DeleteBoostRequestChannel(brc)
 	if err != nil {
-		log.Println("Error deleting boost request channel", err)
+		log.Printf("Error deleting boost request channel: %v", err)
 		respondText(ctx, genericError)
 		return
 	}

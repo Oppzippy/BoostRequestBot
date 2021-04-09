@@ -34,13 +34,13 @@ func addChannelHandler(ctx *dgc.Ctx) {
 
 	frontend, err := ctx.Session.Channel(frontendID)
 	if err != nil {
-		log.Println("Error fetching channel", err)
+		log.Printf("Error fetching channel: %v", err)
 		respondText(ctx, "An error has occurred.")
 		return
 	}
 	backend, err := ctx.Session.Channel(backendID)
 	if err != nil {
-		log.Println("Error fetching channel", err)
+		log.Printf("Error fetching channel: %v", err)
 		respondText(ctx, "An error has occurred.")
 		return
 	}
@@ -60,7 +60,7 @@ func addChannelHandler(ctx *dgc.Ctx) {
 	})
 
 	if err != nil {
-		log.Println("Error inserting boost request channel", err)
+		log.Printf("Error inserting boost request channel: %v", err)
 		respondText(ctx, "An error has occurred.")
 		return
 	}

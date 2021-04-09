@@ -21,7 +21,7 @@ func removeChannelsHandler(ctx *dgc.Ctx) {
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err := repo.DeleteBoostRequestChannelsInGuild(ctx.Event.GuildID)
 	if err != nil {
-		log.Println("Error deleting all channels in guild", err)
+		log.Printf("Error deleting all channels in guild: %v", err)
 		respondText(ctx, genericError)
 	} else {
 		respondText(ctx, "Removed all boost request channels.")

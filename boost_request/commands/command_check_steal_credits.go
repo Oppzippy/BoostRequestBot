@@ -25,7 +25,7 @@ func checkStealCreditsHandler(ctx *dgc.Ctx) {
 	if ctx.Event.GuildID != "" {
 		credits, err := repo.GetStealCreditsForUser(ctx.Event.GuildID, ctx.Event.Author.ID)
 		if err != nil {
-			log.Println("Error fetching boost request steal credits", err)
+			log.Printf("Error fetching boost request steal credits: %v", err)
 			respondText(ctx, genericError)
 			return
 		}

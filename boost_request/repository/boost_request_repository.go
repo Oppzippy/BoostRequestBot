@@ -52,7 +52,7 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 	if embedFieldsJSON.Valid {
 		err := json.Unmarshal([]byte(embedFieldsJSON.String), &br.EmbedFields)
 		if err != nil {
-			log.Println("Error parsing embed field json", err)
+			log.Printf("Error parsing embed field json: %v", err)
 		}
 	}
 	br.Channel = brc
@@ -71,7 +71,7 @@ func (repo dbRepository) InsertBoostRequest(br *BoostRequest) error {
 	if br.EmbedFields != nil {
 		embedFieldsJSONBytes, err := json.Marshal(br.EmbedFields)
 		if err != nil {
-			log.Println("Error marshalling embed field json", err)
+			log.Printf("Error marshalling embed field json: %v", err)
 		} else {
 			s := string(embedFieldsJSONBytes)
 			embedFieldsJSON = &s

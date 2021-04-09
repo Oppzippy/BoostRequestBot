@@ -40,7 +40,7 @@ func setPrivilegesHandler(ctx *dgc.Ctx) {
 		Delay:   delaySeconds,
 	})
 	if err != nil {
-		log.Println("Error setting privileges", err)
+		log.Printf("Error setting privileges: %v", err)
 		respondText(ctx, genericError)
 		return
 	}

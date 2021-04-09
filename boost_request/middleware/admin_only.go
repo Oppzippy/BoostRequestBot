@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -20,7 +21,7 @@ func (mw *AdminOnlyMiddleware) Exec(next dgc.ExecutionHandler) dgc.ExecutionHand
 		if commandHasFlag(ctx.Command, "ADMIN") {
 			permissions, err := mw.getPermissions(ctx.Session, ctx.Event.GuildID, ctx.Event.Author.ID)
 			if err != nil {
-				log.Println("Error fetching permissions", err)
+				log.Printf("Error fetching permissions: %v", err)
 				return
 			}
 			if permissions&discordgo.PermissionAdministrator == 0 {
@@ -34,7 +35,7 @@ func (mw *AdminOnlyMiddleware) Exec(next dgc.ExecutionHandler) dgc.ExecutionHand
 func (mw *AdminOnlyMiddleware) getPermissions(discord *discordgo.Session, guildID, userID string) (int64, error) {
 	guild, err := discord.Guild(guildID)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("fetching guild from discord: %w", err)
 	}
 	if userID == guild.OwnerID {
 		return discordgo.PermissionAll, nil
@@ -42,7 +43,7 @@ func (mw *AdminOnlyMiddleware) getPermissions(discord *discordgo.Session, guildI
 
 	member, err := discord.GuildMember(guildID, userID)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("fetching guild member from discord: %w", err)
 	}
 
 	allRolesByID := mw.indexRolesByID(guild.Roles)

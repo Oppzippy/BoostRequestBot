@@ -21,7 +21,7 @@ func removeLogChannelHandler(ctx *dgc.Ctx) {
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err := repo.DeleteLogChannel(ctx.Event.GuildID)
 	if err != nil {
-		log.Println("Error deleting boost request log channel", err)
+		log.Printf("Error deleting boost request log channel: %v", err)
 		respondText(ctx, genericError)
 		return
 	}

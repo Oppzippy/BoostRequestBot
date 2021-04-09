@@ -138,7 +138,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 			messenger.sendTemporaryMessage(discord, br.Channel.BackendChannelID, advertiser.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
 			_, err := discord.ChannelMessageSend(br.Channel.BackendChannelID, "Please DM "+requester.Mention()+" ("+requester.String()+").")
 			if err != nil {
-				log.Println("Failed to send backup message after failed DM", err)
+				log.Printf("Failed to send backup message after failed DM: %v", err)
 			}
 		}
 		return nil, err
@@ -205,12 +205,12 @@ func (messenger *BoostRequestMessenger) sendTemporaryMessage(discord *discordgo.
 			}
 			err := discord.ChannelMessageDelete(message.ChannelID, message.ID)
 			if err != nil {
-				log.Println("Error deleting temporary message", err)
+				log.Printf("Error deleting temporary message: %v", err)
 			}
 			messenger.waitGroup.Done()
 		}()
 	} else {
-		log.Println("Error sending temporary message", err)
+		log.Printf("Error sending temporary message: %v", err)
 	}
 }
 

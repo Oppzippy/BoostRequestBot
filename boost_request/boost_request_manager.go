@@ -1,6 +1,7 @@
 package boost_request
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -44,19 +45,19 @@ func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, even
 	if event.Author.ID != discord.State.User.ID && event.GuildID != "" {
 		brc, err := brm.repo.GetBoostRequestChannelByFrontendChannelID(event.GuildID, event.ChannelID)
 		if err != nil && err != repository.ErrBoostRequestChannelNotFound {
-			log.Println("Error fetching boost request channel", err)
+			log.Printf("Error fetching boost request channel: %v", err)
 			return
 		}
 		if brc != nil {
 			if !brc.UsesBuyerMessage {
 				err := discord.ChannelMessageDelete(event.ChannelID, event.ID)
 				if err != nil {
-					log.Println("Error deleting message", err)
+					log.Printf("Error deleting message: %v", err)
 				}
 			}
 			_, err = brm.CreateBoostRequest(brc, event.Author.ID, event.Message)
 			if err != nil {
-				log.Println("Error creating boost request", err)
+				log.Printf("Error creating boost request: %v", err)
 				return
 			}
 		}
@@ -67,7 +68,7 @@ func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session,
 	if event.UserID != discord.State.User.ID {
 		br, err := brm.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.MessageID)
 		if err != nil && err != repository.ErrBoostRequestNotFound {
-			log.Println("Error fetching boost request", err)
+			log.Printf("Error fetching boost request: %v", err)
 			return
 		}
 		if br != nil {
@@ -105,7 +106,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		var err error
 		backendMessage, err = brm.messenger.SendBackendSignupMessage(brm.discord, br)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("sending backend signup message: %w", err)
 		}
 	}
 
@@ -116,7 +117,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 
 	err := brm.repo.InsertBoostRequest(br)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("inserting new boost request in db: %w", err)
 	}
 
 	brm.messenger.SendBoostRequestCreatedDM(brm.discord, br)
@@ -124,7 +125,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 
 	logChannel, err := brm.repo.GetLogChannel(brc.GuildID)
 	if err != nil {
-		log.Println("Error fetching log channel", err)
+		log.Printf("Error fetching log channel: %v", err)
 	} else if logChannel != "" {
 		brm.messenger.SendLogChannelMessage(brm.discord, br, logChannel)
 	}
@@ -138,7 +139,7 @@ func (brm *BoostRequestManager) GetBestRolePrivileges(guildID string, roles []st
 	for _, role := range roles {
 		privileges, err := brm.repo.GetAdvertiserPrivilegesForRole(guildID, role)
 		if err != nil {
-			log.Println("Error fetching privileges", err)
+			log.Printf("Error fetching privileges: %v", err)
 		}
 		if privileges != nil {
 			if bestPrivileges == nil || privileges.Weight > bestPrivileges.Weight {
@@ -154,7 +155,7 @@ func (brm *BoostRequestManager) addAdvertiserToBoostRequest(br *repository.Boost
 	// TODO cache roles
 	guildMember, err := brm.discord.GuildMember(br.Channel.GuildID, userID)
 	if err != nil {
-		log.Println("Error fetching guild member", err)
+		log.Printf("Error fetching guild member: %v", err)
 		return
 	}
 	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
@@ -166,7 +167,7 @@ func (brm *BoostRequestManager) addAdvertiserToBoostRequest(br *repository.Boost
 func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, userID string) (ok bool) {
 	credits, err := brm.repo.GetStealCreditsForUser(br.Channel.GuildID, userID)
 	if err != nil {
-		log.Println("Error fetching steal credits", err)
+		log.Printf("Error fetching steal credits: %v", err)
 		return false
 	}
 	if credits <= 0 {
@@ -175,7 +176,7 @@ func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, u
 
 	guildMember, err := brm.discord.GuildMember(br.Channel.GuildID, userID)
 	if err != nil {
-		log.Println("Error fetching guild member", err)
+		log.Printf("Error fetching guild member: %v", err)
 		return false
 	}
 	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
@@ -195,7 +196,7 @@ func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, u
 	if ok && now.Before(endTime) {
 		err := brm.repo.AdjustStealCreditsForUser(br.Channel.GuildID, userID, repository.OperationSubtract, 1)
 		if err != nil {
-			log.Println("Error subtracting boost request credits after use", err)
+			log.Printf("Error subtracting boost request credits after use: %v", err)
 		}
 	}
 	return ok
@@ -208,25 +209,25 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	br.ResolvedAt = time.Now()
 	err := brm.repo.ResolveBoostRequest(&br)
 	if err != nil {
-		log.Println("Error resolving boost request", err)
+		log.Printf("Error resolving boost request: %v", err)
 	}
 	err = brm.discord.MessageReactionsRemoveAll(br.Channel.BackendChannelID, br.BackendMessageID)
 	if err != nil {
-		log.Println("Error removing all reactions", err)
+		log.Printf("Error removing all reactions: %v", err)
 	}
 	brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, ResolvedEmoji)
 	_, err = brm.messenger.SendBackendAdvertiserChosenMessage(brm.discord, &br)
 	if err != nil {
-		log.Println("Error sending message to boost request backend", err)
+		log.Printf("Error sending message to boost request backend: %v", err)
 	}
 	if !br.Channel.SkipsBuyerDM {
 		_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
 		if err != nil {
-			log.Println("Error sending advertsier chosen DM to advertiser", err)
+			log.Printf("Error sending advertsier chosen DM to advertiser: %v", err)
 		}
 		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(brm.discord, &br)
 		if err != nil {
-			log.Println("Error sending advertiser chosen DM to requester", err)
+			log.Printf("Error sending advertiser chosen DM to requester: %v", err)
 		}
 	}
 }

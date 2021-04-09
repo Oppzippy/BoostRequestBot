@@ -33,13 +33,13 @@ func addStealCreditsHandler(ctx *dgc.Ctx) {
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err = repo.AdjustStealCreditsForUser(ctx.Event.GuildID, userID, repository.OperationAdd, amount)
 	if err != nil {
-		log.Println("Error updating steal credits", err)
+		log.Printf("Error updating steal credits: %v", err)
 		respondText(ctx, genericError)
 		return
 	}
 	newCredits, err := repo.GetStealCreditsForUser(ctx.Event.GuildID, userID)
 	if err != nil {
-		log.Println("Error fetching steal credits", err)
+		log.Printf("Error fetching steal credits: %v", err)
 		respondText(ctx, fmt.Sprintf("Added %d steal credits.", amount))
 	} else {
 		respondText(ctx, fmt.Sprintf("Added %d steal credits. New total is %d.", amount, newCredits))

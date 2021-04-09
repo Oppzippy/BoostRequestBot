@@ -27,7 +27,7 @@ func removePrivilegesHandler(ctx *dgc.Ctx) {
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	privileges, err := repo.GetAdvertiserPrivilegesForRole(ctx.Event.GuildID, roleID)
 	if err != nil {
-		log.Println("Error fetching advertiser privileges for role", err)
+		log.Printf("Error fetching advertiser privileges for role: %v", err)
 		respondText(ctx, genericError)
 		return
 	}
@@ -37,7 +37,7 @@ func removePrivilegesHandler(ctx *dgc.Ctx) {
 	}
 	err = repo.DeleteAdvertiserPrivileges(privileges)
 	if err != nil {
-		log.Println("Error deleting advertiser privileges", err)
+		log.Printf("Error deleting advertiser privileges: %v", err)
 		respondText(ctx, genericError)
 		return
 	}

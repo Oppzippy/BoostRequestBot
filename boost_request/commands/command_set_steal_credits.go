@@ -33,7 +33,7 @@ func setStealCreditsHandler(ctx *dgc.Ctx) {
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err = repo.UpdateStealCreditsForUser(ctx.Event.GuildID, userID, amount)
 	if err != nil {
-		log.Println("Error updating steal credits", err)
+		log.Printf("Error updating steal credits: %v", err)
 		respondText(ctx, genericError)
 		return
 	}

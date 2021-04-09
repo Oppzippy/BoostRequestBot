@@ -31,7 +31,7 @@ func setLogChannelHandler(ctx *dgc.Ctx) {
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err := repo.InsertLogChannel(ctx.Event.GuildID, channelID)
 	if err != nil {
-		log.Println("Error setting boost request log channel", err)
+		log.Printf("Error setting boost request log channel: %v", err)
 		respondText(ctx, genericError)
 		return
 	}
