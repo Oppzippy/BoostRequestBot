@@ -8,7 +8,7 @@ type LogChannelRepository interface {
 	DeleteLogChannel(guildID string) error
 }
 
-func (repo dbRepository) GetLogChannel(guildID string) (channelID string, err error) {
+func (repo *dbRepository) GetLogChannel(guildID string) (channelID string, err error) {
 	row := repo.db.QueryRow("SELECT channel_id FROM log_channel WHERE guild_id = ?", guildID)
 	err = row.Scan(&channelID)
 	if err != nil && err != sql.ErrNoRows {
@@ -17,7 +17,7 @@ func (repo dbRepository) GetLogChannel(guildID string) (channelID string, err er
 	return channelID, nil
 }
 
-func (repo dbRepository) InsertLogChannel(guildID, channelID string) error {
+func (repo *dbRepository) InsertLogChannel(guildID, channelID string) error {
 	_, err := repo.db.Exec(
 		`INSERT INTO log_channel (guild_id, channel_id)
 			VALUES (?, ?)
@@ -29,7 +29,7 @@ func (repo dbRepository) InsertLogChannel(guildID, channelID string) error {
 	return err
 }
 
-func (repo dbRepository) DeleteLogChannel(guildID string) error {
+func (repo *dbRepository) DeleteLogChannel(guildID string) error {
 	_, err := repo.db.Exec("DELETE FROM log_channel WHERE guild_id = ?", guildID)
 	return err
 }

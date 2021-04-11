@@ -23,7 +23,7 @@ const (
 
 var ErrInvalidOperation = errors.New("invalid math operation")
 
-func (repo dbRepository) GetStealCreditsForUser(guildID, userID string) (int, error) {
+func (repo *dbRepository) GetStealCreditsForUser(guildID, userID string) (int, error) {
 	row := repo.db.QueryRow(
 		`SELECT credits FROM boost_request_steal_credits
 		WHERE
@@ -39,7 +39,7 @@ func (repo dbRepository) GetStealCreditsForUser(guildID, userID string) (int, er
 	return credits, err
 }
 
-func (repo dbRepository) AdjustStealCreditsForUser(guildID, userID string, operation Operation, amount int) error {
+func (repo *dbRepository) AdjustStealCreditsForUser(guildID, userID string, operation Operation, amount int) error {
 	var operationSymbol string
 	switch operation {
 	case OperationAdd:
@@ -77,7 +77,7 @@ func (repo dbRepository) AdjustStealCreditsForUser(guildID, userID string, opera
 	return err
 }
 
-func (repo dbRepository) UpdateStealCreditsForUser(guildID, userID string, amount int) error {
+func (repo *dbRepository) UpdateStealCreditsForUser(guildID, userID string, amount int) error {
 	_, err := repo.db.Exec(
 		`INSERT INTO boost_request_steal_credits (guild_id, user_id, credits, created_at) VALUES (?, ?, ?, ?)`,
 		guildID,

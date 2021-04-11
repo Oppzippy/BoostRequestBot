@@ -12,12 +12,12 @@ type AdvertiserPrivilegesRepository interface {
 	DeleteAdvertiserPrivileges(privileges *AdvertiserPrivileges) error
 }
 
-func (repo dbRepository) GetAdvertiserPrivilegesForGuild(guildID string) ([]*AdvertiserPrivileges, error) {
+func (repo *dbRepository) GetAdvertiserPrivilegesForGuild(guildID string) ([]*AdvertiserPrivileges, error) {
 	privileges, err := repo.getAdvertiserPrivileges("WHERE guild_id = ?", guildID)
 	return privileges, err
 }
 
-func (repo dbRepository) GetAdvertiserPrivilegesForRole(guildID, roleID string) (*AdvertiserPrivileges, error) {
+func (repo *dbRepository) GetAdvertiserPrivilegesForRole(guildID, roleID string) (*AdvertiserPrivileges, error) {
 	privileges, err := repo.getAdvertiserPrivileges("WHERE guild_id = ? AND role_id = ?", guildID, roleID)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (repo dbRepository) GetAdvertiserPrivilegesForRole(guildID, roleID string) 
 	return privileges[0], nil
 }
 
-func (repo dbRepository) getAdvertiserPrivileges(where string, args ...interface{}) ([]*AdvertiserPrivileges, error) {
+func (repo *dbRepository) getAdvertiserPrivileges(where string, args ...interface{}) ([]*AdvertiserPrivileges, error) {
 	res, err := repo.db.Query(
 		`SELECT
 			id,
@@ -56,7 +56,7 @@ func (repo dbRepository) getAdvertiserPrivileges(where string, args ...interface
 	return privileges, nil
 }
 
-func (repo dbRepository) InsertAdvertiserPrivileges(privileges *AdvertiserPrivileges) error {
+func (repo *dbRepository) InsertAdvertiserPrivileges(privileges *AdvertiserPrivileges) error {
 	res, err := repo.db.Exec(
 		`INSERT INTO advertiser_privileges (
 			guild_id,
@@ -85,7 +85,7 @@ func (repo dbRepository) InsertAdvertiserPrivileges(privileges *AdvertiserPrivil
 	return nil
 }
 
-func (repo dbRepository) DeleteAdvertiserPrivileges(privileges *AdvertiserPrivileges) error {
+func (repo *dbRepository) DeleteAdvertiserPrivileges(privileges *AdvertiserPrivileges) error {
 	_, err := repo.db.Exec(`DELETE FROM advertiser_privileges WHERE id = ?`, privileges.ID)
 	return err
 }

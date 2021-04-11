@@ -18,7 +18,7 @@ type BoostRequestRepository interface {
 
 var ErrBoostRequestNotFound = errors.New("boost request not found")
 
-func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, backendMessageID string) (*BoostRequest, error) {
+func (repo *dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, backendMessageID string) (*BoostRequest, error) {
 	return repo.getBoostRequest(
 		"WHERE brc.backend_channel_id = ? AND br.backend_message_id = ? AND br.deleted_at IS NULL",
 		backendChannelID,
@@ -26,13 +26,13 @@ func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, bac
 	)
 }
 
-func (repo dbRepository) GetUnresolvedBoostRequests() ([]*BoostRequest, error) {
+func (repo *dbRepository) GetUnresolvedBoostRequests() ([]*BoostRequest, error) {
 	// TODO don't load really old boost requests
 	boostRequests, err := repo.getBoostRequests("WHERE resolved_at IS NULL")
 	return boostRequests, err
 }
 
-func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*BoostRequest, error) {
+func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*BoostRequest, error) {
 	boostRequests, err := repo.getBoostRequests(where, args...)
 	if err != nil {
 		return nil, fmt.Errorf("extracting single request: %w", err)
@@ -48,7 +48,7 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 	}
 }
 
-func (repo dbRepository) getBoostRequests(where string, args ...interface{}) ([]*BoostRequest, error) {
+func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([]*BoostRequest, error) {
 	row, err := repo.db.Query(`SELECT
 		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.created_at, br.resolved_at,
 		brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
@@ -78,7 +78,7 @@ type scannable interface {
 	Scan(dest ...interface{}) error
 }
 
-func (repo dbRepository) unmarshalBoostRequest(row scannable) (*BoostRequest, error) {
+func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*BoostRequest, error) {
 	var br BoostRequest
 	var brc BoostRequestChannel
 	var advertiserID sql.NullString
@@ -107,7 +107,7 @@ func (repo dbRepository) unmarshalBoostRequest(row scannable) (*BoostRequest, er
 }
 
 // Inserts the boost request into the database and updates the ID field to match the newly inserted row's id
-func (repo dbRepository) InsertBoostRequest(br *BoostRequest) error {
+func (repo *dbRepository) InsertBoostRequest(br *BoostRequest) error {
 	var advertiserID *string
 	if br.AdvertiserID != "" {
 		advertiserID = &br.AdvertiserID
@@ -145,7 +145,7 @@ func (repo dbRepository) InsertBoostRequest(br *BoostRequest) error {
 	return nil
 }
 
-func (repo dbRepository) ResolveBoostRequest(br *BoostRequest) error {
+func (repo *dbRepository) ResolveBoostRequest(br *BoostRequest) error {
 	var resolvedAt *time.Time
 	if br.IsResolved {
 		resolvedAt = &br.ResolvedAt

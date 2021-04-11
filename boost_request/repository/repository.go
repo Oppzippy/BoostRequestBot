@@ -20,5 +20,5 @@ func NewDBRepository(db *sql.DB) Repository {
 	repo := dbRepository{
 		db: db,
 	}
-	return repo
+	return &repo
 }

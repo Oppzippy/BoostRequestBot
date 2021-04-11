@@ -15,7 +15,7 @@ type BoostRequestChannelRepository interface {
 
 var ErrBoostRequestChannelNotFound = errors.New("boost request channel not found")
 
-func (repo dbRepository) GetBoostRequestChannelByFrontendChannelID(guildID string, frontendChannelID string) (*BoostRequestChannel, error) {
+func (repo *dbRepository) GetBoostRequestChannelByFrontendChannelID(guildID string, frontendChannelID string) (*BoostRequestChannel, error) {
 	brc, err := repo.getBoostRequestChannel(
 		"WHERE guild_id = ? AND frontend_channel_id = ?",
 		guildID,
@@ -24,7 +24,7 @@ func (repo dbRepository) GetBoostRequestChannelByFrontendChannelID(guildID strin
 	return brc, err
 }
 
-func (repo dbRepository) getBoostRequestChannel(where string, args ...interface{}) (*BoostRequestChannel, error) {
+func (repo *dbRepository) getBoostRequestChannel(where string, args ...interface{}) (*BoostRequestChannel, error) {
 	row := repo.db.QueryRow(
 		`SELECT id, guild_id, frontend_channel_id, backend_channel_id, uses_buyer_message, skips_buyer_dm
 			FROM boost_request_channel `+where,
@@ -45,7 +45,7 @@ func (repo dbRepository) getBoostRequestChannel(where string, args ...interface{
 	return &brc, nil
 }
 
-func (repo dbRepository) InsertBoostRequestChannel(brc *BoostRequestChannel) error {
+func (repo *dbRepository) InsertBoostRequestChannel(brc *BoostRequestChannel) error {
 	var usesBuyerMessage, skipsBuyerDM int8
 	if brc.UsesBuyerMessage {
 		usesBuyerMessage = 1
@@ -85,12 +85,12 @@ func (repo dbRepository) InsertBoostRequestChannel(brc *BoostRequestChannel) err
 	return nil
 }
 
-func (repo dbRepository) DeleteBoostRequestChannel(brc *BoostRequestChannel) error {
+func (repo *dbRepository) DeleteBoostRequestChannel(brc *BoostRequestChannel) error {
 	_, err := repo.db.Exec("DELETE FROM boost_request_channel WHERE id = ?", brc.ID)
 	return err
 }
 
-func (repo dbRepository) DeleteBoostRequestChannelsInGuild(guildID string) error {
+func (repo *dbRepository) DeleteBoostRequestChannelsInGuild(guildID string) error {
 	_, err := repo.db.Exec("DELETE FROM boost_request_channel WHERE guild_id = ?", guildID)
 	return err
 }
