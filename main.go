@@ -63,6 +63,8 @@ func main() {
 
 	repo := repository.NewDBRepository(db)
 	brm := boost_request.NewBoostRequestManager(discord, repo)
+	brm.LoadBoostRequests()
+	registerCommandRouter(discord, repo)
 
 	defer brm.Destroy()
 
@@ -71,15 +73,13 @@ func main() {
 		log.Fatalf("Error connecting to discord: %v", err)
 	}
 
-	registerCommands(discord, repo)
-
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
 	log.Println("Stopping bot")
 }
 
-func registerCommands(discord *discordgo.Session, repo repository.Repository) {
+func registerCommandRouter(discord *discordgo.Session, repo repository.Repository) {
 	router := dgc.Create(&dgc.Router{
 		Prefixes: []string{
 			"!",

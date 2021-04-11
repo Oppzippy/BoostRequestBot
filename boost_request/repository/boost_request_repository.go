@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 )
 
 type BoostRequestRepository interface {
+	GetUnresolvedBoostRequests() ([]*BoostRequest, error)
 	GetBoostRequestByBackendMessageID(backendChannelID, backendMessageID string) (*BoostRequest, error)
 	InsertBoostRequest(br *BoostRequest) error
 	ResolveBoostRequest(br *BoostRequest) error
@@ -24,8 +26,30 @@ func (repo dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, bac
 	)
 }
 
+func (repo dbRepository) GetUnresolvedBoostRequests() ([]*BoostRequest, error) {
+	// TODO don't load really old boost requests
+	boostRequests, err := repo.getBoostRequests("WHERE resolved_at IS NULL")
+	return boostRequests, err
+}
+
 func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*BoostRequest, error) {
-	row := repo.db.QueryRow(`SELECT
+	boostRequests, err := repo.getBoostRequests(where, args...)
+	if err != nil {
+		return nil, fmt.Errorf("extracting single request: %w", err)
+	}
+	numRequests := len(boostRequests)
+	switch numRequests {
+	case 0:
+		return nil, fmt.Errorf("no results")
+	case 1:
+		return boostRequests[0], nil
+	default:
+		return nil, fmt.Errorf("more than one result found")
+	}
+}
+
+func (repo dbRepository) getBoostRequests(where string, args ...interface{}) ([]*BoostRequest, error) {
+	row, err := repo.db.Query(`SELECT
 		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.created_at, br.resolved_at,
 		brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM boost_request br
@@ -33,6 +57,28 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 		args...,
 	)
 
+	if err != nil {
+		return nil, fmt.Errorf("error executing query: %w", err)
+	}
+
+	boostRequests := make([]*BoostRequest, 0, 1) // Optimize for the common case of a specific boost request being selected
+
+	for row.Next() {
+		br, err := repo.unmarshalBoostRequest(row)
+		if err != nil {
+			return nil, err
+		}
+		boostRequests = append(boostRequests, br)
+	}
+
+	return boostRequests, nil
+}
+
+type scannable interface {
+	Scan(dest ...interface{}) error
+}
+
+func (repo dbRepository) unmarshalBoostRequest(row scannable) (*BoostRequest, error) {
 	var br BoostRequest
 	var brc BoostRequestChannel
 	var advertiserID sql.NullString
@@ -48,7 +94,6 @@ func (repo dbRepository) getBoostRequest(where string, args ...interface{}) (*Bo
 		}
 		return nil, err
 	}
-
 	if embedFieldsJSON.Valid {
 		err := json.Unmarshal([]byte(embedFieldsJSON.String), &br.EmbedFields)
 		if err != nil {

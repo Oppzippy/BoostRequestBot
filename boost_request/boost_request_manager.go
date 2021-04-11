@@ -19,6 +19,8 @@ type BoostRequestManager struct {
 	repo           repository.Repository
 	messenger      *BoostRequestMessenger
 	activeRequests *sync.Map
+	isLoaded       bool
+	isLoadedLock   *sync.Mutex
 }
 
 func NewBoostRequestManager(discord *discordgo.Session, repo repository.Repository) *BoostRequestManager {
@@ -27,6 +29,7 @@ func NewBoostRequestManager(discord *discordgo.Session, repo repository.Reposito
 		repo:           repo,
 		messenger:      NewBoostRequestMessenger(),
 		activeRequests: new(sync.Map),
+		isLoadedLock:   new(sync.Mutex),
 	}
 
 	discord.Identify.Intents |= discordgo.IntentsGuildMessages | discordgo.IntentsGuildMessageReactions
@@ -78,6 +81,22 @@ func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session,
 			case StealEmoji:
 				brm.stealBoostRequest(br, event.UserID)
 			}
+		}
+	}
+}
+
+func (brm *BoostRequestManager) LoadBoostRequests() {
+	brm.isLoadedLock.Lock()
+	defer brm.isLoadedLock.Unlock()
+	if !brm.isLoaded {
+		boostRequests, err := brm.repo.GetUnresolvedBoostRequests()
+		if err != nil {
+			log.Printf("Unable to load boost requests: %v", err)
+			return
+		}
+		brm.isLoaded = true
+		for _, br := range boostRequests {
+			brm.activeRequests.Store(br.BackendMessageID, newActiveRequest(*br, brm.setWinner))
 		}
 	}
 }
