@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"errors"
 	"time"
 )
@@ -36,6 +37,9 @@ func (repo *dbRepository) GetStealCreditsForUser(guildID, userID string) (int, e
 	)
 	var credits int
 	err := row.Scan(&credits)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
 	return credits, err
 }
 

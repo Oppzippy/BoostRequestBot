@@ -17,6 +17,7 @@ type BoostRequestRepository interface {
 }
 
 var ErrBoostRequestNotFound = errors.New("boost request not found")
+var ErrTooManyResults = errors.New("more than one result found")
 
 func (repo *dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, backendMessageID string) (*BoostRequest, error) {
 	return repo.getBoostRequest(
@@ -40,11 +41,11 @@ func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*B
 	numRequests := len(boostRequests)
 	switch numRequests {
 	case 0:
-		return nil, fmt.Errorf("no results")
+		return nil, ErrBoostRequestNotFound
 	case 1:
 		return boostRequests[0], nil
 	default:
-		return nil, fmt.Errorf("more than one result found")
+		return nil, ErrTooManyResults
 	}
 }
 

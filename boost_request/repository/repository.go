@@ -10,6 +10,7 @@ type Repository interface {
 	AdvertiserPrivilegesRepository
 	LogChannelRepository
 	StealCreditRepository
+	ApiKeyRepository
 }
 
 type dbRepository struct {

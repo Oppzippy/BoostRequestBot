@@ -11,11 +11,12 @@ type BoostRequestChannelRepository interface {
 	InsertBoostRequestChannel(brc *BoostRequestChannel) error
 	DeleteBoostRequestChannel(brc *BoostRequestChannel) error
 	DeleteBoostRequestChannelsInGuild(guildID string) error
+	GetBoostRequestChannels(id string) ([]*BoostRequestChannel, error)
 }
 
 var ErrBoostRequestChannelNotFound = errors.New("boost request channel not found")
 
-func (repo *dbRepository) GetBoostRequestChannelByFrontendChannelID(guildID string, frontendChannelID string) (*BoostRequestChannel, error) {
+func (repo *dbRepository) GetBoostRequestChannelByFrontendChannelID(guildID, frontendChannelID string) (*BoostRequestChannel, error) {
 	brc, err := repo.getBoostRequestChannel(
 		"WHERE guild_id = ? AND frontend_channel_id = ?",
 		guildID,
@@ -24,25 +25,52 @@ func (repo *dbRepository) GetBoostRequestChannelByFrontendChannelID(guildID stri
 	return brc, err
 }
 
+func (repo *dbRepository) GetBoostRequestChannels(guildID string) ([]*BoostRequestChannel, error) {
+	channels, err := repo.getBoostRequestChannels("WHERE guild_id = ?", guildID)
+	return channels, err
+}
+
 func (repo *dbRepository) getBoostRequestChannel(where string, args ...interface{}) (*BoostRequestChannel, error) {
-	row := repo.db.QueryRow(
+	channels, err := repo.getBoostRequestChannels(where, args...)
+	if err != nil {
+		return nil, err
+	}
+	switch len(channels) {
+	case 0:
+		return nil, ErrBoostRequestChannelNotFound
+	case 1:
+		return channels[0], nil
+	default:
+		return nil, ErrTooManyResults
+	}
+}
+
+func (repo *dbRepository) getBoostRequestChannels(where string, args ...interface{}) ([]*BoostRequestChannel, error) {
+	rows, err := repo.db.Query(
 		`SELECT id, guild_id, frontend_channel_id, backend_channel_id, uses_buyer_message, skips_buyer_dm
 			FROM boost_request_channel `+where,
 		args...,
 	)
-	brc := BoostRequestChannel{}
-	var usesBuyerMessage, skipsBuyerDM int
-	err := row.Scan(&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &usesBuyerMessage, &skipsBuyerDM)
-	if err == sql.ErrNoRows {
-		return nil, ErrBoostRequestChannelNotFound
-	}
 	if err != nil {
 		return nil, err
 	}
-	brc.UsesBuyerMessage = usesBuyerMessage != 0
-	brc.SkipsBuyerDM = skipsBuyerDM != 0
+	channels := make([]*BoostRequestChannel, 0, 1)
+	for rows.Next() {
+		brc := BoostRequestChannel{}
+		var usesBuyerMessage, skipsBuyerDM int
+		err := rows.Scan(&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &usesBuyerMessage, &skipsBuyerDM)
+		if err == sql.ErrNoRows {
+			return nil, ErrBoostRequestChannelNotFound
+		}
+		if err != nil {
+			return nil, err
+		}
+		brc.UsesBuyerMessage = usesBuyerMessage != 0
+		brc.SkipsBuyerDM = skipsBuyerDM != 0
+		channels = append(channels, &brc)
+	}
 
-	return &brc, nil
+	return channels, nil
 }
 
 func (repo *dbRepository) InsertBoostRequestChannel(brc *BoostRequestChannel) error {

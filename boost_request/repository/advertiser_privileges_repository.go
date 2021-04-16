@@ -13,7 +13,7 @@ type AdvertiserPrivilegesRepository interface {
 }
 
 func (repo *dbRepository) GetAdvertiserPrivilegesForGuild(guildID string) ([]*AdvertiserPrivileges, error) {
-	privileges, err := repo.getAdvertiserPrivileges("WHERE guild_id = ?", guildID)
+	privileges, err := repo.getAdvertiserPrivileges("WHERE guild_id = ? ORDER BY weight DESC", guildID)
 	return privileges, err
 }
 

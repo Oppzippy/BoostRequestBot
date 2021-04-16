@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,6 +16,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"github.com/lus/dgc"
+	"github.com/oppzippy/BoostRequestBot/api"
 	"github.com/oppzippy/BoostRequestBot/boost_request"
 	"github.com/oppzippy/BoostRequestBot/boost_request/commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/middleware"
@@ -68,12 +71,25 @@ func main() {
 
 	defer brm.Destroy()
 
+	server := api.NewWebAPI(repo)
+
 	err = discord.Open()
 	if err != nil {
 		log.Fatalf("Error connecting to discord: %v", err)
 	}
 
 	sc := make(chan os.Signal, 1)
+
+	go func() {
+		err := server.ListenAndServe()
+		if err != http.ErrServerClosed {
+			log.Fatalf("Error starting http server: %v", err)
+		} else {
+			sc <- syscall.SIGINT
+		}
+	}()
+	defer server.Shutdown(context.TODO())
+
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
 	log.Println("Stopping bot")

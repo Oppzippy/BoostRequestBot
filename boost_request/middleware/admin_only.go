@@ -28,6 +28,7 @@ func (mw *AdminOnlyMiddleware) Exec(next dgc.ExecutionHandler) dgc.ExecutionHand
 				return
 			}
 		}
+		ctx.CustomObjects.Set("isAdmin", true)
 		next(ctx)
 	}
 }

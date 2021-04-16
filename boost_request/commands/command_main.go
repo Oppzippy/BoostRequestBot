@@ -20,6 +20,8 @@ var MainCommand = dgc.Command{
 		&addStealCreditsCommand,
 		&setStealCreditsCommand,
 		&checkStealCreditsCommand,
+		&listChannelsCommand,
+		&listPrivilegesCommand,
 	},
 
 	Handler: mainCommandHandler,
