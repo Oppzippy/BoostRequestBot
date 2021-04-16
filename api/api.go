@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -48,7 +50,15 @@ func router(repo repository.Repository) http.Handler {
 
 func notFoundHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusNotFound)
-	rw.Write([]byte(`{"statusCode": 404,"error": "Not found", "message": "The requested API endpoint does not exist."}`))
+	resp, err := json.Marshal(ErrorResponse{
+		ResponseCode: http.StatusNotFound,
+		Error:        "Not Found",
+		Message:      "The requested API endpoint does not exist.",
+	})
+	if err != nil {
+		log.Printf("Error marshalling error response: %v", err)
+	}
+	rw.Write(resp)
 }
 
 func contentTypeMiddleware(contentType string) mux.MiddlewareFunc {
@@ -79,7 +89,15 @@ func apiKeyMiddleware(repo repository.Repository) mux.MiddlewareFunc {
 				}
 			}
 			rw.WriteHeader(http.StatusUnauthorized)
-			rw.Write([]byte(`{"statusCode":401,"error":"Unauthorized","message":"You must specify an api key with the header Authorization: Bearer api_key"}`))
+			resp, err := json.Marshal(ErrorResponse{
+				ResponseCode: http.StatusUnauthorized,
+				Error:        "Unauthorized",
+				Message:      "You must specify an api key with the header Authorization: Bearer api_key",
+			})
+			if err != nil {
+				log.Printf("Error marshalling error response: %v", err)
+			}
+			rw.Write(resp)
 		})
 	}
 }
@@ -93,7 +111,15 @@ func requireAuthorizationMiddleware() mux.MiddlewareFunc {
 				return
 			}
 			rw.WriteHeader(http.StatusUnauthorized)
-			rw.Write([]byte(`{"statusCode": 401, "error": "Unauthorized", "message": "You must authenticate with the HTTP header 'Authorization: Bearer YOUR_API_KEY'"}`))
+			resp, err := json.Marshal(ErrorResponse{
+				ResponseCode: http.StatusUnauthorized,
+				Error:        "Unauthorized",
+				Message:      "You must authenticate with the HTTP header 'Authorization: Bearer YOUR_API_KEY'",
+			})
+			if err != nil {
+				log.Printf("Error marshalling error response: %v", err)
+			}
+			rw.Write(resp)
 		})
 	}
 }

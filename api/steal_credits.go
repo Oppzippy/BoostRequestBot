@@ -15,6 +15,8 @@ type stealCreditsGetResponse struct {
 	Credits int    `json:"credits"`
 }
 
+const okResponse = `{"statusCode": 200, "message": "ok"}`
+
 func getStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -78,7 +80,7 @@ func adjustStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 		rw.Write(internalServerError("No changes were made."))
 		return
 	}
-	rw.Write([]byte(`{"statusCode": 200, "message": "ok"}`))
+	rw.Write([]byte(okResponse))
 }
 
 func setStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
@@ -114,5 +116,5 @@ func setStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 		rw.Write(internalServerError("No changes were made."))
 		return
 	}
-	rw.Write([]byte(`{"statusCode": 200, "message": "ok"}`))
+	rw.Write([]byte(okResponse))
 }
