@@ -10,4 +10,5 @@ require (
 	github.com/johejo/golang-migrate-extra v0.0.0-20210217013041-51a992e50d16
 	github.com/joho/godotenv v1.3.0
 	github.com/lus/dgc v1.0.9-0.20210403172310-4006663fca90
+	github.com/shopspring/decimal v1.2.0
 )

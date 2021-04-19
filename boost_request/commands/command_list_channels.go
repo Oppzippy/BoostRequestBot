@@ -50,5 +50,9 @@ func listChannelsHandler(ctx *dgc.Ctx) {
 		sb.WriteString(strings.Join(options, ""))
 	}
 
-	respondText(ctx, sb.String())
+	if sb.Len() > 0 {
+		respondText(ctx, sb.String())
+	} else {
+		respondText(ctx, "There are no boost request channels.")
+	}
 }

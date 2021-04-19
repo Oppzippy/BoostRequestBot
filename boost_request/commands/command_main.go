@@ -10,18 +10,26 @@ var MainCommand = dgc.Command{
 	IgnoreCase:  true,
 
 	SubCommands: []*dgc.Command{
+		// Boost request channels
 		&addChannelCommand,
+		&listChannelsCommand,
 		&removeChannelCommand,
 		&removeChannelsCommand,
-		&setPrivilegesCommand,
-		&removePrivilegesCommand,
+		// Log channel
 		&setLogChannelCommand,
 		&removeLogChannelCommand,
+		// Advertiser privileges
+		&setPrivilegesCommand,
+		&listPrivilegesCommand,
+		&removePrivilegesCommand,
+		// Steal credits
 		&addStealCreditsCommand,
 		&setStealCreditsCommand,
 		&checkStealCreditsCommand,
-		&listChannelsCommand,
-		&listPrivilegesCommand,
+		// Role discounts
+		&setRoleDiscountCommand,
+		&listRoleDiscountsCommand,
+		&removeRoleDiscountCommand,
 	},
 
 	Handler: mainCommandHandler,

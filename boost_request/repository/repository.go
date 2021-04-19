@@ -2,7 +2,11 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 )
+
+var ErrNoResults = errors.New("not found")
+var ErrTooManyResults = errors.New("too many results")
 
 type Repository interface {
 	BoostRequestChannelRepository
@@ -11,6 +15,7 @@ type Repository interface {
 	LogChannelRepository
 	StealCreditRepository
 	ApiKeyRepository
+	RoleDiscountRepository
 }
 
 type dbRepository struct {

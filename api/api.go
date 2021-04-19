@@ -75,8 +75,8 @@ func apiKeyMiddleware(repo repository.Repository) mux.MiddlewareFunc {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			auth := r.Header.Get("Authorization")
 			match := authBearerRegex.FindStringSubmatch(auth)
-			if len(match) == 1 {
-				key := match[0]
+			if match != nil {
+				key := match[1]
 				apiKey, err := repo.GetAPIKey(key)
 
 				if err != nil {

@@ -40,13 +40,17 @@ func listPrivilegesHandler(ctx *dgc.Ctx) {
 		sb.WriteString(fmt.Sprintf("%d", p.Delay))
 		sb.WriteString("s\n")
 	}
-	_, err = ctx.Session.ChannelMessageSendComplex(ctx.Event.ChannelID, &discordgo.MessageSend{
-		Reference: ctx.Event.Message.Reference(),
-		Content:   sb.String(),
-		// TODO add replied_user true when discordgo supports it
-		AllowedMentions: &discordgo.MessageAllowedMentions{},
-	})
-	if err != nil {
-		log.Printf("Error sending message with list of privileges: %v", err)
+	if sb.Len() > 0 {
+		_, err = ctx.Session.ChannelMessageSendComplex(ctx.Event.ChannelID, &discordgo.MessageSend{
+			Reference: ctx.Event.Message.Reference(),
+			Content:   sb.String(),
+			// TODO add replied_user true when discordgo supports it
+			AllowedMentions: &discordgo.MessageAllowedMentions{},
+		})
+		if err != nil {
+			log.Printf("Error sending message with list of privileges: %v", err)
+		}
+	} else {
+		respondText(ctx, "No privileges are set.")
 	}
 }
