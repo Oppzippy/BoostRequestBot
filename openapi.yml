@@ -1,0 +1,102 @@
+openapi: '3.0.2'
+info:
+  title: API Title
+  version: '1.0'
+servers:
+  - url: http://127.0.0.1:8080/v1
+paths:
+  /users/{userId}/stealCredits:
+    get:
+      responses:
+        '200':
+          description: Number of boost request steal credits available to the user in a JSON object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStealCredits'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                credits:
+                  type: integer
+                operation:
+                  type: string
+                  enum:
+                    - '+'
+                    - '-'
+                    - '*'
+                    - '/'
+                    - '='
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  responses:
+    BadRequestError:
+      description: The request schema is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    UnauthorizedError:
+      description: API key is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalServerError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    Error:
+      description: Error response.
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code.
+        error:
+          type: string
+          description: Name of HTTP status code.
+        message:
+          type: string
+          description: Description of what went wrong.
+    UserStealCredits:
+      description: Number of boost request steal credits available to a user in a Discord guild.
+      type: object
+      properties:
+        guildId:
+          type: string
+          description: Discord guild id in which the credits are used.
+        userId:
+          type: string
+          description: User's discord id.
+        credits:
+          type: integer
+          description: Number of boost request credits available to the user.
+
+security:
+  - ApiKeyAuth: []
