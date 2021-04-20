@@ -22,9 +22,13 @@ func removeRoleDiscountHandler(ctx *dgc.Ctx) {
 		respondText(ctx, "Usage: "+ctx.Command.Usage)
 		return
 	}
-	roleID := ctx.Arguments.Get(1).AsRoleMentionID()
+	roleID := ctx.Arguments.Get(0).AsRoleMentionID()
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	rd, err := repo.GetRoleDiscountForRole(ctx.Event.GuildID, roleID)
+	if err == repository.ErrNoResults {
+		respondText(ctx, "This role does not have a discount.")
+		return
+	}
 	if err != nil {
 		log.Printf("Error fetching role discount: %v", err)
 		respondText(ctx, genericError)

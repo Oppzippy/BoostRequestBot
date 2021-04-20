@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type BoostRequestRepository interface {
@@ -49,11 +51,15 @@ func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*B
 }
 
 func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([]*BoostRequest, error) {
-	row, err := repo.db.Query(`SELECT
-		br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.created_at, br.resolved_at,
-		brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
+	row, err := repo.db.Query(
+		`SELECT
+			br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.created_at, br.resolved_at,
+			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm,
+			rd.id, rd.guild_id, rd.role_id, rd.discount
 		FROM boost_request br
-		INNER JOIN boost_request_channel brc ON br.boost_request_channel_id = brc.id `+where,
+			INNER JOIN boost_request_channel brc ON br.boost_request_channel_id = brc.id
+			LEFT JOIN role_discount rd ON br.role_discount_id = rd.id
+		`+where,
 		args...,
 	)
 
@@ -84,9 +90,14 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*BoostRequest, e
 	var advertiserID sql.NullString
 	var resolvedAt sql.NullTime
 	var embedFieldsJSON sql.NullString
+	var rdID sql.NullInt64
+	var rdGuildID sql.NullString
+	var rdRoleID sql.NullString
+	var rdDiscount decimal.NullDecimal
 	err := row.Scan(
 		&br.ID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &br.CreatedAt, &resolvedAt,
 		&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
+		&rdID, &rdGuildID, &rdRoleID, &rdDiscount,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -99,6 +110,13 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*BoostRequest, e
 		if err != nil {
 			log.Printf("Error parsing embed field json: %v", err)
 		}
+	}
+	if rdID.Valid {
+		// All of these are NOT NULL so if one isn't null, the rest aren't
+		br.RoleDiscount.ID = rdID.Int64
+		br.RoleDiscount.GuildID = rdGuildID.String
+		br.RoleDiscount.RoleID = rdRoleID.String
+		br.RoleDiscount.Discount = rdDiscount.Decimal
 	}
 	br.Channel = brc
 	br.AdvertiserID = advertiserID.String
@@ -122,16 +140,21 @@ func (repo *dbRepository) InsertBoostRequest(br *BoostRequest) error {
 			embedFieldsJSON = &s
 		}
 	}
+	var roleDiscountID *int64
+	if br.RoleDiscount != nil {
+		roleDiscountID = &br.RoleDiscount.ID
+	}
 	res, err := repo.db.Exec(
 		`INSERT INTO boost_request
-			(boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			(boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, role_discount_id, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		br.Channel.ID,
 		br.RequesterID,
 		advertiserID,
 		br.BackendMessageID,
 		br.Message,
 		embedFieldsJSON,
+		roleDiscountID,
 		br.CreatedAt,
 	)
 	if err != nil {
@@ -153,10 +176,12 @@ func (repo *dbRepository) ResolveBoostRequest(br *BoostRequest) error {
 	_, err := repo.db.Exec(
 		`UPDATE boost_request SET
 			advertiser_id = ?,
-			resolved_at = ?
+			resolved_at = ?,
+			role_discount_id = ?
 			WHERE id = ?`,
 		br.AdvertiserID,
 		resolvedAt,
+		br.RoleDiscount.ID,
 		br.ID,
 	)
 	return err

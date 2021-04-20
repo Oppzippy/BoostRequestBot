@@ -2,11 +2,13 @@ package boost_request
 
 import (
 	"log"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+	"github.com/shopspring/decimal"
 )
 
 type BoostRequestMessenger struct {
@@ -109,10 +111,23 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discor
 		return nil, err
 	}
 
+	sb := strings.Builder{}
+	sb.WriteString(advertiser.Mention())
+	sb.WriteString(" ")
+	sb.WriteString(advertiser.String())
+	sb.WriteString(" will reach out to you shortly.")
+	sb.WriteString(" Anyone else that messages you regarding this boost request is not from Huokan and may attempt to scam you.")
+
+	if br.RoleDiscount != nil {
+		sb.WriteString("\n\n**You will receive a ")
+		sb.WriteString(br.RoleDiscount.Discount.Mul(decimal.NewFromInt(100)).String())
+		sb.WriteString("% discount.**")
+	}
+
 	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
 		Color:       0x00FF00,
 		Title:       "Huokan Boosting Community Boost Request",
-		Description: advertiser.Mention() + " (" + advertiser.String() + ") will reach out to you shortly. Anyone else that messages you regarding this boost request is not from Huokan and may attempt to scam you.",
+		Description: sb.String(),
 		Footer:      footer,
 		Timestamp:   time.Now().Format(time.RFC3339),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
@@ -144,10 +159,30 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 		return nil, err
 	}
 
+	sb := strings.Builder{}
+	sb.WriteString("Please message ")
+	sb.WriteString(requester.Mention())
+	sb.WriteString(" ")
+	sb.WriteString(requester.String())
+	sb.WriteString(".")
+	if br.RoleDiscount != nil {
+		roleName := messenger.getRoleName(discord, br.RoleDiscount.GuildID, br.RoleDiscount.RoleID)
+		sb.WriteString("\n**")
+		if roleName != "" {
+			sb.WriteString("They have the role of ")
+			sb.WriteString(roleName)
+			sb.WriteString(", so a ")
+		} else {
+			sb.WriteString("Due to their role, a ")
+		}
+		sb.WriteString(br.RoleDiscount.Discount.Mul(decimal.NewFromInt(100)).String())
+		sb.WriteString("% discount should be applied.**")
+	}
+
 	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
 		Color:       0xFF0000,
 		Title:       "You have been selected to handle a boost request.",
-		Description: "Please message " + requester.Mention() + " " + requester.String(),
+		Description: sb.String(),
 		Fields:      messenger.formatBoostRequest(br),
 		Footer:      footer,
 		Timestamp:   time.Now().Format(time.RFC3339),
@@ -227,4 +262,16 @@ func (messenger *BoostRequestMessenger) formatBoostRequest(br *repository.BoostR
 		}
 	}
 	return fields
+}
+
+func (messenger *BoostRequestMessenger) getRoleName(discord *discordgo.Session, guildID, roleID string) string {
+	roles, err := discord.GuildRoles(guildID)
+	if err == nil {
+		for _, role := range roles {
+			if role.ID == roleID {
+				return role.Name
+			}
+		}
+	}
+	return ""
 }

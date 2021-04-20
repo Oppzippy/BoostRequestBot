@@ -15,7 +15,7 @@ type RoleDiscountRepository interface {
 var ErrBadBigRat = errors.New("failed to parse big rat")
 
 func (repo *dbRepository) GetRoleDiscountForRole(guildID, roleID string) (*RoleDiscount, error) {
-	discounts, err := repo.getRoleDiscounts("WHERE guild_id = ? AND role_id = ?", guildID, roleID)
+	discounts, err := repo.getRoleDiscounts("WHERE guild_id = ? AND role_id = ? AND not_deleted = 1", guildID, roleID)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (repo *dbRepository) GetRoleDiscountForRole(guildID, roleID string) (*RoleD
 }
 
 func (repo *dbRepository) GetRoleDiscountsForGuild(guildID string) ([]*RoleDiscount, error) {
-	discounts, err := repo.getRoleDiscounts("WHERE guild_id = ?", guildID)
+	discounts, err := repo.getRoleDiscounts("WHERE guild_id = ? AND not_deleted = 1", guildID)
 	return discounts, err
 }
 
@@ -51,8 +51,26 @@ func (repo *dbRepository) getRoleDiscounts(where string, args ...interface{}) ([
 	return discounts, nil
 }
 
+// If a discount for the role already exists, it will be replaced.
 func (repo *dbRepository) InsertRoleDiscount(rd *RoleDiscount) error {
-	res, err := repo.db.Exec(
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(
+		"UPDATE role_discount SET deleted_at = ? WHERE guild_id = ? AND role_id = ? AND not_deleted = 1",
+		time.Now().UTC(),
+		rd.GuildID,
+		rd.RoleID,
+	)
+	if err != nil {
+		rbErr := tx.Rollback()
+		if rbErr != nil {
+			return rbErr
+		}
+		return err
+	}
+	res, err := tx.Exec(
 		`INSERT INTO role_discount (guild_id, role_id, discount, created_at) 
 			VALUES (?, ?, ?, ?)
 		ON DUPLICATE KEY UPDATE
@@ -63,9 +81,15 @@ func (repo *dbRepository) InsertRoleDiscount(rd *RoleDiscount) error {
 		time.Now().UTC(),
 	)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	id, err := res.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}
@@ -74,6 +98,6 @@ func (repo *dbRepository) InsertRoleDiscount(rd *RoleDiscount) error {
 }
 
 func (repo *dbRepository) DeleteRoleDiscount(rd *RoleDiscount) error {
-	_, err := repo.db.Exec("DELETE FROM role_discount WHERE id = ?", rd.ID)
+	_, err := repo.db.Exec("UPDATE role_discount SET deleted_at = ? WHERE id = ?", time.Now().UTC(), rd.ID)
 	return err
 }

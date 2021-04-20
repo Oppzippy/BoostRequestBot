@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 
@@ -47,7 +48,7 @@ func setRoleDiscountHandler(ctx *dgc.Ctx) {
 		respondText(ctx, genericError)
 		return
 	}
-	respondText(ctx, "Added role discount.")
+	respondText(ctx, fmt.Sprintf("Added %v%% role discount.", discountPercent))
 }
 
 func parsePercent(percent string) (decimal.Decimal, error) {
