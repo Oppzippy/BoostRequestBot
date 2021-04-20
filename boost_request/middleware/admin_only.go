@@ -34,9 +34,9 @@ func (mw *AdminOnlyMiddleware) Exec(next dgc.ExecutionHandler) dgc.ExecutionHand
 }
 
 func (mw *AdminOnlyMiddleware) getPermissions(discord *discordgo.Session, guildID, userID string) (int64, error) {
-	guild, err := discord.Guild(guildID)
+	guild, err := discord.State.Guild(guildID)
 	if err != nil {
-		return 0, fmt.Errorf("fetching guild from discord: %w", err)
+		return 0, fmt.Errorf("fetching guild from state cache: %w", err)
 	}
 	if userID == guild.OwnerID {
 		return discordgo.PermissionAll, nil

@@ -119,9 +119,17 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discor
 	sb.WriteString(" Anyone else that messages you regarding this boost request is not from Huokan and may attempt to scam you.")
 
 	if br.RoleDiscount != nil {
-		sb.WriteString("\n\n**You will receive a ")
+		roleName := messenger.getRoleName(discord, br.RoleDiscount.GuildID, br.RoleDiscount.RoleID)
+		sb.WriteString("\n\n**")
+		if roleName != "" {
+			sb.WriteString("You have the role of ")
+			sb.WriteString(roleName)
+			sb.WriteString(", so a ")
+		} else {
+			sb.WriteString("Due to your role, a ")
+		}
 		sb.WriteString(br.RoleDiscount.Discount.Mul(decimal.NewFromInt(100)).String())
-		sb.WriteString("% discount.**")
+		sb.WriteString("% discount will be applied.**")
 	}
 
 	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
@@ -265,8 +273,10 @@ func (messenger *BoostRequestMessenger) formatBoostRequest(br *repository.BoostR
 }
 
 func (messenger *BoostRequestMessenger) getRoleName(discord *discordgo.Session, guildID, roleID string) string {
-	roles, err := discord.GuildRoles(guildID)
+	guild, err := discord.State.Guild(guildID)
+
 	if err == nil {
+		roles := guild.Roles
 		for _, role := range roles {
 			if role.ID == roleID {
 				return role.Name

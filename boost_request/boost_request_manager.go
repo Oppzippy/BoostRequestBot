@@ -32,7 +32,7 @@ func NewBoostRequestManager(discord *discordgo.Session, repo repository.Reposito
 		isLoadedLock:   new(sync.Mutex),
 	}
 
-	discord.Identify.Intents |= discordgo.IntentsGuildMessages | discordgo.IntentsGuildMessageReactions
+	discord.Identify.Intents |= discordgo.IntentsGuilds | discordgo.IntentsGuildMessages | discordgo.IntentsGuildMessageReactions
 
 	discord.AddHandler(brm.onMessageCreate)
 	discord.AddHandler(brm.onMessageReactionAdd)
