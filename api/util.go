@@ -7,9 +7,9 @@ import (
 )
 
 type ErrorResponse struct {
-	ResponseCode int    `json:"responseCode"`
-	Error        string `json:"error"`
-	Message      string `json:"message"`
+	StatusCode int    `json:"statusCode"`
+	Error      string `json:"error"`
+	Message    string `json:"message"`
 }
 
 func internalServerError(message string) []byte {
@@ -17,9 +17,9 @@ func internalServerError(message string) []byte {
 		message = "An unexpected error has occurred."
 	}
 	response := ErrorResponse{
-		ResponseCode: http.StatusInternalServerError,
-		Error:        "Internal Server Error",
-		Message:      message,
+		StatusCode: http.StatusInternalServerError,
+		Error:      "Internal Server Error",
+		Message:    message,
 	}
 	resp, err := json.Marshal(response)
 	if err != nil {

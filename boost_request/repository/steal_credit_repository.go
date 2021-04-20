@@ -12,16 +12,6 @@ type StealCreditRepository interface {
 	UpdateStealCreditsForUser(guildID, userID string, amount int) error
 }
 
-type Operation int
-
-const (
-	OperationAdd = iota
-	OperationSubtract
-	OperationMultiply
-	OperationDivide
-	OperationSet
-)
-
 var ErrInvalidOperation = errors.New("invalid math operation")
 
 func (repo *dbRepository) GetStealCreditsForUser(guildID, userID string) (int, error) {

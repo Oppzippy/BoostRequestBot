@@ -11,6 +11,7 @@ import (
 )
 
 type stealCreditsGetResponse struct {
+	GuildID string `json:"guildId"`
 	UserID  string `json:"userId"`
 	Credits int    `json:"credits"`
 }
@@ -34,6 +35,7 @@ func getStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	responseJSON, err := json.Marshal(stealCreditsGetResponse{
+		GuildID: guildID,
 		UserID:  userID,
 		Credits: credits,
 	})
@@ -60,58 +62,37 @@ func adjustStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 	credits, err := strconv.Atoi(creditsStr)
 	if creditsStr == "" || err != nil {
 		resp := ErrorResponse{
-			ResponseCode: http.StatusBadRequest,
-			Error:        "Bad Request",
-			Message:      "You must specify an integer number of credits to add in the POST body.",
+			StatusCode: http.StatusBadRequest,
+			Error:      "Bad Request",
+			Message:    "You must specify an integer number of credits to add in the POST body.",
 		}
 		marshaledResp, err := json.Marshal(resp)
 		if err != nil {
-			log.Printf("Error marshaling POST steal credits bad request: %v", err)
+			log.Printf("Error marshaling bad request: %v", err)
+		}
+		rw.WriteHeader(http.StatusBadRequest)
+		rw.Write(marshaledResp)
+		return
+	}
+	operation, ok := repository.OperationFromString(r.PostForm.Get("operation"))
+	if !ok {
+		resp := ErrorResponse{
+			StatusCode: http.StatusBadRequest,
+			Error:      "Bad Request",
+			Message:    "Invalid operation. Options are add (+), subtract (-), multiply (*), divide (/), and set (=). Use the symbol.",
+		}
+		marshaledResp, err := json.Marshal(resp)
+		if err != nil {
+			log.Printf("Error marshalling bad request: %v", err)
 		}
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write(marshaledResp)
 		return
 	}
 
-	err = repo.AdjustStealCreditsForUser(guildID, userID, repository.OperationAdd, credits)
+	err = repo.AdjustStealCreditsForUser(guildID, userID, operation, credits)
 	if err != nil {
 		log.Printf("Error adjusting steal credits: %v", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		rw.Write(internalServerError("No changes were made."))
-		return
-	}
-	rw.Write([]byte(okResponse))
-}
-
-func setStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	vars := mux.Vars(r)
-
-	guildID := ctx.Value(contextKey("guildID")).(string)
-	userID := vars["userID"]
-	repo := ctx.Value(contextKey("repo")).(repository.Repository)
-
-	r.ParseForm()
-	creditsStr := r.PostForm.Get("credits")
-	credits, err := strconv.Atoi(creditsStr)
-	if creditsStr == "" || err != nil {
-		resp := ErrorResponse{
-			ResponseCode: http.StatusBadRequest,
-			Error:        "Bad Request",
-			Message:      "You must specify an integer number of boost request credits to set.",
-		}
-		marshaledResp, err := json.Marshal(resp)
-		if err != nil {
-			log.Printf("Error marshaling PUT steal credits bad request: %v", err)
-		}
-		rw.WriteHeader(http.StatusBadRequest)
-		rw.Write(marshaledResp)
-		return
-	}
-
-	err = repo.UpdateStealCreditsForUser(guildID, userID, credits)
-	if err != nil {
-		log.Printf("Error setting steal credits: %v", err)
 		rw.WriteHeader(http.StatusInternalServerError)
 		rw.Write(internalServerError("No changes were made."))
 		return
