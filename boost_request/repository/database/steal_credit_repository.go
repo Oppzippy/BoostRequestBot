@@ -1,18 +1,11 @@
-package repository
+package database
 
 import (
 	"database/sql"
-	"errors"
 	"time"
+
+	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
-
-type StealCreditRepository interface {
-	GetStealCreditsForUser(guildID, userID string) (int, error)
-	AdjustStealCreditsForUser(guildID, userID string, operation Operation, amount int) error
-	UpdateStealCreditsForUser(guildID, userID string, amount int) error
-}
-
-var ErrInvalidOperation = errors.New("invalid math operation")
 
 func (repo *dbRepository) GetStealCreditsForUser(guildID, userID string) (int, error) {
 	row := repo.db.QueryRow(
@@ -33,21 +26,21 @@ func (repo *dbRepository) GetStealCreditsForUser(guildID, userID string) (int, e
 	return credits, err
 }
 
-func (repo *dbRepository) AdjustStealCreditsForUser(guildID, userID string, operation Operation, amount int) error {
+func (repo *dbRepository) AdjustStealCreditsForUser(guildID, userID string, operation repository.Operation, amount int) error {
 	var operationSymbol string
 	switch operation {
-	case OperationAdd:
+	case repository.OperationAdd:
 		operationSymbol = "+"
-	case OperationSubtract:
+	case repository.OperationSubtract:
 		operationSymbol = "-"
-	case OperationMultiply:
+	case repository.OperationMultiply:
 		operationSymbol = "*"
-	case OperationDivide:
+	case repository.OperationDivide:
 		operationSymbol = "/"
-	case OperationSet:
+	case repository.OperationSet:
 		return repo.UpdateStealCreditsForUser(guildID, userID, amount)
 	default:
-		return ErrInvalidOperation
+		return repository.ErrInvalidOperation
 	}
 	_, err := repo.db.Exec(
 		`INSERT INTO boost_request_steal_credits (

@@ -47,7 +47,7 @@ func (brm *BoostRequestManager) Destroy() {
 func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, event *discordgo.MessageCreate) {
 	if event.Author.ID != discord.State.User.ID && event.GuildID != "" {
 		brc, err := brm.repo.GetBoostRequestChannelByFrontendChannelID(event.GuildID, event.ChannelID)
-		if err != nil && err != repository.ErrBoostRequestChannelNotFound {
+		if err != nil && err != repository.ErrNoResults {
 			log.Printf("Error fetching boost request channel: %v", err)
 			return
 		}
@@ -70,7 +70,7 @@ func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, even
 func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session, event *discordgo.MessageReactionAdd) {
 	if event.UserID != discord.State.User.ID {
 		br, err := brm.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.MessageID)
-		if err != nil && err != repository.ErrBoostRequestNotFound {
+		if err != nil && err != repository.ErrNoResults {
 			log.Printf("Error fetching boost request: %v", err)
 			return
 		}
@@ -143,10 +143,12 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 	brm.activeRequests.Store(br.BackendMessageID, newActiveRequest(*br, brm.setWinner))
 
 	logChannel, err := brm.repo.GetLogChannel(brc.GuildID)
-	if err != nil {
-		log.Printf("Error fetching log channel: %v", err)
-	} else if logChannel != "" {
-		brm.messenger.SendLogChannelMessage(brm.discord, br, logChannel)
+	if err != repository.ErrNoResults {
+		if err != nil {
+			log.Printf("Error fetching log channel: %v", err)
+		} else {
+			brm.messenger.SendLogChannelMessage(brm.discord, br, logChannel)
+		}
 	}
 
 	return br, nil
@@ -157,7 +159,7 @@ func (brm *BoostRequestManager) GetBestRolePrivileges(guildID string, roles []st
 	var bestPrivileges *repository.AdvertiserPrivileges = nil
 	for _, role := range roles {
 		privileges, err := brm.repo.GetAdvertiserPrivilegesForRole(guildID, role)
-		if err != nil {
+		if err != nil && err != repository.ErrNoResults {
 			log.Printf("Error fetching privileges: %v", err)
 		}
 		if privileges != nil {

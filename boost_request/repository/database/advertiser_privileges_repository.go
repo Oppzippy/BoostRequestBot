@@ -1,34 +1,29 @@
-package repository
+package database
 
 import (
 	"database/sql"
 	"time"
+
+	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type AdvertiserPrivilegesRepository interface {
-	GetAdvertiserPrivilegesForGuild(guildID string) ([]*AdvertiserPrivileges, error)
-	GetAdvertiserPrivilegesForRole(guildID, roleID string) (*AdvertiserPrivileges, error)
-	InsertAdvertiserPrivileges(privileges *AdvertiserPrivileges) error
-	DeleteAdvertiserPrivileges(privileges *AdvertiserPrivileges) error
-}
-
-func (repo *dbRepository) GetAdvertiserPrivilegesForGuild(guildID string) ([]*AdvertiserPrivileges, error) {
+func (repo *dbRepository) GetAdvertiserPrivilegesForGuild(guildID string) ([]*repository.AdvertiserPrivileges, error) {
 	privileges, err := repo.getAdvertiserPrivileges("WHERE guild_id = ? ORDER BY weight DESC", guildID)
 	return privileges, err
 }
 
-func (repo *dbRepository) GetAdvertiserPrivilegesForRole(guildID, roleID string) (*AdvertiserPrivileges, error) {
+func (repo *dbRepository) GetAdvertiserPrivilegesForRole(guildID, roleID string) (*repository.AdvertiserPrivileges, error) {
 	privileges, err := repo.getAdvertiserPrivileges("WHERE guild_id = ? AND role_id = ?", guildID, roleID)
 	if err != nil {
 		return nil, err
 	}
 	if len(privileges) == 0 {
-		return nil, nil
+		return nil, repository.ErrNoResults
 	}
 	return privileges[0], nil
 }
 
-func (repo *dbRepository) getAdvertiserPrivileges(where string, args ...interface{}) ([]*AdvertiserPrivileges, error) {
+func (repo *dbRepository) getAdvertiserPrivileges(where string, args ...interface{}) ([]*repository.AdvertiserPrivileges, error) {
 	res, err := repo.db.Query(
 		`SELECT
 			id,
@@ -44,9 +39,9 @@ func (repo *dbRepository) getAdvertiserPrivileges(where string, args ...interfac
 	}
 	defer res.Close()
 
-	privileges := make([]*AdvertiserPrivileges, 0, 15)
+	privileges := make([]*repository.AdvertiserPrivileges, 0, 15)
 	for res.Next() {
-		p := AdvertiserPrivileges{}
+		p := repository.AdvertiserPrivileges{}
 		res.Scan(&p.ID, &p.GuildID, &p.RoleID, &p.Weight, &p.Delay)
 		privileges = append(privileges, &p)
 	}
@@ -56,7 +51,7 @@ func (repo *dbRepository) getAdvertiserPrivileges(where string, args ...interfac
 	return privileges, nil
 }
 
-func (repo *dbRepository) InsertAdvertiserPrivileges(privileges *AdvertiserPrivileges) error {
+func (repo *dbRepository) InsertAdvertiserPrivileges(privileges *repository.AdvertiserPrivileges) error {
 	res, err := repo.db.Exec(
 		`INSERT INTO advertiser_privileges (
 			guild_id,
@@ -85,7 +80,7 @@ func (repo *dbRepository) InsertAdvertiserPrivileges(privileges *AdvertiserPrivi
 	return nil
 }
 
-func (repo *dbRepository) DeleteAdvertiserPrivileges(privileges *AdvertiserPrivileges) error {
+func (repo *dbRepository) DeleteAdvertiserPrivileges(privileges *repository.AdvertiserPrivileges) error {
 	_, err := repo.db.Exec(`DELETE FROM advertiser_privileges WHERE id = ?`, privileges.ID)
 	return err
 }

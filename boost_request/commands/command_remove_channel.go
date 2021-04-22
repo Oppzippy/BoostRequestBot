@@ -32,7 +32,7 @@ func removeChannelHandler(ctx *dgc.Ctx) {
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	brc, err := repo.GetBoostRequestChannelByFrontendChannelID(ctx.Event.GuildID, channelID)
 	if err != nil {
-		if err == repository.ErrBoostRequestChannelNotFound {
+		if err == repository.ErrNoResults {
 			respondText(ctx, "<#"+channelID+"> is not a boost request frontend.")
 			return
 		}

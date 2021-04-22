@@ -1,17 +1,18 @@
-package repository
+package database
 
-import "database/sql"
+import (
+	"database/sql"
 
-type LogChannelRepository interface {
-	GetLogChannel(guildID string) (channelID string, err error)
-	InsertLogChannel(guildID, channelID string) error
-	DeleteLogChannel(guildID string) error
-}
+	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+)
 
 func (repo *dbRepository) GetLogChannel(guildID string) (channelID string, err error) {
 	row := repo.db.QueryRow("SELECT channel_id FROM log_channel WHERE guild_id = ?", guildID)
 	err = row.Scan(&channelID)
-	if err != nil && err != sql.ErrNoRows {
+	if err == sql.ErrNoRows {
+		return "", repository.ErrNoResults
+	}
+	if err != nil {
 		return "", err
 	}
 	return channelID, nil
