@@ -21,7 +21,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/middleware"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
-	dbRepository "github.com/oppzippy/BoostRequestBot/boost_request/repository/database"
+	db_repository "github.com/oppzippy/BoostRequestBot/boost_request/repository/database"
 )
 
 func main() {
@@ -65,7 +65,7 @@ func main() {
 		log.Println("Disconnected from discord")
 	})
 
-	var repo repository.Repository = dbRepository.NewRepository(db)
+	var repo repository.Repository = db_repository.NewRepository(db)
 	brm := boost_request.NewBoostRequestManager(discord, repo)
 	brm.LoadBoostRequests()
 	registerCommandRouter(discord, repo)
