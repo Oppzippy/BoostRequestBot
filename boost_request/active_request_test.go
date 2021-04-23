@@ -9,6 +9,7 @@ import (
 )
 
 func TestImmediateSignup(t *testing.T) {
+	t.Parallel()
 	start := time.Now()
 	c := make(chan struct{})
 	ar := boost_request.NewActiveRequest(repository.BoostRequest{
@@ -49,6 +50,7 @@ func TestImmediateSignup(t *testing.T) {
 }
 
 func TestLateSignup(t *testing.T) {
+	t.Parallel()
 	c := make(chan struct{})
 	ar := boost_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{
@@ -79,6 +81,7 @@ func TestLateSignup(t *testing.T) {
 }
 
 func TestSetAdvertiser(t *testing.T) {
+	t.Parallel()
 	c := make(chan struct{})
 	ar := boost_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{
@@ -103,6 +106,7 @@ func TestSetAdvertiser(t *testing.T) {
 }
 
 func TestRepeatedSetAdvertiser(t *testing.T) {
+	t.Parallel()
 	c := make(chan struct{})
 	ar := boost_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{

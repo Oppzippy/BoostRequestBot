@@ -24,5 +24,5 @@ func OperationFromString(op string) (operation Operation, ok bool) {
 	case "=":
 		operation = OperationSet
 	}
-	return operation, false
+	return operation, operation != nilOperation
 }
