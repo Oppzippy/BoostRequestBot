@@ -96,7 +96,7 @@ func (brm *BoostRequestManager) LoadBoostRequests() {
 		}
 		brm.isLoaded = true
 		for _, br := range boostRequests {
-			brm.activeRequests.Store(br.BackendMessageID, newActiveRequest(*br, brm.setWinner))
+			brm.activeRequests.Store(br.BackendMessageID, NewActiveRequest(*br, brm.setWinner))
 		}
 	}
 }
@@ -140,7 +140,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 	}
 
 	brm.messenger.SendBoostRequestCreatedDM(brm.discord, br)
-	brm.activeRequests.Store(br.BackendMessageID, newActiveRequest(*br, brm.setWinner))
+	brm.activeRequests.Store(br.BackendMessageID, NewActiveRequest(*br, brm.setWinner))
 
 	logChannel, err := brm.repo.GetLogChannel(brc.GuildID)
 	if err != repository.ErrNoResults {

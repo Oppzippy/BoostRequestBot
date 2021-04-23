@@ -22,7 +22,7 @@ type userWithPrivileges struct {
 	privileges repository.AdvertiserPrivileges
 }
 
-func newActiveRequest(br repository.BoostRequest, cb func(br repository.BoostRequest, userID string)) *activeRequest {
+func NewActiveRequest(br repository.BoostRequest, cb func(br repository.BoostRequest, userID string)) *activeRequest {
 	return &activeRequest{
 		AdvertiserChosenCallback: cb,
 		boostRequest:             br,
@@ -67,7 +67,7 @@ func (r *activeRequest) setAdvertiserWithoutLocking(userID string) (ok bool) {
 	if ok {
 		close(r.quit)
 		r.inactive = true
-		r.AdvertiserChosenCallback(r.boostRequest, userID)
+		go r.AdvertiserChosenCallback(r.boostRequest, userID)
 	}
 	return ok
 }

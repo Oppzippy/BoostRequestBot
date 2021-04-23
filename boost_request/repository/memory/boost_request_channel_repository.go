@@ -1,4 +1,4 @@
-package mock
+package memory
 
 import "github.com/oppzippy/BoostRequestBot/boost_request/repository"
 
