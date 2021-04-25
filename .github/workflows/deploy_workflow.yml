@@ -18,7 +18,7 @@ jobs:
         run: go build
 
   deploy:
-    needs: build
+    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     steps:
