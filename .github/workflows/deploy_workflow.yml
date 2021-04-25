@@ -22,11 +22,20 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     steps:
-      - name: SSH Remote Commands
-        uses: appleboy/ssh-action@v0.0.7
+      - name: SCP
+        uses: appleboy/scp-action@v0.1.1
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
-          script: screen -dm bash -c "./gitscript"
+          source: BoostRequestBot
+          target: BoostRequestBot
+      - name: SSH Remote Commands
+        uses: appleboy/ssh-action@v0.1.4
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: screen -dm bash -c "./update"
