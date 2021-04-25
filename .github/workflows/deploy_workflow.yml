@@ -3,7 +3,7 @@ name: Deploy
 on: [push]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     steps:
+      - uses: actions/checkout@v2
+      - name: Use Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16.3
+      - name: Build
+        run: go build
       - name: SCP
         uses: appleboy/scp-action@v0.1.1
         with:
@@ -29,7 +36,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
-          source: BoostRequestBot
+          source: ./BoostRequestBot
           target: BoostRequestBot
       - name: SSH Remote Commands
         uses: appleboy/ssh-action@v0.1.4
