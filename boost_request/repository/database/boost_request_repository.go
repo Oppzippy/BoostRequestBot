@@ -160,6 +160,11 @@ func (repo *dbRepository) ResolveBoostRequest(br *repository.BoostRequest) error
 	if br.IsResolved {
 		resolvedAt = &br.ResolvedAt
 	}
+	var roleDiscountID *int64
+	if br.RoleDiscount != nil {
+		roleDiscountID = &br.RoleDiscount.ID
+	}
+
 	_, err := repo.db.Exec(
 		`UPDATE boost_request SET
 			advertiser_id = ?,
@@ -168,7 +173,7 @@ func (repo *dbRepository) ResolveBoostRequest(br *repository.BoostRequest) error
 			WHERE id = ?`,
 		br.AdvertiserID,
 		resolvedAt,
-		br.RoleDiscount.ID,
+		roleDiscountID,
 		br.ID,
 	)
 	return err
