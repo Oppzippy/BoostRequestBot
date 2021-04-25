@@ -29,7 +29,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Printf("Error loading .env file: %v", err)
 	}
 
 	dataSourceName := fmt.Sprintf(
