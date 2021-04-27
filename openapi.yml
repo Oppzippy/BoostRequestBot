@@ -35,18 +35,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                credits:
-                  type: integer
-                operation:
-                  type: string
-                  enum:
-                    - '+'
-                    - '-'
-                    - '*'
-                    - '/'
-                    - '='
+              $ref: '#/components/schemas/PatchStealCreditsRequest'
       responses:
         '200':
           description: OK
@@ -109,6 +98,19 @@ components:
         credits:
           type: integer
           description: Number of boost request credits available to the user.
+    PatchStealCreditsRequest:
+      type: object
+      properties:
+        credits:
+          type: integer
+        operation:
+          type: string
+          enum:
+            - '+'
+            - '-'
+            - '*'
+            - '/'
+            - '='
 
 security:
   - ApiKeyAuth: []
