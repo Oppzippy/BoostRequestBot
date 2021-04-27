@@ -58,11 +58,11 @@ jobs:
       - name: Download openapi-generator-cli
         run: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/5.1.0/openapi-generator-cli-5.1.0.jar -O openapi-generator-cli.jar
       - name: Make sdk dir
-        run: mkdir sdk
+        run: mkdir sdk sdk_zip
       - name: Build Python sdk
         run: |
           java -jar openapi-generator-cli.jar generate -i openapi.yml -g python -o sdk/python
-          zip BoostRequestBot_Python_SDK.zip sdk/python
+          zip sdk_zip/BoostRequestBot_Python_SDK.zip sdk/python
       - name: Upload
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
