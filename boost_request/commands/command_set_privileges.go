@@ -32,6 +32,15 @@ func setPrivilegesHandler(ctx *dgc.Ctx) {
 		return
 	}
 
+	if weight <= 0 {
+		respondText(ctx, "Weight must be greater than 0.")
+		return
+	}
+	if delaySeconds < 0 {
+		respondText(ctx, "Delay must be greater than or equal to 0.")
+		return
+	}
+
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err := repo.InsertAdvertiserPrivileges(&repository.AdvertiserPrivileges{
 		GuildID: ctx.Event.GuildID,

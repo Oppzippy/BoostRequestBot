@@ -36,6 +36,10 @@ func setRoleDiscountHandler(ctx *dgc.Ctx) {
 		return
 	}
 	discount := discountPercent.Div(decimal.NewFromInt(100))
+	if discount.LessThanOrEqual(decimal.Zero) || discount.GreaterThan(decimal.NewFromInt(1)) {
+		respondText(ctx, "Discount must be greater than 0% and less than or equal to 100%.")
+		return
+	}
 
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err = repo.InsertRoleDiscount(&repository.RoleDiscount{

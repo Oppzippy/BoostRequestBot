@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/lus/dgc"
@@ -18,6 +19,10 @@ var removeChannelsCommand = dgc.Command{
 }
 
 func removeChannelsHandler(ctx *dgc.Ctx) {
+	if ctx.Arguments.Amount() != 0 {
+		respondText(ctx, fmt.Sprintf("Usage: %v. Did you mean !boostrequest removechannel?", ctx.Command.Usage))
+		return
+	}
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err := repo.DeleteBoostRequestChannelsInGuild(ctx.Event.GuildID)
 	if err != nil {
