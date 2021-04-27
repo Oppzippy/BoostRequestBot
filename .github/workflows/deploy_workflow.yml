@@ -59,7 +59,7 @@ jobs:
         run: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/5.1.0/openapi-generator-cli-5.1.0.jar -O openapi-generator-cli.jar
       - name: Make sdk dir
         run: mkdir sdk
-      - name: Build python3 sdk
+      - name: Build Python sdk
         run: |
           java -jar openapi-generator-cli.jar generate -i openapi.yml -g python -o sdk/python
           zip BoostRequestBot_Python_SDK.zip sdk/python

@@ -7,6 +7,12 @@ servers:
 paths:
   /users/{userId}/stealCredits:
     get:
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
       responses:
         '200':
           description: Number of boost request steal credits available to the user in a JSON object.
@@ -19,6 +25,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     patch:
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
       requestBody:
         content:
           application/json:
