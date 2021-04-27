@@ -146,6 +146,16 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discor
 }
 
 func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
+	if br.EmbedFields != nil {
+		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithBotRequester(discord, br)
+		return m, err
+	} else {
+		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithHumanRequester(discord, br)
+		return m, err
+	}
+}
+
+func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHumanRequester(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
 	requester, err := discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
@@ -191,6 +201,32 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 		Color:       0xFF0000,
 		Title:       "You have been selected to handle a boost request.",
 		Description: sb.String(),
+		Fields:      messenger.formatBoostRequest(br),
+		Footer:      footer,
+		Timestamp:   time.Now().Format(time.RFC3339),
+	})
+
+	return message, err
+}
+
+func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithBotRequester(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
+	advertiser, err := discord.User(br.AdvertiserID)
+	if err != nil {
+		return nil, err
+	}
+	dmChannel, err := discord.UserChannelCreate(advertiser.ID)
+	if err != nil {
+		restErr, ok := err.(discordgo.RESTError)
+		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
+			messenger.sendTemporaryMessage(discord, br.Channel.BackendChannelID, advertiser.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
+		}
+		return nil, err
+	}
+
+	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
+		Color:       0xFF0000,
+		Title:       "You have been selected to handle a boost request.",
+		Description: "Please message the user listed below.",
 		Fields:      messenger.formatBoostRequest(br),
 		Footer:      footer,
 		Timestamp:   time.Now().Format(time.RFC3339),

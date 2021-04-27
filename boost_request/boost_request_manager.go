@@ -139,7 +139,9 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		return nil, fmt.Errorf("inserting new boost request in db: %w", err)
 	}
 
-	brm.messenger.SendBoostRequestCreatedDM(brm.discord, br)
+	if !brc.SkipsBuyerDM {
+		brm.messenger.SendBoostRequestCreatedDM(brm.discord, br)
+	}
 	brm.activeRequests.Store(br.BackendMessageID, NewActiveRequest(*br, brm.setWinner))
 
 	logChannel, err := brm.repo.GetLogChannel(brc.GuildID)
@@ -228,12 +230,18 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	br.AdvertiserID = userID
 	br.IsResolved = true
 	br.ResolvedAt = time.Now()
-	rd, err := brm.getRoleDiscountForUser(br.Channel.GuildID, br.RequesterID)
-	if err != nil {
-		log.Printf("Error searching roles for discount: %v", err)
+	var rd *repository.RoleDiscount
+	// Essentially checking if the user is a bot
+	// TODO add IsBot to BoostRequest
+	if br.EmbedFields == nil {
+		var err error
+		rd, err = brm.getRoleDiscountForUser(br.Channel.GuildID, br.RequesterID)
+		if err != nil {
+			log.Printf("Error searching roles for discount: %v", err)
+		}
 	}
 	br.RoleDiscount = rd
-	err = brm.repo.ResolveBoostRequest(&br)
+	err := brm.repo.ResolveBoostRequest(&br)
 	if err != nil {
 		// Log the error but try to keep things running.
 		// There will be data loss, but that is better than a lost sale.
@@ -249,11 +257,11 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	if err != nil {
 		log.Printf("Error sending message to boost request backend: %v", err)
 	}
+	_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
+	if err != nil {
+		log.Printf("Error sending advertsier chosen DM to advertiser: %v", err)
+	}
 	if !br.Channel.SkipsBuyerDM {
-		_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
-		if err != nil {
-			log.Printf("Error sending advertsier chosen DM to advertiser: %v", err)
-		}
 		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(brm.discord, &br)
 		if err != nil {
 			log.Printf("Error sending advertiser chosen DM to requester: %v", err)
