@@ -88,7 +88,7 @@ func apiKeyMiddleware(repo repository.Repository) mux.MiddlewareFunc {
 			resp, err := json.Marshal(ErrorResponse{
 				StatusCode: http.StatusUnauthorized,
 				Error:      "Unauthorized",
-				Message:    "You must specify an api key with the header Authorization: Bearer api_key",
+				Message:    "You must specify an api key with the header X-API-Key: your_api_key",
 			})
 			if err != nil {
 				log.Printf("Error marshalling error response: %v", err)
