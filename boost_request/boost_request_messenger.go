@@ -52,7 +52,7 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *disco
 	message, err := discord.ChannelMessageSendComplex(dmChannel.ID, &discordgo.MessageSend{
 		Content: "Please wait while we find an advertiser to complete your request.",
 		Embed: &discordgo.MessageEmbed{
-			Title: "Huokan Community Boost Request",
+			Title: "Huokan Boosting Community Boost Request",
 			Author: &discordgo.MessageEmbedAuthor{
 				Name: requester.String(),
 			},
