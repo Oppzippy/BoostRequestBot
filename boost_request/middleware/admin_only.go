@@ -18,18 +18,19 @@ func NewAdminOnlyMiddleware() *AdminOnlyMiddleware {
 
 func (mw *AdminOnlyMiddleware) Exec(next dgc.ExecutionHandler) dgc.ExecutionHandler {
 	return func(ctx *dgc.Ctx) {
-		if commandHasFlag(ctx.Command, "ADMIN") {
-			permissions, err := mw.getPermissions(ctx.Session, ctx.Event.GuildID, ctx.Event.Author.ID)
-			if err != nil {
-				log.Printf("Error fetching permissions: %v", err)
-				return
-			}
-			if permissions&discordgo.PermissionAdministrator == 0 {
-				return
-			}
+		var isAdmin bool
+		permissions, err := mw.getPermissions(ctx.Session, ctx.Event.GuildID, ctx.Event.Author.ID)
+		if err != nil {
+			log.Printf("Error fetching permissions: %v", err)
+			return
 		}
-		ctx.CustomObjects.Set("isAdmin", true)
-		next(ctx)
+		if permissions&discordgo.PermissionAdministrator != 0 {
+			isAdmin = true
+		}
+		ctx.CustomObjects.Set("isAdmin", isAdmin)
+		if isAdmin || !commandHasFlag(ctx.Command, "ADMIN") {
+			next(ctx)
+		}
 	}
 }
 
