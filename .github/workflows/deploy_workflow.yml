@@ -61,7 +61,7 @@ jobs:
         run: mkdir sdk
       - name: Build python3 sdk
         run: |
-          java -jar openapi-generator-cli.jar generate openapi.yml -g python -o sdk/python
+          java -jar openapi-generator-cli.jar generate -i openapi.yml -g python -o sdk/python
           zip BoostRequestBot_Python_SDK.zip sdk/python
       - name: Upload
         if: startsWith(github.ref, 'refs/tags/')
