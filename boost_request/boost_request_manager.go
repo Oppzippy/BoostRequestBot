@@ -220,7 +220,9 @@ func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, u
 		err := brm.repo.AdjustStealCreditsForUser(br.Channel.GuildID, userID, repository.OperationSubtract, 1)
 		if err != nil {
 			log.Printf("Error subtracting boost request credits after use: %v", err)
+			return false
 		}
+		go brm.messenger.SendCreditsUpdateDM(brm.discord, userID, credits-1)
 	}
 	return ok
 }

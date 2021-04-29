@@ -1,6 +1,7 @@
 package boost_request
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -262,6 +263,22 @@ func (messenger *BoostRequestMessenger) SendLogChannelMessage(
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
 	message, err := discord.ChannelMessageSendEmbed(channelID, embed)
+	return message, err
+}
+
+func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(discord *discordgo.Session, userID string, credits int) (*discordgo.Message, error) {
+	dmChannel, err := discord.UserChannelCreate(userID)
+	if err != nil {
+		return nil, err
+	}
+	var plural string
+	if credits != 1 {
+		plural = "s"
+	}
+	message, err := discord.ChannelMessageSend(
+		dmChannel.ID,
+		fmt.Sprintf("You now have %d boost request steal credit%s.", credits, plural),
+	)
 	return message, err
 }
 
