@@ -65,7 +65,7 @@ jobs:
           echo packageVersion: $VERSION >> openapi-config-python.yml
           java -jar openapi-generator-cli.jar generate -i openapi.yml -g python -o python_sdk --package-name boostrequestbotapi --config openapi-config-python.yml
           zip -r sdk_zip/BoostRequestBot_Python_SDK.zip python_sdk
-        with:
+        env:
           GITHUB_REF: github.ref
       - name: Upload
         if: startsWith(github.ref, 'refs/tags/')
