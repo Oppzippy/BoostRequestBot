@@ -26,6 +26,47 @@ func (repo *dbRepository) GetStealCreditsForUser(guildID, userID string) (int, e
 	return credits, err
 }
 
+func (repo *dbRepository) GetGlobalStealCreditsForUser(userID string) (map[string]int, error) {
+	rows, err := repo.db.Query(
+		`SELECT
+			sc2.guild_id AS guild_id,
+			(
+			SELECT
+				sc.credits
+			FROM
+				boost_request_steal_credits sc
+			WHERE
+				sc.guild_id = sc2.guild_id
+				AND sc.user_id = ?
+			ORDER BY
+				sc.id DESC
+			LIMIT 1) AS credits
+		FROM
+			boost_request_steal_credits sc2
+		WHERE
+			sc2.user_id = ?
+		GROUP BY
+			sc2.guild_id`,
+		userID,
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	creditsByGuild := make(map[string]int)
+	for rows.Next() {
+		var guildID string
+		var credits int
+		err := rows.Scan(&guildID, &credits)
+		if err != nil {
+			return nil, err
+		}
+		creditsByGuild[guildID] = credits
+	}
+	return creditsByGuild, nil
+}
+
 func (repo *dbRepository) AdjustStealCreditsForUser(guildID, userID string, operation repository.Operation, amount int) error {
 	var operationSymbol string
 	switch operation {

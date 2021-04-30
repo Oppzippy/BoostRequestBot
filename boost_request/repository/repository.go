@@ -86,6 +86,8 @@ type RoleDiscountRepository interface {
 type StealCreditRepository interface {
 	// Returns the number of boost request steal credits avilable to a user.
 	GetStealCreditsForUser(guildID, userID string) (int, error)
+	// Returns the number of boost request steal credits available to a user across all guilds.
+	GetGlobalStealCreditsForUser(userID string) (map[string]int, error)
 	// Performs a math operation on the number of boost request steal credits in a user's possession.
 	// If a valid operation is not specified, ErrInvalidOperation will be returned.
 	AdjustStealCreditsForUser(guildID, userID string, operation Operation, amount int) error

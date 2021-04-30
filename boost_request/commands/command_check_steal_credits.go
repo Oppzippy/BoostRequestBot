@@ -18,13 +18,14 @@ var checkStealCreditsCommand = dgc.Command{
 	Example:     "!boostrequest credits",
 	IgnoreCase:  true,
 	Handler:     checkStealCreditsHandler,
-	Flags:       []string{"GUILD"},
+	Flags:       []string{},
 }
 
 func checkStealCreditsHandler(ctx *dgc.Ctx) {
-	// TODO implement DM functionality
 	if ctx.Event.GuildID != "" {
 		checkStealCreditsHandlerGuild(ctx)
+	} else {
+		checkStealCreditsHandlerDM(ctx)
 	}
 }
 
@@ -77,4 +78,36 @@ func checkStealCreditsForUsers(ctx *dgc.Ctx) {
 		// TODO add replied_user true when discordgo supports it
 		AllowedMentions: &discordgo.MessageAllowedMentions{},
 	})
+}
+
+func checkStealCreditsHandlerDM(ctx *dgc.Ctx) {
+	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
+	userID := ctx.Event.Author.ID
+	creditsByGuild, err := repo.GetGlobalStealCreditsForUser(userID)
+	if err != nil {
+		respondText(ctx, genericError)
+		return
+	}
+
+	sb := strings.Builder{}
+	for guildID, credits := range creditsByGuild {
+		guild, err := ctx.Session.State.Guild(guildID)
+		if err != nil {
+			guild, err = ctx.Session.Guild(guildID)
+			if err != nil {
+				continue
+			}
+		}
+		var plural string
+		if credits != 1 {
+			plural = "s"
+		}
+
+		sb.WriteString(fmt.Sprintf("**%s**\nYou have %d boost request steal credit%s.\n", guild.Name, credits, plural))
+	}
+	if sb.Len() == 0 {
+		respondText(ctx, "You don't have any boost request steal credits.")
+	} else {
+		respondText(ctx, sb.String())
+	}
 }

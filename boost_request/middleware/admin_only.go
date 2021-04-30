@@ -18,6 +18,10 @@ func NewAdminOnlyMiddleware() *AdminOnlyMiddleware {
 
 func (mw *AdminOnlyMiddleware) Exec(next dgc.ExecutionHandler) dgc.ExecutionHandler {
 	return func(ctx *dgc.Ctx) {
+		if ctx.Event.GuildID == "" {
+			next(ctx)
+			return
+		}
 		var isAdmin bool
 		permissions, err := mw.getPermissions(ctx.Session, ctx.Event.GuildID, ctx.Event.Author.ID)
 		if err != nil {
