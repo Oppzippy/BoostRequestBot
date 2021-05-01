@@ -2,6 +2,7 @@ package commands
 
 import (
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -28,12 +29,22 @@ func listRoleDiscountsHandler(ctx *dgc.Ctx) {
 		respondText(ctx, genericError)
 		return
 	}
+	sort.Slice(discounts, func(i, j int) bool {
+		return discounts[i].RoleID < discounts[j].RoleID
+	})
+
+	var prevRoleID string
 	sb := strings.Builder{}
 	for _, rd := range discounts {
+		if prevRoleID != rd.RoleID {
+			prevRoleID = rd.RoleID
+			sb.WriteString("**<@&")
+			sb.WriteString(rd.RoleID)
+			sb.WriteString(">**\n")
+		}
 		discountPercent := rd.Discount.Mul(decimal.NewFromInt(100))
-		sb.WriteString("<@&")
-		sb.WriteString(rd.RoleID)
-		sb.WriteString(">: ")
+		sb.WriteString(rd.BoostType)
+		sb.WriteString(": ")
 		sb.WriteString(discountPercent.String())
 		sb.WriteString("%\n")
 	}

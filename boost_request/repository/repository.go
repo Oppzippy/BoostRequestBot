@@ -73,8 +73,12 @@ type LogChannelRepository interface {
 }
 
 type RoleDiscountRepository interface {
-	// Returns a role's discount on boost requests or ErrNoResults.
-	GetRoleDiscountForRole(guildID, roleID string) (*RoleDiscount, error)
+	// Returns the best discount of each boost type available to the provided roles.
+	GetBestDiscountsForRoles(guildID string, roleID []string) ([]*RoleDiscount, error)
+	// Returns a role's discounts on all types of boosts.
+	GetRoleDiscountsForRole(guildID, roleID string) ([]*RoleDiscount, error)
+	// Returns a role's discount for a specific boost type or ErrNoResults.
+	GetRoleDiscountForBoostType(guildID, roleID, boostType string) (*RoleDiscount, error)
 	// Returns all role discounts in a guild.
 	GetRoleDiscountsForGuild(guildID string) ([]*RoleDiscount, error)
 	// Creates a role discount in a guild. If the discount already exists, it will be updated.

@@ -13,8 +13,8 @@ import (
 var setRoleDiscountCommand = dgc.Command{
 	Name:        "setrolediscount",
 	Description: "Sets a permanent discount when anyone with a particular role requests a boost.",
-	Usage:       "!boostrequest setrolediscount <@Role> <discount%>",
-	Example:     "!boostrequest setrolediscount @Booster 10%",
+	Usage:       "!boostrequest setrolediscount <@Role> <boostType> <discount%>",
+	Example:     "!boostrequest setrolediscount @Booster mythic+ 10%",
 	IgnoreCase:  true,
 	Handler:     setRoleDiscountHandler,
 	Flags:       []string{"ADMIN", "GUILD"},
@@ -23,12 +23,14 @@ var setRoleDiscountCommand = dgc.Command{
 var percentRegex = regexp.MustCompile(`([0-9\.]+)%`)
 
 func setRoleDiscountHandler(ctx *dgc.Ctx) {
-	if ctx.Arguments.Amount() != 2 {
+	if ctx.Arguments.Amount() != 3 {
 		respondText(ctx, "Usage: "+ctx.Command.Usage)
 		return
 	}
 	roleID := ctx.Arguments.Get(0).AsRoleMentionID()
-	discountStr := ctx.Arguments.Get(1).Raw()
+	boostType := ctx.Arguments.Get(1).Raw()
+	discountStr := ctx.Arguments.Get(2).Raw()
+
 	discountPercent, err := parsePercent(discountStr)
 	if err != nil {
 		log.Printf("Failed to parse percentage: %v", err)
@@ -43,9 +45,10 @@ func setRoleDiscountHandler(ctx *dgc.Ctx) {
 
 	repo := ctx.CustomObjects.MustGet("repo").(repository.Repository)
 	err = repo.InsertRoleDiscount(&repository.RoleDiscount{
-		GuildID:  ctx.Event.GuildID,
-		RoleID:   roleID,
-		Discount: discount,
+		GuildID:   ctx.Event.GuildID,
+		RoleID:    roleID,
+		BoostType: boostType,
+		Discount:  discount,
 	})
 	if err != nil {
 		log.Printf("Error inserting role discount: %v", err)

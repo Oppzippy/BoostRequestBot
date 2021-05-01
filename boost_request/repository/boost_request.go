@@ -20,7 +20,7 @@ type BoostRequest struct {
 	BackendMessageID string
 	Message          string
 	EmbedFields      []*MessageEmbedField
-	RoleDiscount     *RoleDiscount
+	RoleDiscounts    []*RoleDiscount
 	CreatedAt        time.Time
 	IsResolved       bool
 	ResolvedAt       time.Time

@@ -119,18 +119,21 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discor
 	sb.WriteString(" will reach out to you shortly.")
 	sb.WriteString(" Anyone else that messages you regarding this boost request is not from Huokan and may attempt to scam you.")
 
-	if br.RoleDiscount != nil {
-		roleName := messenger.getRoleName(discord, br.RoleDiscount.GuildID, br.RoleDiscount.RoleID)
-		sb.WriteString("\n\n**")
-		if roleName != "" {
-			sb.WriteString("You have the role of ")
-			sb.WriteString(roleName)
-			sb.WriteString(", so a ")
-		} else {
-			sb.WriteString("Due to your role, a ")
+	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
+		sb.WriteString("\n\n**You are eligible for discounts**\n")
+		for _, roleDiscount := range br.RoleDiscounts {
+			sb.WriteString(roleDiscount.Discount.Mul(decimal.NewFromInt(100)).String())
+			sb.WriteString("% discount on ")
+			sb.WriteString(roleDiscount.BoostType)
+
+			roleName := messenger.getRoleName(discord, roleDiscount.GuildID, roleDiscount.RoleID)
+			if roleName != "" {
+				sb.WriteString(" (")
+				sb.WriteString(roleName)
+				sb.WriteString(")")
+			}
+			sb.WriteString("\n")
 		}
-		sb.WriteString(br.RoleDiscount.Discount.Mul(decimal.NewFromInt(100)).String())
-		sb.WriteString("% discount will be applied.**")
 	}
 
 	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
@@ -184,18 +187,21 @@ func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHu
 	sb.WriteString(" ")
 	sb.WriteString(requester.String())
 	sb.WriteString(".")
-	if br.RoleDiscount != nil {
-		roleName := messenger.getRoleName(discord, br.RoleDiscount.GuildID, br.RoleDiscount.RoleID)
-		sb.WriteString("\n**")
-		if roleName != "" {
-			sb.WriteString("They have the role of ")
-			sb.WriteString(roleName)
-			sb.WriteString(", so a ")
-		} else {
-			sb.WriteString("Due to their role, a ")
+	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
+		sb.WriteString("\n\n**The requester is eligible for discounts**\n")
+		for _, roleDiscount := range br.RoleDiscounts {
+			sb.WriteString(roleDiscount.Discount.Mul(decimal.NewFromInt(100)).String())
+			sb.WriteString("% discount on ")
+			sb.WriteString(roleDiscount.BoostType)
+
+			roleName := messenger.getRoleName(discord, roleDiscount.GuildID, roleDiscount.RoleID)
+			if roleName != "" {
+				sb.WriteString(" (")
+				sb.WriteString(roleName)
+				sb.WriteString(")")
+			}
+			sb.WriteString("\n")
 		}
-		sb.WriteString(br.RoleDiscount.Discount.Mul(decimal.NewFromInt(100)).String())
-		sb.WriteString("% discount should be applied.**")
 	}
 
 	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{

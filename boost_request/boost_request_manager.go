@@ -235,17 +235,16 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	br.AdvertiserID = userID
 	br.IsResolved = true
 	br.ResolvedAt = time.Now()
-	var rd *repository.RoleDiscount
 	// Essentially checking if the user is a bot
 	// TODO add IsBot to BoostRequest
 	if br.EmbedFields == nil {
 		var err error
-		rd, err = brm.getRoleDiscountForUser(br.Channel.GuildID, br.RequesterID)
+		rd, err := brm.getRoleDiscountForUser(br.Channel.GuildID, br.RequesterID)
 		if err != nil {
 			log.Printf("Error searching roles for discount: %v", err)
 		}
+		br.RoleDiscounts = rd
 	}
-	br.RoleDiscount = rd
 	err := brm.repo.ResolveBoostRequest(&br)
 	if err != nil {
 		// Log the error but try to keep things running.
@@ -274,25 +273,13 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	}
 }
 
-func (brm *BoostRequestManager) getRoleDiscountForUser(guildID, userID string) (*repository.RoleDiscount, error) {
+func (brm *BoostRequestManager) getRoleDiscountForUser(guildID, userID string) ([]*repository.RoleDiscount, error) {
 	member, err := brm.discord.GuildMember(guildID, userID)
 	if err != nil {
 		return nil, err
 	}
-	var best *repository.RoleDiscount
-	for _, role := range member.Roles {
-		rd, err := brm.repo.GetRoleDiscountForRole(guildID, role)
-		if err == repository.ErrNoResults {
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		if best == nil || rd.Discount.GreaterThan(best.Discount) {
-			best = rd
-		}
-	}
-	return best, nil
+	bestDiscounts, err := brm.repo.GetBestDiscountsForRoles(guildID, member.Roles)
+	return bestDiscounts, err
 }
 
 func (brm *BoostRequestManager) signUp(br *repository.BoostRequest, userID string, privileges *repository.AdvertiserPrivileges) {
