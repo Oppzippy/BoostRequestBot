@@ -46,6 +46,7 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 		`+where,
 		args...,
 	)
+	// TODO fetch role discounts
 
 	if err != nil {
 		return nil, err
@@ -124,6 +125,7 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		embedFieldsJSON,
 		br.CreatedAt,
 	)
+	// TODO insert role discounts if they're set
 	if err != nil {
 		return err
 	}
@@ -141,7 +143,12 @@ func (repo *dbRepository) ResolveBoostRequest(br *repository.BoostRequest) error
 		resolvedAt = &br.ResolvedAt
 	}
 
-	_, err := repo.db.Exec(
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(
 		`UPDATE boost_request SET
 			advertiser_id = ?,
 			resolved_at = ?
@@ -149,6 +156,61 @@ func (repo *dbRepository) ResolveBoostRequest(br *repository.BoostRequest) error
 		br.AdvertiserID,
 		resolvedAt,
 		br.ID,
+	)
+	if err != nil {
+		rbErr := tx.Rollback()
+		if rbErr != nil {
+			return rbErr
+		}
+		return err
+	}
+
+	err = insertRoleDiscounts(br, tx)
+	if err != nil {
+		rbErr := tx.Rollback()
+		if rbErr != nil {
+			return rbErr
+		}
+		return err
+	}
+
+	err = tx.Commit()
+	return err
+}
+
+func insertRoleDiscounts(br *repository.BoostRequest, tx *sql.Tx) error {
+	numRoleDiscounts := len(br.RoleDiscounts)
+	args := make([]interface{}, 0, numRoleDiscounts+1)
+	args = append(args, br.ID)
+	if br.RoleDiscounts != nil {
+		for _, rd := range br.RoleDiscounts {
+			args = append(args, rd.ID)
+		}
+	}
+	_, err := tx.Exec(
+		`DELETE FROM boost_request_role_discount
+		WHERE
+			boost_request_id = ?
+			AND role_discount_id NOT IN `+SQLSet(numRoleDiscounts),
+		args...,
+	)
+	if err != nil {
+		return err
+	}
+	if numRoleDiscounts == 0 {
+		return nil
+	}
+
+	args = make([]interface{}, 0, numRoleDiscounts*2)
+	for _, rd := range br.RoleDiscounts {
+		args = append(args, br.ID, rd.ID)
+	}
+
+	_, err = tx.Exec(
+		`INSERT IGNORE INTO boost_request_role_discount (
+			boost_request_id, role_discount_id
+		) VALUES `+SQLSets(2, numRoleDiscounts),
+		args...,
 	)
 	return err
 }

@@ -26,3 +26,18 @@ func TestSQLSet(t *testing.T) {
 		}
 	})
 }
+
+func TestSQLSets(t *testing.T) {
+	t.Run("length 1", func(t *testing.T) {
+		sets := database.SQLSets(1, 1)
+		if sets != "(?)" {
+			t.Errorf("Sets should be (?); got %s", sets)
+		}
+	})
+	t.Run("length 1", func(t *testing.T) {
+		sets := database.SQLSets(1, 3)
+		if sets != "(?), (?), (?)" {
+			t.Errorf("Set should be (?), (?), (?); got %s", sets)
+		}
+	})
+}
