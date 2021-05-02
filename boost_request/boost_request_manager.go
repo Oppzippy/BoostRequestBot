@@ -239,9 +239,9 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	// TODO add IsBot to BoostRequest
 	if br.EmbedFields == nil {
 		var err error
-		rd, err := brm.getRoleDiscountForUser(br.Channel.GuildID, br.RequesterID)
+		rd, err := brm.getRoleDiscountsForUser(br.Channel.GuildID, br.RequesterID)
 		if err != nil {
-			log.Printf("Error searching roles for discount: %v", err)
+			log.Printf("Error searching roles for discounts: %v", err)
 		}
 		br.RoleDiscounts = rd
 	}
@@ -273,7 +273,7 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	}
 }
 
-func (brm *BoostRequestManager) getRoleDiscountForUser(guildID, userID string) ([]*repository.RoleDiscount, error) {
+func (brm *BoostRequestManager) getRoleDiscountsForUser(guildID, userID string) ([]*repository.RoleDiscount, error) {
 	member, err := brm.discord.GuildMember(guildID, userID)
 	if err != nil {
 		return nil, err
