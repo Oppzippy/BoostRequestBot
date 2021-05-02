@@ -55,7 +55,7 @@ func setRoleDiscountHandler(ctx *dgc.Ctx) {
 		respondText(ctx, genericError)
 		return
 	}
-	respondText(ctx, fmt.Sprintf("Added %v%% role discount.", discountPercent))
+	respondText(ctx, fmt.Sprintf("Added %v%% role discount for %s.", discountPercent, boostType))
 }
 
 func parsePercent(percent string) (decimal.Decimal, error) {
