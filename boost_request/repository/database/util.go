@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -25,4 +26,15 @@ func SQLSets(setLen, numSets int) string {
 
 	sets := set + strings.Repeat(fmt.Sprintf(", %s", set), numSets-1)
 	return sets
+}
+
+func rollbackIfErr(tx *sql.Tx, err error) error {
+	if err != nil {
+		rbErr := tx.Rollback()
+		if rbErr != nil {
+			return fmt.Errorf("%v; caused by %v", rbErr, err)
+		}
+		return err
+	}
+	return nil
 }

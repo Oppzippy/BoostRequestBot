@@ -46,8 +46,6 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 		`+where,
 		args...,
 	)
-	// TODO fetch role discounts
-
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +57,13 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 		if err != nil {
 			return nil, err
 		}
+		// TODO do this in 2 queries rather than n+1
+		// n is usually 1 though, so it's 2 queries in the most common case anyway
+		rd, err := getBoostRequestRoleDiscounts(repo.db, br.ID)
+		if err != nil {
+			return nil, err
+		}
+		br.RoleDiscounts = rd
 		boostRequests = append(boostRequests, br)
 	}
 
@@ -113,7 +118,11 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 			embedFieldsJSON = &s
 		}
 	}
-	res, err := repo.db.Exec(
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+	res, err := tx.Exec(
 		`INSERT INTO boost_request
 			(boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, created_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -125,16 +134,23 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		embedFieldsJSON,
 		br.CreatedAt,
 	)
-	// TODO insert role discounts if they're set
+	err = rollbackIfErr(tx, err)
 	if err != nil {
 		return err
 	}
+	err = rollbackIfErr(tx, insertRoleDiscounts(tx, br))
+	if err != nil {
+		return err
+	}
+
 	id, err := res.LastInsertId()
+	err = rollbackIfErr(tx, err)
 	if err != nil {
 		return err
 	}
 	br.ID = id
-	return nil
+	err = tx.Commit()
+	return err
 }
 
 func (repo *dbRepository) ResolveBoostRequest(br *repository.BoostRequest) error {
@@ -157,20 +173,13 @@ func (repo *dbRepository) ResolveBoostRequest(br *repository.BoostRequest) error
 		resolvedAt,
 		br.ID,
 	)
+	err = rollbackIfErr(tx, err)
 	if err != nil {
-		rbErr := tx.Rollback()
-		if rbErr != nil {
-			return rbErr
-		}
 		return err
 	}
 
-	err = insertRoleDiscounts(br, tx)
+	err = rollbackIfErr(tx, insertRoleDiscounts(tx, br))
 	if err != nil {
-		rbErr := tx.Rollback()
-		if rbErr != nil {
-			return rbErr
-		}
 		return err
 	}
 
@@ -178,7 +187,12 @@ func (repo *dbRepository) ResolveBoostRequest(br *repository.BoostRequest) error
 	return err
 }
 
-func insertRoleDiscounts(br *repository.BoostRequest, tx *sql.Tx) error {
+type queryable interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	Exec(query string, args ...interface{}) (sql.Result, error)
+}
+
+func insertRoleDiscounts(db queryable, br *repository.BoostRequest) error {
 	numRoleDiscounts := len(br.RoleDiscounts)
 	args := make([]interface{}, 0, numRoleDiscounts+1)
 	args = append(args, br.ID)
@@ -187,7 +201,7 @@ func insertRoleDiscounts(br *repository.BoostRequest, tx *sql.Tx) error {
 			args = append(args, rd.ID)
 		}
 	}
-	_, err := tx.Exec(
+	_, err := db.Exec(
 		`DELETE FROM boost_request_role_discount
 		WHERE
 			boost_request_id = ?
@@ -206,11 +220,37 @@ func insertRoleDiscounts(br *repository.BoostRequest, tx *sql.Tx) error {
 		args = append(args, br.ID, rd.ID)
 	}
 
-	_, err = tx.Exec(
+	_, err = db.Exec(
 		`INSERT IGNORE INTO boost_request_role_discount (
 			boost_request_id, role_discount_id
 		) VALUES `+SQLSets(2, numRoleDiscounts),
 		args...,
 	)
 	return err
+}
+
+func getBoostRequestRoleDiscounts(db queryable, boostRequestID int64) ([]*repository.RoleDiscount, error) {
+	rows, err := db.Query(
+		`SELECT rd.id, rd.guild_id, rd.role_id, rd.boost_type, rd.discount
+		FROM
+			boost_request_role_discount brrd
+		INNER JOIN
+			role_discount rd ON brrd.role_discount_id = rd.id
+		WHERE
+			brrd.boost_request_id = ?`,
+		boostRequestID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	discounts := make([]*repository.RoleDiscount, 0, 10)
+	for rows.Next() {
+		var rd repository.RoleDiscount
+		err := rows.Scan(&rd.ID, &rd.GuildID, &rd.RoleID, &rd.BoostType, &rd.Discount)
+		if err != nil {
+			return nil, err
+		}
+		discounts = append(discounts, &rd)
+	}
+	return discounts, nil
 }

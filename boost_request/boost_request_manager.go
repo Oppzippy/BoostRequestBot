@@ -121,6 +121,18 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		CreatedAt:   createdAt,
 	}
 
+	// Essentially checking if the user is a bot
+	// TODO add IsBot to BoostRequest
+	if br.EmbedFields == nil {
+		var err error
+		rd, err := brm.getRoleDiscountsForUser(br.Channel.GuildID, br.RequesterID)
+		if err != nil {
+			// They won't get their discounts, but we don't have to abort
+			log.Printf("Error searching roles for discounts: %v", err)
+		}
+		br.RoleDiscounts = rd
+	}
+
 	var backendMessage *discordgo.Message
 	if brc.UsesBuyerMessage {
 		backendMessage = message
@@ -132,12 +144,18 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		}
 	}
 
-	brm.discord.MessageReactionAdd(backendMessage.ChannelID, backendMessage.ID, AcceptEmoji)
-	brm.discord.MessageReactionAdd(backendMessage.ChannelID, backendMessage.ID, StealEmoji)
+	err := brm.discord.MessageReactionAdd(backendMessage.ChannelID, backendMessage.ID, AcceptEmoji)
+	if err != nil {
+		return nil, err
+	}
+	err = brm.discord.MessageReactionAdd(backendMessage.ChannelID, backendMessage.ID, StealEmoji)
+	if err != nil {
+		return nil, err
+	}
 
 	br.BackendMessageID = backendMessage.ID
 
-	err := brm.repo.InsertBoostRequest(br)
+	err = brm.repo.InsertBoostRequest(br)
 	if err != nil {
 		return nil, fmt.Errorf("inserting new boost request in db: %w", err)
 	}
@@ -235,16 +253,6 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	br.AdvertiserID = userID
 	br.IsResolved = true
 	br.ResolvedAt = time.Now()
-	// Essentially checking if the user is a bot
-	// TODO add IsBot to BoostRequest
-	if br.EmbedFields == nil {
-		var err error
-		rd, err := brm.getRoleDiscountsForUser(br.Channel.GuildID, br.RequesterID)
-		if err != nil {
-			log.Printf("Error searching roles for discounts: %v", err)
-		}
-		br.RoleDiscounts = rd
-	}
 	err := brm.repo.ResolveBoostRequest(&br)
 	if err != nil {
 		// Log the error but try to keep things running.
