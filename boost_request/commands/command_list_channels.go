@@ -47,7 +47,8 @@ func listChannelsHandler(ctx *dgc.Ctx) {
 		sb.WriteString(">\nBackend Channel: <#")
 		sb.WriteString(brc.BackendChannelID)
 		sb.WriteString(">\nOptions: ")
-		sb.WriteString(strings.Join(options, ""))
+		sb.WriteString(strings.Join(options, ", "))
+		sb.WriteString("\n")
 	}
 
 	if sb.Len() > 0 {
