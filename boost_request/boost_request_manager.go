@@ -39,6 +39,7 @@ func NewBoostRequestManager(discord *discordgo.Session, repo repository.Reposito
 
 	discord.AddHandler(brm.onMessageCreate)
 	discord.AddHandler(brm.onMessageReactionAdd)
+	discord.AddHandler(brm.onMessageReactionRemove)
 
 	return &brm
 }
@@ -84,6 +85,16 @@ func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session,
 			case StealEmoji:
 				brm.stealBoostRequest(br, event.UserID)
 			}
+		}
+	}
+}
+
+func (brm *BoostRequestManager) onMessageReactionRemove(discord *discordgo.Session, event *discordgo.MessageReactionRemove) {
+	req, ok := brm.activeRequests.Load(event.MessageID)
+	if ok {
+		ar, ok := req.(*activeRequest)
+		if ok {
+			ar.RemoveSignup(event.UserID)
 		}
 	}
 }
@@ -143,17 +154,12 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 			return nil, fmt.Errorf("sending backend signup message: %w", err)
 		}
 	}
-
-	err := brm.discord.MessageReactionAdd(backendMessage.ChannelID, backendMessage.ID, AcceptEmoji)
-	if err != nil {
-		return nil, err
-	}
-	err = brm.discord.MessageReactionAdd(backendMessage.ChannelID, backendMessage.ID, StealEmoji)
-	if err != nil {
-		return nil, err
-	}
-
 	br.BackendMessageID = backendMessage.ID
+
+	err := brm.React(br)
+	if err != nil {
+		return nil, fmt.Errorf("reacting to boost request: %v", err)
+	}
 
 	err = brm.repo.InsertBoostRequest(br)
 	if err != nil {
@@ -175,6 +181,18 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 	}
 
 	return br, nil
+}
+
+func (brm *BoostRequestManager) React(br *repository.BoostRequest) error {
+	err := brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, AcceptEmoji)
+	if err != nil {
+		return err
+	}
+	err = brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, StealEmoji)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Best is defined as the role with the highest weight

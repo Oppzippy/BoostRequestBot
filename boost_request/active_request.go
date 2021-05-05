@@ -12,6 +12,7 @@ type activeRequest struct {
 	AdvertiserChosenCallback func(br repository.BoostRequest, userID string)
 	boostRequest             repository.BoostRequest
 	signupsByDelay           map[int][]userWithPrivileges
+	userDelays               map[string]int
 	quit                     chan struct{}
 	mutex                    sync.Mutex
 	inactive                 bool
@@ -28,6 +29,7 @@ func NewActiveRequest(br repository.BoostRequest, cb func(br repository.BoostReq
 		boostRequest:             br,
 		quit:                     make(chan struct{}),
 		signupsByDelay:           make(map[int][]userWithPrivileges),
+		userDelays:               make(map[string]int),
 	}
 }
 
@@ -38,6 +40,10 @@ func (r *activeRequest) AddSignup(userID string, privileges repository.Advertise
 	if r.inactive {
 		return
 	}
+	_, isSignedUp := r.userDelays[userID]
+	if isSignedUp {
+		r.removeSignupWithoutLocking(userID)
+	}
 
 	endTime := r.boostRequest.CreatedAt.Add(time.Duration(privileges.Delay) * time.Second)
 	if now := time.Now(); now.After(endTime) || now.Equal(endTime) {
@@ -45,6 +51,7 @@ func (r *activeRequest) AddSignup(userID string, privileges repository.Advertise
 		return
 	}
 
+	r.userDelays[userID] = privileges.Delay
 	uwp := userWithPrivileges{userID, privileges}
 
 	if signups := r.signupsByDelay[privileges.Delay]; signups != nil {
@@ -52,6 +59,37 @@ func (r *activeRequest) AddSignup(userID string, privileges repository.Advertise
 	} else {
 		r.signupsByDelay[privileges.Delay] = []userWithPrivileges{uwp}
 		go r.waitForDelay(privileges.Delay, endTime)
+	}
+}
+
+func (r *activeRequest) RemoveSignup(userID string) {
+	r.mutex.Lock()
+	r.removeSignupWithoutLocking(userID)
+	r.mutex.Unlock()
+}
+
+func (r *activeRequest) removeSignupWithoutLocking(userID string) {
+	if r.inactive {
+		return
+	}
+
+	delay, isSignedUp := r.userDelays[userID]
+	if !isSignedUp {
+		return
+	}
+	delete(r.userDelays, userID)
+	signups, ok := r.signupsByDelay[delay]
+	if !ok {
+		return
+	}
+
+	for i, user := range signups {
+		if user.userID == userID {
+			length := len(signups)
+			signups[i] = signups[length-1]
+			r.signupsByDelay[delay] = signups[:length-1]
+			break
+		}
 	}
 }
 

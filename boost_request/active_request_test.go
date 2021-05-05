@@ -141,3 +141,48 @@ func TestRepeatedSetAdvertiser(t *testing.T) {
 		t.Errorf("expected 1 advertiser to be chosen, but %d were chosen", i)
 	}
 }
+
+func TestRepeatedSignupOfSameUser(t *testing.T) {
+	t.Parallel()
+	c := make(chan struct{})
+	ar := boost_request.NewActiveRequest(repository.BoostRequest{
+		Channel: repository.BoostRequestChannel{
+			GuildID:           "guild",
+			FrontendChannelID: "frontend",
+			BackendChannelID:  "backend",
+		},
+		RequesterID:      "requester",
+		BackendMessageID: "backendMessage",
+		Message:          "I would like one boost please!",
+		CreatedAt:        time.Now(),
+	}, func(br repository.BoostRequest, userID string) {
+		c <- struct{}{}
+	})
+
+	p := repository.AdvertiserPrivileges{
+		GuildID: "guild",
+		RoleID:  "advertiser",
+		Weight:  1,
+		Delay:   1,
+	}
+
+	ar.AddSignup("advertiser", p)
+	ar.AddSignup("advertiser", p)
+	ar.AddSignup("advertiser", p)
+	ar.RemoveSignup("advertiser")
+
+	var i int
+	var done bool
+	for !done {
+		select {
+		case <-time.After(1500 * time.Millisecond):
+			done = true
+		case <-c:
+			i++
+		}
+	}
+
+	if i != 0 {
+		t.Errorf("expected 0 advertisers to be chosen, but %d were chosen", i)
+	}
+}
