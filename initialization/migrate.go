@@ -1,19 +1,16 @@
-package main
+package initialization
 
 import (
-	"embed"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/johejo/golang-migrate-extra/source/iofs"
+	"github.com/oppzippy/BoostRequestBot/migrations"
 )
 
-//go:embed migrations/*.sql
-var migrationFS embed.FS
-
 func MigrateUp(dbURL string) error {
-	fs, err := iofs.New(migrationFS, "migrations")
+	fs, err := iofs.New(migrations.MigrationFS, ".")
 	if err != nil {
 		return fmt.Errorf("opening embedded migration fs: %w", err)
 	}

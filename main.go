@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -22,6 +20,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/middleware"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	db_repository "github.com/oppzippy/BoostRequestBot/boost_request/repository/database"
+	"github.com/oppzippy/BoostRequestBot/initialization"
 )
 
 func main() {
@@ -32,23 +31,9 @@ func main() {
 		log.Printf("Error loading .env file: %v", err)
 	}
 
-	dataSourceName := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_DATABASE"),
-	)
-	db, err := sql.Open("mysql", dataSourceName+"?parseTime=true")
+	db, err := initialization.GetDBC()
 	if err != nil {
-		log.Fatalf("Error connecting to database: %v", err)
-	}
-	defer db.Close()
-
-	err = MigrateUp("mysql://" + dataSourceName + "?multiStatements=true")
-	if err != nil {
-		log.Fatalf("Error running database migrations: %v", err)
+		log.Fatalf("Failed to acquire database connection: %v", err)
 	}
 
 	discord, err := discordgo.New("Bot " + os.Getenv("DISCORD_TOKEN"))
@@ -72,7 +57,7 @@ func main() {
 
 	defer brm.Destroy()
 
-	server := api.NewWebAPI(repo)
+	server := api.NewWebAPI(repo, os.Getenv("HTTP_LISTEN_ADDRESS"))
 
 	err = discord.Open()
 	if err != nil {

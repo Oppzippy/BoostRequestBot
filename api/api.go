@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -15,9 +14,9 @@ import (
 
 type contextKey string
 
-func NewWebAPI(repo repository.Repository) *http.Server {
+func NewWebAPI(repo repository.Repository, listenAddress string) *http.Server {
 	server := http.Server{
-		Addr:         os.Getenv("HTTP_LISTEN_ADDRESS"),
+		Addr:         listenAddress,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		Handler:      router(repo),

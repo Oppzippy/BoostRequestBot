@@ -10,7 +10,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type stealCreditsGetResponse struct {
+type StealCreditsGetResponse struct {
 	GuildID string `json:"guildId"`
 	UserID  string `json:"userId"`
 	Credits int    `json:"credits"`
@@ -34,7 +34,7 @@ func getStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseJSON, err := json.Marshal(stealCreditsGetResponse{
+	responseJSON, err := json.Marshal(StealCreditsGetResponse{
 		GuildID: guildID,
 		UserID:  userID,
 		Credits: credits,
