@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 
+	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -16,7 +16,14 @@ type StealCreditsGetResponse struct {
 	Credits int    `json:"credits"`
 }
 
+type StealCreditsPatchRequest struct {
+	Credits   *int    `json:"credits" validate:"required"`
+	Operation *string `json:"operation" validate:"required"`
+}
+
 const okResponse = `{"statusCode": 200, "message": "ok"}`
+
+var validate = validator.New()
 
 func getStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -57,24 +64,18 @@ func adjustStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 	userID := vars["userID"]
 	repo := ctx.Value(contextKey("repo")).(repository.Repository)
 
-	r.ParseForm()
-	creditsStr := r.PostForm.Get("credits")
-	credits, err := strconv.Atoi(creditsStr)
-	if creditsStr == "" || err != nil {
-		resp := ErrorResponse{
-			StatusCode: http.StatusBadRequest,
-			Error:      "Bad Request",
-			Message:    "You must specify an integer number of credits to add in the POST body.",
-		}
-		marshaledResp, err := json.Marshal(resp)
-		if err != nil {
-			log.Printf("Error marshaling bad request: %v", err)
-		}
-		rw.WriteHeader(http.StatusBadRequest)
-		rw.Write(marshaledResp)
+	body := StealCreditsPatchRequest{}
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		badRequest(rw, "Failed to parse request body. Please check the documentation.")
 		return
 	}
-	operation, ok := repository.OperationFromString(r.PostForm.Get("operation"))
+	err = validate.Struct(body)
+	if err != nil {
+		badRequest(rw, "Failed to parse request body. Please check the documentation.")
+		return
+	}
+	operation, ok := repository.OperationFromString(*body.Operation)
 	if !ok {
 		resp := ErrorResponse{
 			StatusCode: http.StatusBadRequest,
@@ -90,7 +91,7 @@ func adjustStealCreditsHandler(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = repo.AdjustStealCreditsForUser(guildID, userID, operation, credits)
+	err = repo.AdjustStealCreditsForUser(guildID, userID, operation, *body.Credits)
 	if err != nil {
 		log.Printf("Error adjusting steal credits: %v", err)
 		rw.WriteHeader(http.StatusInternalServerError)

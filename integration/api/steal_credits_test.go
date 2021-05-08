@@ -3,15 +3,28 @@
 package api_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
+	"github.com/go-playground/validator"
 	"github.com/oppzippy/BoostRequestBot/api"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository/database"
 	"github.com/oppzippy/BoostRequestBot/initialization"
 )
+
+type stealCreditsGetResponse struct {
+	GuildID *string `json:"guildId" validate:"required"`
+	UserID  *string `json:"userId" validate:"required"`
+	Credits *int    `json:"credits" validate:"required"`
+}
+
+type stealCreditsPatchRequest struct {
+	Credits   int    `json:"credits"`
+	Operation string `json:"operation"`
+}
 
 func TestStealCredits(t *testing.T) {
 	db, err := initialization.GetDBC()
@@ -35,29 +48,68 @@ func TestStealCredits(t *testing.T) {
 			t.Errorf("Error creating http request: %v", err)
 			return
 		}
-		req.Header.Add("X-API-Key", apiKey.Key)
+		req.Header.Set("X-API-Key", apiKey.Key)
 		resp, err := client.Do(req)
 		if err != nil {
 			t.Errorf("http error: %v", err)
 			return
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("Got http status code %v, expected 200", resp.Status)
 		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			t.Errorf("error reading from server: %v", err)
 			return
 		}
-		var r api.StealCreditsGetResponse
+		var r stealCreditsGetResponse
 		err = json.Unmarshal(body, &r)
 		if err != nil {
 			t.Errorf("Error parsing json: %v", err)
 			return
 		}
-		if r.Credits != 0 {
+		validate := validator.New()
+		err = validate.Struct(r)
+		if err != nil {
+			t.Errorf("Invalid response schema: %v", err)
+			return
+		}
+		if *r.Credits != 0 {
 			t.Errorf("Expected 0 credits, got %d", r.Credits)
 		}
 	})
 	t.Run("set credits", func(t *testing.T) {
-
+		body := stealCreditsPatchRequest{
+			Credits:   2,
+			Operation: "=",
+		}
+		bodyJSON, err := json.Marshal(body)
+		if err != nil {
+			t.Errorf("Error marshalling body: %v", err)
+			return
+		}
+		req, err := http.NewRequest("PATCH", "http://localhost:8080/v1/users/2/stealCredits", bytes.NewBuffer(bodyJSON))
+		if err != nil {
+			t.Errorf("Error creating http request: %v", err)
+			return
+		}
+		req.Header.Set("X-API-Key", apiKey.Key)
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Errorf("http error: %v", err)
+			return
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("Got http status code code %v, expected 200", resp.Status)
+		}
+		credits, err := repo.GetStealCreditsForUser(apiKey.GuildID, "2")
+		if err != nil {
+			t.Errorf("Error fetching credits: %v", err)
+			return
+		}
+		if credits != 2 {
+			t.Errorf("Set credits to 2 but ended up with %v", credits)
+		}
 	})
 	t.Run("add credits", func(t *testing.T) {
 

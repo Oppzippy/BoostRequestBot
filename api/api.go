@@ -74,7 +74,7 @@ func apiKeyMiddleware(repo repository.Repository) mux.MiddlewareFunc {
 			}
 			if key != "" {
 				apiKey, err := repo.GetAPIKey(key)
-				if err != nil {
+				if err == nil {
 					ctx := context.WithValue(r.Context(), contextKey("isAuthorized"), true)
 					ctx = context.WithValue(ctx, contextKey("guildID"), apiKey.GuildID)
 
