@@ -16,14 +16,14 @@ type StealCreditsPatchRequest struct {
 }
 
 type StealCreditsPatch struct {
-	repo     repository.Repository
-	validate *json_unmarshaler.Unmarshaler
+	repo        repository.Repository
+	unmarshaler *json_unmarshaler.Unmarshaler
 }
 
 func NewStealCreditsPatchHandler(repo repository.Repository) *StealCreditsPatch {
 	return &StealCreditsPatch{
-		repo:     repo,
-		validate: json_unmarshaler.New(),
+		repo:        repo,
+		unmarshaler: json_unmarshaler.New(),
 	}
 }
 
@@ -35,7 +35,7 @@ func (h *StealCreditsPatch) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	userID := vars["userID"]
 
 	body := StealCreditsPatchRequest{}
-	err := h.validate.UnmarshalReader(r.Body, &body)
+	err := h.unmarshaler.UnmarshalReader(r.Body, &body)
 	if err != nil {
 		badRequest(rw, "Failed to parse request body. Please check the documentation.")
 		return
