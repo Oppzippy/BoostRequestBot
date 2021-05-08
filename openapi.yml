@@ -7,6 +7,8 @@ servers:
 paths:
   /users/{userId}/stealCredits:
     get:
+      tags:
+        - users
       parameters:
         - in: path
           name: userId
@@ -25,6 +27,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     patch:
+      tags:
+        - users
       parameters:
         - in: path
           name: userId
