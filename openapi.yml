@@ -38,7 +38,7 @@ paths:
               $ref: '#/components/schemas/PatchStealCreditsRequest'
       responses:
         '200':
-          description: OK
+          $ref: '#/components/responses/OK'
         '400':
           $ref: '#/components/responses/BadRequestError'
         '401':
@@ -53,26 +53,42 @@ components:
       in: header
       name: X-API-Key
   responses:
+    OK:
+      description: The action has been exectuted successfully.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenericResponse'
     BadRequestError:
       description: The request schema is invalid.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: "#/components/schemas/ErrorResponse"
     UnauthorizedError:
       description: API key is invalid.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: "#/components/schemas/ErrorResponse"
     InternalServerError:
       description: Internal server error.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
-    Error:
+    GenericResponse:
+      description: Error response.
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code.
+        message:
+          type: string
+          description: Description of what went wrong.
+    ErrorResponse:
       description: Error response.
       type: object
       properties:
