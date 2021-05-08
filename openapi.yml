@@ -79,7 +79,7 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
   schemas:
     GenericResponse:
-      description: Error response.
+      description: Default response when an action was completed but no more information is provided.
       type: object
       properties:
         statusCode:
