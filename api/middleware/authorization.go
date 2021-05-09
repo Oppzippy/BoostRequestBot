@@ -23,7 +23,7 @@ func RequireAuthorizationMiddleware() mux.MiddlewareFunc {
 			resp, err := json.Marshal(routes.GenericResponse{
 				StatusCode: http.StatusUnauthorized,
 				Error:      "Unauthorized",
-				Message:    "You must authenticate with the HTTP header 'Authorization: Bearer YOUR_API_KEY'",
+				Message:    "You must authenticate with the HTTP header 'X-API-Key: YOUR_API_KEY'",
 			})
 			if err != nil {
 				log.Printf("Error marshalling error response: %v", err)
