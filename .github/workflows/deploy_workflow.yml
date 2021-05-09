@@ -61,7 +61,7 @@ jobs:
         run: mkdir sdk_zip
       - name: Build Python sdk
         run: |
-          VERSION=$(echo $GITHUB_REF | sed -E "s/\/refs\/tags\/v?//g")
+          VERSION=$(echo $GITHUB_REF | sed -E "s/\/?refs\/tags\/v?//g")
           echo packageVersion: $VERSION >> openapi-config-python.yml
           java -jar openapi-generator-cli.jar generate -i openapi.yml -g python -o python_sdk --package-name boostrequestbotapi --config openapi-config-python.yml
           zip -r sdk_zip/BoostRequestBot_Python_SDK.zip python_sdk
