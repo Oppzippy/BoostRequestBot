@@ -102,13 +102,14 @@ func TestStealCredits(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Got http status code code %v, expected 200", resp.Status)
 		}
-		credits, err := repo.GetStealCreditsForUser(apiKey.GuildID, "2")
+		var r stealCreditsGetResponse
+		err = json.NewDecoder(resp.Body).Decode(&r)
 		if err != nil {
 			t.Errorf("Error fetching credits: %v", err)
 			return
 		}
-		if credits != 2 {
-			t.Errorf("Set credits to 2 but ended up with %v", credits)
+		if *r.Credits != 2 {
+			t.Errorf("Set credits to 2 but ended up with %v", *r.Credits)
 		}
 	})
 	t.Run("add credits", func(t *testing.T) {

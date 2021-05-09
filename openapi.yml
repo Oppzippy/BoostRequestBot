@@ -47,7 +47,11 @@ paths:
         required: true
       responses:
         '200':
-          $ref: '#/components/responses/OK'
+          description: New number of boost request steal credits available to the user in a JSON object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStealCredits'
         '400':
           $ref: '#/components/responses/BadRequestError'
         '401':

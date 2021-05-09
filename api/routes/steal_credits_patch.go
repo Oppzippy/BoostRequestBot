@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -52,5 +53,24 @@ func (h *StealCreditsPatch) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		internalServerError(rw, "No changes were made.")
 		return
 	}
-	respondOK(rw)
+
+	credits, err := h.repo.GetStealCreditsForUser(guildID, userID)
+	if err != nil {
+		log.Printf("Error fetching steal credits for user: %v", err)
+		respondOK(rw)
+		return
+	}
+
+	responseJSON, err := json.Marshal(StealCreditsGetResponse{
+		GuildID: guildID,
+		UserID:  userID,
+		Credits: credits,
+	})
+
+	if err != nil {
+		log.Printf("Error marshalling GET steal credits response: %v", err)
+		respondOK(rw)
+		return
+	}
+	rw.Write(responseJSON)
 }
