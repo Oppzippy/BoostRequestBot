@@ -1,6 +1,7 @@
 package boost_request_test
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -185,4 +186,67 @@ func TestRepeatedSignupOfSameUser(t *testing.T) {
 	if i != 0 {
 		t.Errorf("expected 0 advertisers to be chosen, but %d were chosen", i)
 	}
+}
+
+func TestRandomness(t *testing.T) {
+	t.Parallel()
+	numRuns := 10000
+	winners := make(chan string)
+	for i := 0; i < numRuns; i++ {
+		runIteration(winners)
+	}
+	winCount := make(map[string]int)
+	for i := 0; i < numRuns; i++ {
+		winner := <-winners
+		winCount[winner] = winCount[winner] + 1
+	}
+
+	advertiser1WinRate := float64(winCount["advertiser1"]) / float64(numRuns)
+	advertiser2WinRate := float64(winCount["advertiser2"]) / float64(numRuns)
+	advertiser3WinRate := float64(winCount["advertiser3"]) / float64(numRuns)
+
+	if math.Abs(advertiser1WinRate-1.0/6.0) > 0.01 {
+		t.Errorf("Expected %f win rate for advertiser1, got %f", 1.0/6.0, advertiser1WinRate)
+	}
+	if math.Abs(advertiser2WinRate-2.0/6.0) > 0.01 {
+		t.Errorf("Expected %f win rate for advertiser2, got %f", 2.0/6.0, advertiser2WinRate)
+	}
+	if math.Abs(advertiser3WinRate-3.0/6.0) > 0.01 {
+		t.Errorf("Expected %f win rate for advertiser3, got %f", 3.0/6.0, advertiser3WinRate)
+	}
+}
+
+func runIteration(winners chan string) {
+	ar := boost_request.NewActiveRequest(repository.BoostRequest{
+		Channel: repository.BoostRequestChannel{
+			GuildID:           "guild",
+			FrontendChannelID: "frontend",
+			BackendChannelID:  "backend",
+		},
+		RequesterID:      "requester",
+		BackendMessageID: "backendMessage",
+		Message:          "I would like one boost please!",
+		CreatedAt:        time.Now(),
+	}, func(br repository.BoostRequest, userID string) {
+		winners <- userID
+	})
+
+	ar.AddSignup("advertiser1", repository.AdvertiserPrivileges{
+		GuildID: "guild",
+		RoleID:  "advertiser1",
+		Weight:  1,
+		Delay:   1,
+	})
+	ar.AddSignup("advertiser2", repository.AdvertiserPrivileges{
+		GuildID: "guild",
+		RoleID:  "advertiser2",
+		Weight:  2,
+		Delay:   1,
+	})
+	ar.AddSignup("advertiser3", repository.AdvertiserPrivileges{
+		GuildID: "guild",
+		RoleID:  "advertiser3",
+		Weight:  3,
+		Delay:   1,
+	})
 }
