@@ -1,6 +1,7 @@
 package boost_request
 
 import (
+	"log"
 	"math/rand"
 	"sync"
 	"time"
@@ -119,9 +120,14 @@ func (r *activeRequest) chooseAdvertiser(delay int) (string, bool) {
 	}
 	var chosenWeight float64 = rand.Float64() * totalWeight
 
+	log.Printf("Chose weight %f, total weight %f", chosenWeight, totalWeight)
+	for _, user := range users {
+		log.Printf("%s: weight %f", user.userID, user.privileges.Weight)
+	}
 	var currentWeight float64
 	for _, user := range users {
 		currentWeight += user.privileges.Weight
+		log.Printf("%s, current cumulative weight %f", user.userID, currentWeight)
 		if chosenWeight < currentWeight {
 			return user.userID, true
 		}
