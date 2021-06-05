@@ -11,7 +11,7 @@ jobs:
       - name: Use Go
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.16.3
+          go-version: ^1.16.5
       - name: Test
         run: go test -v ./...
       - name: Build
@@ -26,7 +26,7 @@ jobs:
       - name: Use Go
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.16.3
+          go-version: ^1.16.5
       - name: Build
         run: go build
       - name: SCP
