@@ -111,7 +111,7 @@ func (r *activeRequest) setAdvertiserWithoutLocking(userID string) (ok bool) {
 }
 
 // mutex should be locked before calling this method
-func (r *activeRequest) chooseAdvertiser(delay int) (string, bool) {
+func (r *activeRequest) chooseAdvertiser(delay int) (advertiserID string, ok bool) {
 	users := r.signupsByDelay[delay]
 	var totalWeight float64
 	for _, user := range users {
