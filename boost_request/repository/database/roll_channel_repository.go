@@ -6,9 +6,9 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-func (repo *dbRepository) GetLogChannel(guildID string) (channelID string, err error) {
+func (repo *dbRepository) GetRollChannel(guildID string) (channelID string, err error) {
 	row := repo.db.QueryRow(
-		"SELECT channel_id FROM log_channel WHERE guild_id = ?",
+		"SELECT channel_id FROM roll_channel WHERE guild_id = ?",
 		guildID,
 	)
 	err = row.Scan(&channelID)
@@ -21,9 +21,9 @@ func (repo *dbRepository) GetLogChannel(guildID string) (channelID string, err e
 	return channelID, nil
 }
 
-func (repo *dbRepository) InsertLogChannel(guildID, channelID string) error {
+func (repo *dbRepository) InsertRollChannel(guildID string, channelID string) error {
 	_, err := repo.db.Exec(
-		`INSERT INTO log_channel (guild_id, channel_id)
+		`INSERT INTO roll_channel (guild_id, channel_id) 
 			VALUES (?, ?)
 			ON DUPLICATE KEY UPDATE
 				channel_id = VALUES(channel_id)`,
@@ -33,7 +33,7 @@ func (repo *dbRepository) InsertLogChannel(guildID, channelID string) error {
 	return err
 }
 
-func (repo *dbRepository) DeleteLogChannel(guildID string) error {
-	_, err := repo.db.Exec("DELETE FROM log_channel WHERE guild_id = ?", guildID)
+func (repo *dbRepository) DeleteRollChannel(guildID string) error {
+	_, err := repo.db.Exec("DELETE FROM roll_channel WHERE guild_id = ?", guildID)
 	return err
 }

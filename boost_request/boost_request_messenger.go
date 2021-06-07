@@ -1,6 +1,7 @@
 package boost_request
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+	"github.com/oppzippy/BoostRequestBot/roll"
 	"github.com/shopspring/decimal"
 )
 
@@ -161,6 +163,46 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(disco
 		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithHumanRequester(discord, br)
 		return m, err
 	}
+}
+
+func (messenger *BoostRequestMessenger) SendRoll(discord *discordgo.Session, channelID string, br *repository.BoostRequest, rollResults *roll.WeightedRollResults) (*discordgo.Message, error) {
+	if rollResults == nil {
+		return nil, errors.New("rollResults must not be nil")
+	}
+
+	sb := strings.Builder{}
+	var weightAccumulator float64
+	for iter := rollResults.Iterator(); iter.HasNext(); {
+		advertiserID, weight, isChosenItem := iter.Next()
+		weightAccumulator += weight
+
+		sb.WriteString(fmt.Sprintf(
+			"<@%s>: %s to %s",
+			advertiserID,
+			messenger.formatFloat(weightAccumulator-weight),
+			messenger.formatFloat(weightAccumulator),
+		))
+		if isChosenItem {
+			sb.WriteString(fmt.Sprintf(
+				"   **<-- %s**",
+				messenger.formatFloat(rollResults.Roll()),
+			))
+		}
+		sb.WriteString("\n")
+	}
+
+	message, err := discord.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+		Content: br.Message,
+		Embed: &discordgo.MessageEmbed{
+			Title:       "Roll Results",
+			Description: sb.String(),
+			Timestamp:   time.Now().Format(time.RFC3339),
+			Footer:      footer,
+		},
+		AllowedMentions: &discordgo.MessageAllowedMentions{},
+	})
+
+	return message, err
 }
 
 func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHumanRequester(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
@@ -360,4 +402,11 @@ func (messenger *BoostRequestMessenger) getRoleName(discord *discordgo.Session, 
 		}
 	}
 	return ""
+}
+
+func (messenger *BoostRequestMessenger) formatFloat(f float64) string {
+	return strings.TrimRight(
+		strings.TrimRight(fmt.Sprintf("%.2f", f), "0"),
+		".",
+	)
 }

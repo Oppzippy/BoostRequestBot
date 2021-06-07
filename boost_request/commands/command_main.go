@@ -30,6 +30,9 @@ var MainCommand = dgc.Command{
 		&setRoleDiscountCommand,
 		&listRoleDiscountsCommand,
 		&removeRoleDiscountCommand,
+		// Boost request RNG Rolls
+		&setRollChannelCommand,
+		&removeRollChannelCommand,
 	},
 
 	Handler: mainCommandHandler,

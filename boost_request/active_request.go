@@ -1,15 +1,21 @@
 package boost_request
 
 import (
-	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+	"github.com/oppzippy/BoostRequestBot/roll"
 )
 
+type AdvertiserChosenEvent struct {
+	BoostRequest repository.BoostRequest
+	UserID       string
+	RollResults  *roll.WeightedRollResults
+}
+
 type activeRequest struct {
-	AdvertiserChosenCallback func(br repository.BoostRequest, userID string)
+	AdvertiserChosenCallback func(*AdvertiserChosenEvent)
 	boostRequest             repository.BoostRequest
 	signupsByDelay           map[int][]userWithPrivileges
 	userDelays               map[string]int
@@ -23,7 +29,7 @@ type userWithPrivileges struct {
 	privileges repository.AdvertiserPrivileges
 }
 
-func NewActiveRequest(br repository.BoostRequest, cb func(br repository.BoostRequest, userID string)) *activeRequest {
+func NewActiveRequest(br repository.BoostRequest, cb func(*AdvertiserChosenEvent)) *activeRequest {
 	return &activeRequest{
 		AdvertiserChosenCallback: cb,
 		boostRequest:             br,
@@ -47,7 +53,10 @@ func (r *activeRequest) AddSignup(userID string, privileges repository.Advertise
 
 	endTime := r.boostRequest.CreatedAt.Add(time.Duration(privileges.Delay) * time.Second)
 	if now := time.Now(); now.After(endTime) || now.Equal(endTime) {
-		r.setAdvertiserWithoutLocking(userID)
+		r.setAdvertiserWithoutLocking(&AdvertiserChosenEvent{
+			BoostRequest: r.boostRequest,
+			UserID:       userID,
+		})
 		return
 	}
 
@@ -95,38 +104,37 @@ func (r *activeRequest) removeSignupWithoutLocking(userID string) {
 
 func (r *activeRequest) SetAdvertiser(userID string) (ok bool) {
 	r.mutex.Lock()
-	ok = r.setAdvertiserWithoutLocking(userID)
+	ok = r.setAdvertiserWithoutLocking(&AdvertiserChosenEvent{
+		BoostRequest: r.boostRequest,
+		UserID:       userID,
+	})
 	r.mutex.Unlock()
 	return ok
 }
 
-func (r *activeRequest) setAdvertiserWithoutLocking(userID string) (ok bool) {
+func (r *activeRequest) setAdvertiserWithoutLocking(event *AdvertiserChosenEvent) (ok bool) {
 	ok = !r.inactive
 	if ok {
 		close(r.quit)
 		r.inactive = true
-		go r.AdvertiserChosenCallback(r.boostRequest, userID)
+		go r.AdvertiserChosenCallback(event)
 	}
 	return ok
 }
 
 // mutex should be locked before calling this method
-func (r *activeRequest) chooseAdvertiser(delay int) (advertiserID string, ok bool) {
+func (r *activeRequest) chooseAdvertiser(delay int) (rollInfo *roll.WeightedRollResults, ok bool) {
 	users := r.signupsByDelay[delay]
-	var totalWeight float64
-	for _, user := range users {
-		totalWeight += user.privileges.Weight
+	if len(users) == 0 {
+		return nil, false
 	}
-	var chosenWeight float64 = rand.Float64() * totalWeight
 
-	var currentWeight float64
+	weightedRoll := roll.NewWeightedRoll(len(users))
 	for _, user := range users {
-		currentWeight += user.privileges.Weight
-		if chosenWeight < currentWeight {
-			return user.userID, true
-		}
+		weightedRoll.AddItem(user.userID, user.privileges.Weight)
 	}
-	return "", false
+	results, ok := weightedRoll.Roll()
+	return results, ok
 }
 
 func (r *activeRequest) waitForDelay(delay int, endTime time.Time) {
@@ -137,8 +145,13 @@ func (r *activeRequest) waitForDelay(delay int, endTime time.Time) {
 	}
 	r.mutex.Lock()
 	if !r.inactive {
-		if advertiserID, ok := r.chooseAdvertiser(delay); ok {
-			r.setAdvertiserWithoutLocking(advertiserID)
+		if rollResults, ok := r.chooseAdvertiser(delay); ok {
+			advertiserID := rollResults.ChosenItem()
+			r.setAdvertiserWithoutLocking(&AdvertiserChosenEvent{
+				BoostRequest: r.boostRequest,
+				UserID:       advertiserID,
+				RollResults:  rollResults,
+			})
 		}
 	}
 	r.mutex.Unlock()

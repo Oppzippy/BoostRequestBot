@@ -18,6 +18,7 @@ type Repository interface {
 	LogChannelRepository
 	RoleDiscountRepository
 	StealCreditRepository
+	RollChannelRepository
 }
 
 type ApiKeyRepository interface {
@@ -99,4 +100,14 @@ type StealCreditRepository interface {
 	AdjustStealCreditsForUser(guildID, userID string, operation Operation, amount int) error
 	// UpdateStealCreditsForUser Short version of AdjustStealCreditsForUser with OperationSet
 	UpdateStealCreditsForUser(guildID, userID string, amount int) error
+}
+
+type RollChannelRepository interface {
+	// GetRollChannel Returns the channel ID that boost request RNG rolls should be posted to
+	// or ErrNoResults if rolls should not be posted
+	GetRollChannel(guildID string) (channelID string, err error)
+	// InsertRollChannel Sets the channel that boost request RNG rolls should be posted to
+	InsertRollChannel(guildID, channelID string) error
+	// DeleteRollChannel Stops posting boost request RNG rolls
+	DeleteRollChannel(guildID string) error
 }

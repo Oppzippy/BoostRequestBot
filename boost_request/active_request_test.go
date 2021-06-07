@@ -23,7 +23,7 @@ func TestImmediateSignup(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        start,
-	}, func(br repository.BoostRequest, userID string) {
+	}, func(event *boost_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 
@@ -63,7 +63,7 @@ func TestLateSignup(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(br repository.BoostRequest, userID string) {
+	}, func(event *boost_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 	<-time.After(2 * time.Second)
@@ -94,7 +94,7 @@ func TestSetAdvertiser(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(br repository.BoostRequest, userID string) {
+	}, func(event *boost_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 
@@ -119,7 +119,7 @@ func TestRepeatedSetAdvertiser(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(br repository.BoostRequest, userID string) {
+	}, func(event *boost_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 
@@ -156,7 +156,7 @@ func TestRepeatedSignupOfSameUser(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(br repository.BoostRequest, userID string) {
+	}, func(event *boost_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 
@@ -227,8 +227,8 @@ func runIteration(winners chan string) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(br repository.BoostRequest, userID string) {
-		winners <- userID
+	}, func(event *boost_request.AdvertiserChosenEvent) {
+		winners <- event.UserID
 	})
 
 	ar.AddSignup("advertiser1", repository.AdvertiserPrivileges{

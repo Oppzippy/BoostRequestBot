@@ -266,7 +266,10 @@ func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, u
 	return ok
 }
 
-func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID string) {
+func (brm *BoostRequestManager) setWinner(event *AdvertiserChosenEvent) {
+	br := event.BoostRequest
+	userID := event.UserID
+
 	brm.activeRequests.Delete(br.BackendMessageID)
 	br.AdvertiserID = userID
 	br.IsResolved = true
@@ -282,19 +285,34 @@ func (brm *BoostRequestManager) setWinner(br repository.BoostRequest, userID str
 	if err != nil {
 		log.Printf("Error removing all reactions: %v", err)
 	}
+
 	brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, ResolvedEmoji)
 	_, err = brm.messenger.SendBackendAdvertiserChosenMessage(brm.discord, &br)
 	if err != nil {
 		log.Printf("Error sending message to boost request backend: %v", err)
 	}
+
 	_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
 	if err != nil {
 		log.Printf("Error sending advertsier chosen DM to advertiser: %v", err)
 	}
+
 	if !br.Channel.SkipsBuyerDM {
 		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(brm.discord, &br)
 		if err != nil {
 			log.Printf("Error sending advertiser chosen DM to requester: %v", err)
+		}
+	}
+
+	rollChannel, err := brm.repo.GetRollChannel(br.Channel.GuildID)
+	if err != nil {
+		if err != repository.ErrNoResults {
+			fmt.Printf("Error fetching log channel: %v", err)
+		}
+	} else {
+		_, err := brm.messenger.SendRoll(brm.discord, rollChannel, &br, event.RollResults)
+		if err != nil {
+			fmt.Printf("Error sending roll message: %v", err)
 		}
 	}
 }
