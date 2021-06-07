@@ -27,7 +27,7 @@ func NewBoostRequestManager(discord *discordgo.Session, repo repository.Reposito
 	brm := BoostRequestManager{
 		discord:        discord,
 		repo:           repo,
-		messenger:      NewBoostRequestMessenger(),
+		messenger:      NewBoostRequestMessenger(discord),
 		activeRequests: new(sync.Map),
 		isLoadedLock:   new(sync.Mutex),
 	}
@@ -45,7 +45,7 @@ func NewBoostRequestManager(discord *discordgo.Session, repo repository.Reposito
 }
 
 func (brm *BoostRequestManager) Destroy() {
-	brm.messenger.Destroy(brm.discord)
+	brm.messenger.Destroy()
 }
 
 func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, event *discordgo.MessageCreate) {
@@ -149,7 +149,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		backendMessage = message
 	} else {
 		var err error
-		backendMessage, err = brm.messenger.SendBackendSignupMessage(brm.discord, br)
+		backendMessage, err = brm.messenger.SendBackendSignupMessage(br)
 		if err != nil {
 			return nil, fmt.Errorf("sending backend signup message: %w", err)
 		}
@@ -167,7 +167,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 	}
 
 	if !brc.SkipsBuyerDM {
-		brm.messenger.SendBoostRequestCreatedDM(brm.discord, br)
+		brm.messenger.SendBoostRequestCreatedDM(br)
 	}
 	brm.activeRequests.Store(br.BackendMessageID, NewActiveRequest(*br, brm.setWinner))
 
@@ -176,7 +176,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		if err != nil {
 			log.Printf("Error fetching log channel: %v", err)
 		} else {
-			brm.messenger.SendLogChannelMessage(brm.discord, br, logChannel)
+			brm.messenger.SendLogChannelMessage(br, logChannel)
 		}
 	}
 
@@ -261,7 +261,7 @@ func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, u
 			log.Printf("Error subtracting boost request credits after use: %v", err)
 			return false
 		}
-		go brm.messenger.SendCreditsUpdateDM(brm.discord, userID, credits-1)
+		go brm.messenger.SendCreditsUpdateDM(userID, credits-1)
 	}
 	return ok
 }
@@ -287,18 +287,18 @@ func (brm *BoostRequestManager) setWinner(event *AdvertiserChosenEvent) {
 	}
 
 	brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, ResolvedEmoji)
-	_, err = brm.messenger.SendBackendAdvertiserChosenMessage(brm.discord, &br)
+	_, err = brm.messenger.SendBackendAdvertiserChosenMessage(&br)
 	if err != nil {
 		log.Printf("Error sending message to boost request backend: %v", err)
 	}
 
-	_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(brm.discord, &br)
+	_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(&br)
 	if err != nil {
 		log.Printf("Error sending advertsier chosen DM to advertiser: %v", err)
 	}
 
 	if !br.Channel.SkipsBuyerDM {
-		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(brm.discord, &br)
+		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(&br)
 		if err != nil {
 			log.Printf("Error sending advertiser chosen DM to requester: %v", err)
 		}
@@ -310,7 +310,7 @@ func (brm *BoostRequestManager) setWinner(event *AdvertiserChosenEvent) {
 			fmt.Printf("Error fetching log channel: %v", err)
 		}
 	} else {
-		_, err := brm.messenger.SendRoll(brm.discord, rollChannel, &br, event.RollResults)
+		_, err := brm.messenger.SendRoll(rollChannel, &br, event.RollResults)
 		if err != nil {
 			fmt.Printf("Error sending roll message: %v", err)
 		}

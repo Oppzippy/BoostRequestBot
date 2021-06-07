@@ -16,6 +16,7 @@ import (
 
 type BoostRequestMessenger struct {
 	Destroyed bool
+	discord   *discordgo.Session
 	waitGroup *sync.WaitGroup
 	quit      chan struct{}
 }
@@ -25,27 +26,28 @@ var footer = &discordgo.MessageEmbedFooter{
 	IconURL: "https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png",
 }
 
-func NewBoostRequestMessenger() *BoostRequestMessenger {
+func NewBoostRequestMessenger(discord *discordgo.Session) *BoostRequestMessenger {
 	brm := BoostRequestMessenger{
 		Destroyed: false,
+		discord:   discord,
 		waitGroup: new(sync.WaitGroup),
 		quit:      make(chan struct{}),
 	}
 	return &brm
 }
 
-func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.BoostRequest) (*discordgo.Message, error) {
 	var fields []*discordgo.MessageEmbedField
 
 	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
 		fields = make([]*discordgo.MessageEmbedField, 1)
 		fields[0] = &discordgo.MessageEmbedField{
 			Name:  "The requester is eligible for discounts",
-			Value: messenger.formatDiscounts(discord, br),
+			Value: messenger.formatDiscounts(br),
 		}
 	}
 
-	message, err := discord.ChannelMessageSendEmbed(br.Channel.BackendChannelID, &discordgo.MessageEmbed{
+	message, err := messenger.discord.ChannelMessageSendEmbed(br.Channel.BackendChannelID, &discordgo.MessageEmbed{
 		Color:       0x0000FF,
 		Title:       "New Boost Request",
 		Description: br.Message,
@@ -57,13 +59,13 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(discord *discor
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
-	requester, err := discord.User(br.RequesterID)
+func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository.BoostRequest) (*discordgo.Message, error) {
+	requester, err := messenger.discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
 	}
-	dmChannel, _ := discord.UserChannelCreate(requester.ID)
-	message, err := discord.ChannelMessageSendComplex(dmChannel.ID, &discordgo.MessageSend{
+	dmChannel, _ := messenger.discord.UserChannelCreate(requester.ID)
+	message, err := messenger.discord.ChannelMessageSendComplex(dmChannel.ID, &discordgo.MessageSend{
 		Content: "Please wait while we find an advertiser to complete your request.",
 		Embed: &discordgo.MessageEmbed{
 			Title: "Huokan Boosting Community Boost Request",
@@ -80,21 +82,27 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(discord *disco
 	if err != nil {
 		restErr, ok := err.(*discordgo.RESTError)
 		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(discord, br.Channel.FrontendChannelID, requester.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
+			messenger.sendTemporaryMessage(
+				br.Channel.FrontendChannelID,
+				requester.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server "+
+					"and enabling \"Allow direct messages from server members.\" in Privacy Settings.",
+			)
 		}
 		return nil, err
 	}
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
-	advertiser, err := discord.User(br.AdvertiserID)
+func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
+	br *repository.BoostRequest,
+) (*discordgo.Message, error) {
+	advertiser, err := messenger.discord.User(br.AdvertiserID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	message, err := discord.ChannelMessageSendEmbed(br.Channel.BackendChannelID, &discordgo.MessageEmbed{
+	message, err := messenger.discord.ChannelMessageSendEmbed(br.Channel.BackendChannelID, &discordgo.MessageEmbed{
 		Color:       0xFF0000,
 		Title:       "An advertiser has been selected.",
 		Description: advertiser.Mention() + " will handle the following boost request.",
@@ -107,20 +115,27 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(disco
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
-	requester, err := discord.User(br.RequesterID)
+func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
+	br *repository.BoostRequest,
+) (*discordgo.Message, error) {
+	requester, err := messenger.discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
 	}
-	advertiser, err := discord.User(br.AdvertiserID)
+	advertiser, err := messenger.discord.User(br.AdvertiserID)
 	if err != nil {
 		return nil, err
 	}
-	dmChannel, err := discord.UserChannelCreate(requester.ID)
+	dmChannel, err := messenger.discord.UserChannelCreate(requester.ID)
 	if err != nil {
 		restErr, ok := err.(discordgo.RESTError)
 		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(discord, br.Channel.FrontendChannelID, requester.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings and post your message again.")
+			messenger.sendTemporaryMessage(
+				br.Channel.FrontendChannelID,
+				requester.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the "+
+					"server and enabling \"Allow direct messages from server members.\" in Privacy Settings and post "+
+					"your message again.",
+			)
 		}
 		return nil, err
 	}
@@ -137,11 +152,11 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discor
 		fields = make([]*discordgo.MessageEmbedField, 1)
 		fields[0] = &discordgo.MessageEmbedField{
 			Name:  "You are eligible for discounts",
-			Value: messenger.formatDiscounts(discord, br),
+			Value: messenger.formatDiscounts(br),
 		}
 	}
 
-	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
+	message, err := messenger.discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
 		Color:       0x00FF00,
 		Title:       "Huokan Boosting Community Boost Request",
 		Description: sb.String(),
@@ -155,17 +170,21 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(discor
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
+	br *repository.BoostRequest,
+) (*discordgo.Message, error) {
 	if br.EmbedFields != nil {
-		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithBotRequester(discord, br)
+		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithBotRequester(br)
 		return m, err
 	} else {
-		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithHumanRequester(discord, br)
+		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithHumanRequester(br)
 		return m, err
 	}
 }
 
-func (messenger *BoostRequestMessenger) SendRoll(discord *discordgo.Session, channelID string, br *repository.BoostRequest, rollResults *roll.WeightedRollResults) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendRoll(
+	channelID string, br *repository.BoostRequest, rollResults *roll.WeightedRollResults,
+) (*discordgo.Message, error) {
 	if rollResults == nil {
 		return nil, errors.New("rollResults must not be nil")
 	}
@@ -191,7 +210,7 @@ func (messenger *BoostRequestMessenger) SendRoll(discord *discordgo.Session, cha
 		sb.WriteString("\n")
 	}
 
-	message, err := discord.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+	message, err := messenger.discord.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 		Content: br.Message,
 		Embed: &discordgo.MessageEmbed{
 			Title:       "Roll Results",
@@ -205,21 +224,26 @@ func (messenger *BoostRequestMessenger) SendRoll(discord *discordgo.Session, cha
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHumanRequester(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
-	requester, err := discord.User(br.RequesterID)
+func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHumanRequester(
+	br *repository.BoostRequest,
+) (*discordgo.Message, error) {
+	requester, err := messenger.discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
 	}
-	advertiser, err := discord.User(br.AdvertiserID)
+	advertiser, err := messenger.discord.User(br.AdvertiserID)
 	if err != nil {
 		return nil, err
 	}
-	dmChannel, err := discord.UserChannelCreate(advertiser.ID)
+	dmChannel, err := messenger.discord.UserChannelCreate(advertiser.ID)
 	if err != nil {
 		restErr, ok := err.(discordgo.RESTError)
 		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(discord, br.Channel.BackendChannelID, advertiser.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
-			_, err := discord.ChannelMessageSend(br.Channel.BackendChannelID, "Please DM "+requester.Mention()+" ("+requester.String()+").")
+			messenger.sendTemporaryMessage(
+				br.Channel.BackendChannelID,
+				advertiser.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.",
+			)
+			_, err := messenger.discord.ChannelMessageSend(br.Channel.BackendChannelID, "Please DM "+requester.Mention()+" ("+requester.String()+").")
 			if err != nil {
 				log.Printf("Failed to send backup message after failed DM: %v", err)
 			}
@@ -239,11 +263,11 @@ func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHu
 	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:  "The requester is eligible for discounts",
-			Value: messenger.formatDiscounts(discord, br),
+			Value: messenger.formatDiscounts(br),
 		})
 	}
 
-	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
+	message, err := messenger.discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
 		Color:       0xFF0000,
 		Title:       "You have been selected to handle a boost request.",
 		Description: sb.String(),
@@ -255,21 +279,23 @@ func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHu
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithBotRequester(discord *discordgo.Session, br *repository.BoostRequest) (*discordgo.Message, error) {
-	advertiser, err := discord.User(br.AdvertiserID)
+func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithBotRequester(
+	br *repository.BoostRequest,
+) (*discordgo.Message, error) {
+	advertiser, err := messenger.discord.User(br.AdvertiserID)
 	if err != nil {
 		return nil, err
 	}
-	dmChannel, err := discord.UserChannelCreate(advertiser.ID)
+	dmChannel, err := messenger.discord.UserChannelCreate(advertiser.ID)
 	if err != nil {
 		restErr, ok := err.(discordgo.RESTError)
 		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(discord, br.Channel.BackendChannelID, advertiser.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
+			messenger.sendTemporaryMessage(br.Channel.BackendChannelID, advertiser.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
 		}
 		return nil, err
 	}
 
-	message, err := discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
+	message, err := messenger.discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
 		Color:       0xFF0000,
 		Title:       "You have been selected to handle a boost request.",
 		Description: "Please message the user listed below.",
@@ -283,13 +309,13 @@ func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithBo
 
 // Logs the creation of a boost request to a channel only moderators can view
 func (messenger *BoostRequestMessenger) SendLogChannelMessage(
-	discord *discordgo.Session, br *repository.BoostRequest, channelID string,
+	br *repository.BoostRequest, channelID string,
 ) (*discordgo.Message, error) {
 	if br.EmbedFields != nil {
 		// TODO return an error
 		return nil, nil
 	}
-	user, err := discord.User(br.RequesterID)
+	user, err := messenger.discord.User(br.RequesterID)
 	if err != nil {
 		return nil, err
 	}
@@ -307,12 +333,12 @@ func (messenger *BoostRequestMessenger) SendLogChannelMessage(
 		Footer:    footer,
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
-	message, err := discord.ChannelMessageSendEmbed(channelID, embed)
+	message, err := messenger.discord.ChannelMessageSendEmbed(channelID, embed)
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(discord *discordgo.Session, userID string, credits int) (*discordgo.Message, error) {
-	dmChannel, err := discord.UserChannelCreate(userID)
+func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(userID string, credits int) (*discordgo.Message, error) {
+	dmChannel, err := messenger.discord.UserChannelCreate(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -320,14 +346,14 @@ func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(discord *discordgo.S
 	if credits != 1 {
 		plural = "s"
 	}
-	message, err := discord.ChannelMessageSend(
+	message, err := messenger.discord.ChannelMessageSend(
 		dmChannel.ID,
 		fmt.Sprintf("You now have %d boost request steal credit%s.", credits, plural),
 	)
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) Destroy(discord *discordgo.Session) {
+func (messenger *BoostRequestMessenger) Destroy() {
 	if !messenger.Destroyed {
 		messenger.Destroyed = true
 		close(messenger.quit)
@@ -335,8 +361,8 @@ func (messenger *BoostRequestMessenger) Destroy(discord *discordgo.Session) {
 	}
 }
 
-func (messenger *BoostRequestMessenger) sendTemporaryMessage(discord *discordgo.Session, channelID string, content string) {
-	message, err := discord.ChannelMessageSend(channelID, content)
+func (messenger *BoostRequestMessenger) sendTemporaryMessage(channelID string, content string) {
+	message, err := messenger.discord.ChannelMessageSend(channelID, content)
 	if err == nil {
 		messenger.waitGroup.Add(1)
 		go func() {
@@ -344,7 +370,7 @@ func (messenger *BoostRequestMessenger) sendTemporaryMessage(discord *discordgo.
 			case <-time.After(30 * time.Second):
 			case <-messenger.quit:
 			}
-			err := discord.ChannelMessageDelete(message.ChannelID, message.ID)
+			err := messenger.discord.ChannelMessageDelete(message.ChannelID, message.ID)
 			if err != nil {
 				log.Printf("Error deleting temporary message: %v", err)
 			}
@@ -370,7 +396,7 @@ func (messenger *BoostRequestMessenger) formatBoostRequest(br *repository.BoostR
 	return fields
 }
 
-func (messenger *BoostRequestMessenger) formatDiscounts(discord *discordgo.Session, br *repository.BoostRequest) string {
+func (messenger *BoostRequestMessenger) formatDiscounts(br *repository.BoostRequest) string {
 	sb := strings.Builder{}
 	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
 		for _, roleDiscount := range br.RoleDiscounts {
@@ -378,7 +404,7 @@ func (messenger *BoostRequestMessenger) formatDiscounts(discord *discordgo.Sessi
 			sb.WriteString("% discount on ")
 			sb.WriteString(roleDiscount.BoostType)
 
-			roleName := messenger.getRoleName(discord, roleDiscount.GuildID, roleDiscount.RoleID)
+			roleName := messenger.getRoleName(roleDiscount.GuildID, roleDiscount.RoleID)
 			if roleName != "" {
 				sb.WriteString(" (")
 				sb.WriteString(roleName)
@@ -390,8 +416,8 @@ func (messenger *BoostRequestMessenger) formatDiscounts(discord *discordgo.Sessi
 	return sb.String()
 }
 
-func (messenger *BoostRequestMessenger) getRoleName(discord *discordgo.Session, guildID, roleID string) string {
-	guild, err := discord.State.Guild(guildID)
+func (messenger *BoostRequestMessenger) getRoleName(guildID, roleID string) string {
+	guild, err := messenger.discord.State.Guild(guildID)
 
 	if err == nil {
 		roles := guild.Roles
