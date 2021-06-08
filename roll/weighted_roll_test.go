@@ -37,6 +37,36 @@ func TestWeightedRollZeroWeight(t *testing.T) {
 	checkNotOK(t, results, ok)
 }
 
+func TestWeightedRollResultsIterator(t *testing.T) {
+	t.Parallel()
+	roll := roll.NewWeightedRoll(2)
+	roll.AddItem("one", 1)
+	roll.AddItem("two", 2)
+	results, ok := roll.Roll()
+	if !checkOK(t, results, ok) {
+		return
+	}
+
+	var numChosenItems int
+	seenItems := make(map[string]struct{})
+	for iter := results.Iterator(); iter.HasNext(); {
+		item, _, isChosenItem := iter.Next()
+		if _, ok := seenItems[item]; ok {
+			t.Errorf("%s was seen twice", item)
+			return
+		}
+		seenItems[item] = struct{}{}
+
+		if isChosenItem {
+			numChosenItems++
+			if numChosenItems > 1 {
+				t.Errorf("isChosenItem was true for %d items, expected 1", numChosenItems)
+				return
+			}
+		}
+	}
+}
+
 func TestRandomness(t *testing.T) {
 	t.Parallel()
 	iterations := 100000
