@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -21,11 +22,14 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	db_repository "github.com/oppzippy/BoostRequestBot/boost_request/repository/database"
 	"github.com/oppzippy/BoostRequestBot/initialization"
+	"github.com/oppzippy/BoostRequestBot/locales"
 )
 
 func main() {
 	log.Println("Starting bot")
 	rand.Seed(time.Now().UnixNano())
+	localeBundle := locales.Bundle()
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Printf("Error loading .env file: %v", err)
@@ -36,22 +40,14 @@ func main() {
 		log.Fatalf("Failed to acquire database connection: %v", err)
 	}
 
-	discord, err := discordgo.New("Bot " + os.Getenv("DISCORD_TOKEN"))
+	discord, err := setUpDiscord()
 	if err != nil {
-		log.Fatalf("Error creating discord connection: %v", err)
+		log.Fatalf("Error setting up discord: %v", err)
 	}
 	defer discord.Close()
-	discord.Identify.Intents = discordgo.IntentsNone
-
-	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Connect) {
-		log.Println("Connected to discord")
-	})
-	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Disconnect) {
-		log.Println("Disconnected from discord")
-	})
 
 	var repo repository.Repository = db_repository.NewRepository(db)
-	brm := boost_request.NewBoostRequestManager(discord, repo)
+	brm := boost_request.NewBoostRequestManager(discord, repo, localeBundle)
 	brm.LoadBoostRequests()
 	registerCommandRouter(discord, repo)
 
@@ -79,6 +75,22 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
 	log.Println("Stopping bot")
+}
+
+func setUpDiscord() (*discordgo.Session, error) {
+	discord, err := discordgo.New("Bot " + os.Getenv("DISCORD_TOKEN"))
+	if err != nil {
+		return nil, fmt.Errorf("creating discord connection: %v", err)
+	}
+	discord.Identify.Intents = discordgo.IntentsNone
+
+	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Connect) {
+		log.Println("Connected to discord")
+	})
+	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Disconnect) {
+		log.Println("Disconnected from discord")
+	})
+	return discord, nil
 }
 
 func registerCommandRouter(discord *discordgo.Session, repo repository.Repository) {

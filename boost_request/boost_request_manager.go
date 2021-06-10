@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -17,17 +18,19 @@ const ResolvedEmoji = "✅"
 type BoostRequestManager struct {
 	discord        *discordgo.Session
 	repo           repository.Repository
+	bundle         *i18n.Bundle
 	messenger      *BoostRequestMessenger
 	activeRequests *sync.Map
 	isLoaded       bool
 	isLoadedLock   *sync.Mutex
 }
 
-func NewBoostRequestManager(discord *discordgo.Session, repo repository.Repository) *BoostRequestManager {
+func NewBoostRequestManager(discord *discordgo.Session, repo repository.Repository, bundle *i18n.Bundle) *BoostRequestManager {
 	brm := BoostRequestManager{
 		discord:        discord,
 		repo:           repo,
-		messenger:      NewBoostRequestMessenger(discord),
+		bundle:         bundle,
+		messenger:      NewBoostRequestMessenger(discord, bundle),
 		activeRequests: new(sync.Map),
 		isLoadedLock:   new(sync.Mutex),
 	}

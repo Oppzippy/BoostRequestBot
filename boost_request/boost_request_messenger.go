@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/roll"
 	"github.com/shopspring/decimal"
@@ -17,6 +19,7 @@ import (
 type BoostRequestMessenger struct {
 	Destroyed bool
 	discord   *discordgo.Session
+	bundle    *i18n.Bundle
 	waitGroup *sync.WaitGroup
 	quit      chan struct{}
 }
@@ -26,10 +29,11 @@ var footer = &discordgo.MessageEmbedFooter{
 	IconURL: "https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png",
 }
 
-func NewBoostRequestMessenger(discord *discordgo.Session) *BoostRequestMessenger {
+func NewBoostRequestMessenger(discord *discordgo.Session, bundle *i18n.Bundle) *BoostRequestMessenger {
 	brm := BoostRequestMessenger{
 		Destroyed: false,
 		discord:   discord,
+		bundle:    bundle,
 		waitGroup: new(sync.WaitGroup),
 		quit:      make(chan struct{}),
 	}
@@ -37,24 +41,10 @@ func NewBoostRequestMessenger(discord *discordgo.Session) *BoostRequestMessenger
 }
 
 func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.BoostRequest) (*discordgo.Message, error) {
-	var fields []*discordgo.MessageEmbedField
+	gen := message_generator.NewGenerator(messenger.localizer("en"), messenger.discord)
+	bsm := gen.BackendSignupMessage(br)
 
-	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
-		fields = make([]*discordgo.MessageEmbedField, 1)
-		fields[0] = &discordgo.MessageEmbedField{
-			Name:  "The requester is eligible for discounts",
-			Value: messenger.formatDiscounts(br),
-		}
-	}
-
-	message, err := messenger.discord.ChannelMessageSendEmbed(br.Channel.BackendChannelID, &discordgo.MessageEmbed{
-		Color:       0x0000FF,
-		Title:       "New Boost Request",
-		Description: br.Message,
-		Fields:      fields,
-		Footer:      footer,
-		Timestamp:   time.Now().Format(time.RFC3339),
-	})
+	message, err := messenger.send(bsm)
 
 	return message, err
 }
@@ -435,4 +425,35 @@ func (messenger *BoostRequestMessenger) formatFloat(f float64) string {
 		strings.TrimRight(fmt.Sprintf("%.2f", f), "0"),
 		".",
 	)
+}
+
+func (messenger *BoostRequestMessenger) localizer(langs ...string) *i18n.Localizer {
+	return i18n.NewLocalizer(messenger.bundle, langs...)
+}
+
+type sendable interface {
+	ChannelID() (string, error)
+	Message() (*discordgo.MessageSend, error)
+}
+
+func (messenger *BoostRequestMessenger) send(sendableMessage sendable) (*discordgo.Message, error) {
+	channelID, err := sendableMessage.ChannelID()
+	if err != nil {
+		// TODO handle
+		return nil, err
+	}
+	message, err := sendableMessage.Message()
+	if err != nil {
+		// TODO handle
+		return nil, err
+	}
+	if message.Embed != nil {
+		message.Embed.Footer = &discordgo.MessageEmbedFooter{
+			Text:    "Huokan Boosting Community",
+			IconURL: "https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png",
+		}
+		message.Embed.Timestamp = time.Now().Format(time.RFC3339)
+	}
+	m, err := messenger.discord.ChannelMessageSendComplex(channelID, message)
+	return m, err
 }
