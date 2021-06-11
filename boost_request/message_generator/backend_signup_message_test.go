@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
+	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/shopspring/decimal"
 )
@@ -22,15 +23,6 @@ func TestBackendSignupMessage(t *testing.T) {
 		&message_generator.DiscountFormatter{},
 		br,
 	)
-
-	t.Run("ChannelID", func(t *testing.T) {
-		channelID, err := bsm.ChannelID()
-		if err != nil {
-			t.Errorf("error generating channel id: %v", err)
-		} else if channelID != br.Channel.BackendChannelID {
-			t.Errorf("expected backend channel id %s, got %s", br.Channel.BackendChannelID, channelID)
-		}
-	})
 
 	t.Run("Message", func(t *testing.T) {
 		message, err := bsm.Message()
@@ -64,7 +56,7 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 			emptyLocalizer(),
 			message_generator.NewDiscountFormatter(
 				emptyLocalizer(),
-				&MockRoleNameProvider{},
+				&mocks.MockRoleNameProvider{},
 			),
 			br,
 		)
@@ -86,8 +78,8 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 			emptyLocalizer(),
 			message_generator.NewDiscountFormatter(
 				emptyLocalizer(),
-				&MockRoleNameProvider{
-					MockRoleName: "booster",
+				&mocks.MockRoleNameProvider{
+					Value: "booster",
 				},
 			),
 			br,

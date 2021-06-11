@@ -7,25 +7,37 @@ import (
 )
 
 type Generator struct {
-	localiser *i18n.Localizer
+	localizer *i18n.Localizer
 	discord   *discordgo.Session
 }
 
 func NewGenerator(localizer *i18n.Localizer, discord *discordgo.Session) *Generator {
 	return &Generator{
-		localiser: localizer,
+		localizer: localizer,
 		discord:   discord,
 	}
 }
 
 func (gen *Generator) BackendSignupMessage(br *repository.BoostRequest) *BackendSignupMessage {
-	return NewBackendSignupMessage(gen.localiser, gen.discountFormatter(), br)
+	return NewBackendSignupMessage(gen.localizer, gen.discountFormatter(), br)
+}
+
+func (gen *Generator) BoostRequestCreatedDM(br *repository.BoostRequest) *BoostRequestCreatedDM {
+	return NewBoostRequestCreatedDM(gen.localizer, gen.userProvider(), br)
+}
+
+func (gen *Generator) DMBlockedMessage(userID string) *DMBlockedMessage {
+	return NewDMBlockedMessage(gen.localizer, userID)
 }
 
 func (gen *Generator) discountFormatter() *DiscountFormatter {
-	return NewDiscountFormatter(gen.localiser, gen.roleNameProvider())
+	return NewDiscountFormatter(gen.localizer, gen.roleNameProvider())
 }
 
 func (gen *Generator) roleNameProvider() RoleNameProvider {
 	return NewDiscordRoleNameProvider(gen.discord)
+}
+
+func (gen *Generator) userProvider() userProvider {
+	return gen.discord
 }

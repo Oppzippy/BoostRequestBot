@@ -3,7 +3,9 @@ package message_generator_test
 import (
 	"testing"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
+	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -14,7 +16,16 @@ func TestBoostRequestCreatedDM(t *testing.T) {
 			SkipsBuyerDM: false,
 		},
 	}
-	createdDM := message_generator.NewBoostRequestCreatedDM(emptyLocalizer(), br)
+	createdDM := message_generator.NewBoostRequestCreatedDM(
+		emptyLocalizer(),
+		&mocks.MockDMUserProvider{
+			Value: &discordgo.User{
+				Username:      "test",
+				Discriminator: "1234",
+			},
+		},
+		br,
+	)
 	m, _ := createdDM.Message()
 
 	if m.Embed.Author.Name != "test#1234" {

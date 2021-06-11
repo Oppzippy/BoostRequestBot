@@ -1,9 +1,9 @@
-package message_generator_test
+package mocks
 
 type MockRoleNameProvider struct {
-	MockRoleName string
+	Value string
 }
 
 func (rnp *MockRoleNameProvider) RoleName(guildID, roleID string) string {
-	return rnp.MockRoleName
+	return rnp.Value
 }

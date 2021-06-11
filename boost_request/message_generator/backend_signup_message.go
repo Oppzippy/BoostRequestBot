@@ -22,10 +22,6 @@ func NewBackendSignupMessage(
 	}
 }
 
-func (m *BackendSignupMessage) ChannelID() (string, error) {
-	return m.boostRequest.Channel.BackendChannelID, nil
-}
-
 func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 	br := m.boostRequest
 	var fields []*discordgo.MessageEmbedField

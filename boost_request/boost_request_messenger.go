@@ -44,42 +44,26 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.
 	gen := message_generator.NewGenerator(messenger.localizer("en"), messenger.discord)
 	bsm := gen.BackendSignupMessage(br)
 
-	message, err := messenger.send(bsm)
+	message, err := messenger.send(&MessageDestination{
+		DestinationID:   br.Channel.BackendChannelID,
+		DestinationType: DestinationChannel,
+	}, bsm)
 
 	return message, err
 }
 
 func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository.BoostRequest) (*discordgo.Message, error) {
-	requester, err := messenger.discord.User(br.RequesterID)
-	if err != nil {
-		return nil, err
-	}
-	dmChannel, _ := messenger.discord.UserChannelCreate(requester.ID)
-	message, err := messenger.discord.ChannelMessageSendComplex(dmChannel.ID, &discordgo.MessageSend{
-		Content: "Please wait while we find an advertiser to complete your request.",
-		Embed: &discordgo.MessageEmbed{
-			Title: "Huokan Boosting Community Boost Request",
-			Author: &discordgo.MessageEmbedAuthor{
-				Name: requester.String(),
-			},
-			Description: br.Message,
-			Footer:      footer,
-			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: requester.AvatarURL(""),
-			},
-		},
-	})
-	if err != nil {
-		restErr, ok := err.(*discordgo.RESTError)
-		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(
-				br.Channel.FrontendChannelID,
-				requester.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server "+
-					"and enabling \"Allow direct messages from server members.\" in Privacy Settings.",
-			)
-		}
-		return nil, err
-	}
+	localizer := messenger.localizer("en")
+
+	gen := message_generator.NewGenerator(localizer, messenger.discord)
+	brcDM := gen.BoostRequestCreatedDM(br)
+
+	message, err := messenger.send(&MessageDestination{
+		DestinationID:     br.RequesterID,
+		DestinationType:   DestinationUser,
+		FallbackChannelID: br.Channel.FrontendChannelID,
+	}, brcDM)
+
 	return message, err
 }
 
@@ -108,24 +92,15 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
 	br *repository.BoostRequest,
 ) (*discordgo.Message, error) {
-	requester, err := messenger.discord.User(br.RequesterID)
-	if err != nil {
-		return nil, err
-	}
 	advertiser, err := messenger.discord.User(br.AdvertiserID)
 	if err != nil {
 		return nil, err
 	}
-	dmChannel, err := messenger.discord.UserChannelCreate(requester.ID)
+	dmChannel, err := messenger.discord.UserChannelCreate(br.RequesterID)
 	if err != nil {
 		restErr, ok := err.(discordgo.RESTError)
 		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(
-				br.Channel.FrontendChannelID,
-				requester.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the "+
-					"server and enabling \"Allow direct messages from server members.\" in Privacy Settings and post "+
-					"your message again.",
-			)
+			messenger.sendDMBlockedMessage(br.Channel.FrontendChannelID, br.RequesterID)
 		}
 		return nil, err
 	}
@@ -221,18 +196,11 @@ func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHu
 	if err != nil {
 		return nil, err
 	}
-	advertiser, err := messenger.discord.User(br.AdvertiserID)
-	if err != nil {
-		return nil, err
-	}
-	dmChannel, err := messenger.discord.UserChannelCreate(advertiser.ID)
+	dmChannel, err := messenger.discord.UserChannelCreate(br.AdvertiserID)
 	if err != nil {
 		restErr, ok := err.(discordgo.RESTError)
 		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(
-				br.Channel.BackendChannelID,
-				advertiser.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.",
-			)
+			messenger.sendDMBlockedMessage(br.Channel.BackendChannelID, br.AdvertiserID)
 			_, err := messenger.discord.ChannelMessageSend(br.Channel.BackendChannelID, "Please DM "+requester.Mention()+" ("+requester.String()+").")
 			if err != nil {
 				log.Printf("Failed to send backup message after failed DM: %v", err)
@@ -272,15 +240,11 @@ func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHu
 func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithBotRequester(
 	br *repository.BoostRequest,
 ) (*discordgo.Message, error) {
-	advertiser, err := messenger.discord.User(br.AdvertiserID)
-	if err != nil {
-		return nil, err
-	}
-	dmChannel, err := messenger.discord.UserChannelCreate(advertiser.ID)
+	dmChannel, err := messenger.discord.UserChannelCreate(br.AdvertiserID)
 	if err != nil {
 		restErr, ok := err.(discordgo.RESTError)
 		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendTemporaryMessage(br.Channel.BackendChannelID, advertiser.Mention()+", I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.")
+			messenger.sendDMBlockedMessage(br.Channel.BackendChannelID, br.AdvertiserID)
 		}
 		return nil, err
 	}
@@ -351,26 +315,6 @@ func (messenger *BoostRequestMessenger) Destroy() {
 	}
 }
 
-func (messenger *BoostRequestMessenger) sendTemporaryMessage(channelID string, content string) {
-	message, err := messenger.discord.ChannelMessageSend(channelID, content)
-	if err == nil {
-		messenger.waitGroup.Add(1)
-		go func() {
-			select {
-			case <-time.After(30 * time.Second):
-			case <-messenger.quit:
-			}
-			err := messenger.discord.ChannelMessageDelete(message.ChannelID, message.ID)
-			if err != nil {
-				log.Printf("Error deleting temporary message: %v", err)
-			}
-			messenger.waitGroup.Done()
-		}()
-	} else {
-		log.Printf("Error sending temporary message: %v", err)
-	}
-}
-
 func (messenger *BoostRequestMessenger) formatBoostRequest(br *repository.BoostRequest) []*discordgo.MessageEmbedField {
 	var fields []*discordgo.MessageEmbedField
 	if br.EmbedFields != nil {
@@ -432,20 +376,17 @@ func (messenger *BoostRequestMessenger) localizer(langs ...string) *i18n.Localiz
 }
 
 type sendable interface {
-	ChannelID() (string, error)
 	Message() (*discordgo.MessageSend, error)
 }
 
-func (messenger *BoostRequestMessenger) send(sendableMessage sendable) (*discordgo.Message, error) {
-	channelID, err := sendableMessage.ChannelID()
+func (messenger *BoostRequestMessenger) send(dest *MessageDestination, sendableMessage sendable) (*discordgo.Message, error) {
+	channelID, err := dest.ResolveChannelID(messenger.discord)
 	if err != nil {
-		// TODO handle
-		return nil, err
+		return nil, fmt.Errorf("resolving channel id: %v", err)
 	}
 	message, err := sendableMessage.Message()
 	if err != nil {
-		// TODO handle
-		return nil, err
+		return nil, fmt.Errorf("generating message: %v", err)
 	}
 	if message.Embed != nil {
 		message.Embed.Footer = &discordgo.MessageEmbedFooter{
@@ -455,5 +396,46 @@ func (messenger *BoostRequestMessenger) send(sendableMessage sendable) (*discord
 		message.Embed.Timestamp = time.Now().Format(time.RFC3339)
 	}
 	m, err := messenger.discord.ChannelMessageSendComplex(channelID, message)
+
+	if err != nil && dest.DestinationType == DestinationUser {
+		restErr, ok := err.(discordgo.RESTError)
+		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
+			if dest.FallbackChannelID != "" {
+				messenger.sendDMBlockedMessage(dest.FallbackChannelID, dest.DestinationID)
+			}
+		}
+	}
+
 	return m, err
+}
+
+func (messenger *BoostRequestMessenger) sendDMBlockedMessage(channelID, userID string) {
+	gen := message_generator.NewGenerator(messenger.localizer("en"), messenger.discord)
+	dmBlockedMessage := gen.DMBlockedMessage(userID)
+	message, err := dmBlockedMessage.Message()
+	if err != nil {
+		log.Printf("error generating dm blocked message: %v", err)
+		return
+	}
+	messenger.sendTemporaryMessage(channelID, message)
+}
+
+func (messenger *BoostRequestMessenger) sendTemporaryMessage(channelID string, content *discordgo.MessageSend) {
+	message, err := messenger.discord.ChannelMessageSendComplex(channelID, content)
+	if err == nil {
+		messenger.waitGroup.Add(1)
+		go func() {
+			select {
+			case <-time.After(30 * time.Second):
+			case <-messenger.quit:
+			}
+			err := messenger.discord.ChannelMessageDelete(message.ChannelID, message.ID)
+			if err != nil {
+				log.Printf("Error deleting temporary message: %v", err)
+			}
+			messenger.waitGroup.Done()
+		}()
+	} else {
+		log.Printf("Error sending temporary message: %v", err)
+	}
 }
