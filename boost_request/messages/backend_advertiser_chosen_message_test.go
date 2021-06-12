@@ -1,4 +1,4 @@
-package message_generator_test
+package messages_test
 
 import (
 	"strings"

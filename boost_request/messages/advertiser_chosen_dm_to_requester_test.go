@@ -1,12 +1,11 @@
-package message_generator_test
+package messages_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator/mocks"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 

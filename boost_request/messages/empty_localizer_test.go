@@ -1,4 +1,4 @@
-package message_generator_test
+package messages_test
 
 import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"

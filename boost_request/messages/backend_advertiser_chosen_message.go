@@ -1,4 +1,4 @@
-package message_generator
+package messages
 
 import (
 	"fmt"

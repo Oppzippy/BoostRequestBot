@@ -1,17 +1,17 @@
-package message_generator_test
+package messages_test
 
 import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator/mocks"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
 func TestAdvertiserChosenDMToAdvertiserHuman(t *testing.T) {
 	// TODO improve test
-	m := message_generator.NewAdvertiserChosenDMToAdvertiser(
+	m := messages.NewAdvertiserChosenDMToAdvertiser(
 		emptyLocalizer(),
 		&mocks.MockUserProvider{
 			Value: &discordgo.User{
@@ -20,7 +20,7 @@ func TestAdvertiserChosenDMToAdvertiserHuman(t *testing.T) {
 				Discriminator: "1234",
 			},
 		},
-		message_generator.NewDiscountFormatter(
+		messages.NewDiscountFormatter(
 			emptyLocalizer(),
 			&mocks.MockRoleNameProvider{},
 		),
@@ -37,7 +37,7 @@ func TestAdvertiserChosenDMToAdvertiserHuman(t *testing.T) {
 
 func TestAdvertiserChosenDMToAdvertiserBot(t *testing.T) {
 	// TODO improve test
-	m := message_generator.NewAdvertiserChosenDMToAdvertiser(
+	m := messages.NewAdvertiserChosenDMToAdvertiser(
 		emptyLocalizer(),
 		&mocks.MockUserProvider{
 			Value: &discordgo.User{
@@ -46,7 +46,7 @@ func TestAdvertiserChosenDMToAdvertiserBot(t *testing.T) {
 				Discriminator: "1234",
 			},
 		},
-		message_generator.NewDiscountFormatter(
+		messages.NewDiscountFormatter(
 			emptyLocalizer(),
 			&mocks.MockRoleNameProvider{},
 		),
