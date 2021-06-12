@@ -55,7 +55,7 @@ func (m *BackendSignupMessage) roleDiscountField() *discordgo.MessageEmbedField 
 					Other: "The requester is eligible for discounts",
 				},
 			}),
-			Value: m.discountFormatter.FormatDiscounts(m.boostRequest),
+			Value: m.discountFormatter.FormatDiscounts(m.boostRequest.RoleDiscounts),
 		}
 	}
 	return nil

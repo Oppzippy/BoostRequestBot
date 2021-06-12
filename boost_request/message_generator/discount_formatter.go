@@ -20,10 +20,10 @@ func NewDiscountFormatter(localizer *i18n.Localizer, roleNameProvider RoleNamePr
 	}
 }
 
-func (df *DiscountFormatter) FormatDiscounts(br *repository.BoostRequest) string {
+func (df *DiscountFormatter) FormatDiscounts(discounts []*repository.RoleDiscount) string {
 	sb := strings.Builder{}
-	if len(br.RoleDiscounts) != 0 {
-		for _, rd := range br.RoleDiscounts {
+	if len(discounts) != 0 {
+		for _, rd := range discounts {
 			sb.WriteString(df.FormatDiscount(rd))
 		}
 	}

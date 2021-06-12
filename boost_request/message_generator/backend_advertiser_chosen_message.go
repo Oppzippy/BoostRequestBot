@@ -9,22 +9,27 @@ import (
 )
 
 type BackendAdvertiserChosenMessage struct {
-	localizer           *i18n.Localizer
-	boostRequest        *repository.BoostRequest
-	advertiserAvatarURL string
+	localizer    *i18n.Localizer
+	boostRequest *repository.BoostRequest
+	userProvider userProvider
 }
 
 func NewBackendAdvertiserChosenMessage(
-	localizer *i18n.Localizer, br *repository.BoostRequest, advertiserAvatarURL string,
+	localizer *i18n.Localizer, up userProvider, br *repository.BoostRequest,
 ) *BackendAdvertiserChosenMessage {
 	return &BackendAdvertiserChosenMessage{
-		localizer:           localizer,
-		boostRequest:        br,
-		advertiserAvatarURL: advertiserAvatarURL,
+		localizer:    localizer,
+		boostRequest: br,
+		userProvider: up,
 	}
 }
 
 func (m *BackendAdvertiserChosenMessage) Message() (*discordgo.MessageSend, error) {
+	advertiser, err := m.userProvider.User(m.boostRequest.AdvertiserID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &discordgo.MessageSend{
 		Embed: &discordgo.MessageEmbed{
 			Color: 0xFF0000,
@@ -37,15 +42,15 @@ func (m *BackendAdvertiserChosenMessage) Message() (*discordgo.MessageSend, erro
 			Description: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "AdvertiserWillHandleBoostRequest",
-					Other: "{{.Advertiser}} will handle the following boost request.",
+					Other: "{{.AdvertiserMention}} will handle the following boost request.",
 				},
 				TemplateData: map[string]string{
-					"Advertiser": fmt.Sprintf("<@%s>", m.boostRequest.AdvertiserID),
+					"AdvertiserMention": fmt.Sprintf("<@%s>", m.boostRequest.AdvertiserID),
 				},
 			}),
 			Fields: formatBoostRequest(m.localizer, m.boostRequest),
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: m.advertiserAvatarURL,
+				URL: advertiser.AvatarURL(""),
 			},
 		},
 	}, nil

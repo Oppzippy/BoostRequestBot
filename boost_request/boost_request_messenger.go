@@ -75,12 +75,7 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository
 func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 	br *repository.BoostRequest,
 ) (*discordgo.Message, error) {
-	advertiser, err := messenger.discord.User(br.AdvertiserID)
-	if err != nil {
-		return nil, err
-	}
-
-	m := message_generator.NewBackendAdvertiserChosenMessage(messenger.localizer("en"), br, advertiser.AvatarURL(""))
+	m := message_generator.NewBackendAdvertiserChosenMessage(messenger.localizer("en"), messenger.discord, br)
 
 	message, err := messenger.send(&MessageDestination{
 		DestinationID:   br.Channel.BackendChannelID,
@@ -93,46 +88,22 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
 	br *repository.BoostRequest,
 ) (*discordgo.Message, error) {
-	advertiser, err := messenger.discord.User(br.AdvertiserID)
-	if err != nil {
-		return nil, err
-	}
-	dmChannel, err := messenger.discord.UserChannelCreate(br.RequesterID)
-	if err != nil {
-		restErr, ok := err.(discordgo.RESTError)
-		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendDMBlockedMessage(br.Channel.FrontendChannelID, br.RequesterID)
-		}
-		return nil, err
-	}
+	localizer := messenger.localizer("en")
+	m := message_generator.NewAdvertiserChosenDMToRequester(
+		localizer,
+		messenger.discord,
+		message_generator.NewDiscountFormatter(
+			localizer,
+			message_generator.NewDiscordRoleNameProvider(messenger.discord),
+		),
+		br,
+	)
+	message, err := messenger.send(&MessageDestination{
+		DestinationID:     br.RequesterID,
+		DestinationType:   DestinationUser,
+		FallbackChannelID: br.Channel.FrontendChannelID,
+	}, m)
 
-	sb := strings.Builder{}
-	sb.WriteString(advertiser.Mention())
-	sb.WriteString(" ")
-	sb.WriteString(advertiser.String())
-	sb.WriteString(" will reach out to you shortly.")
-	sb.WriteString(" Anyone else that messages you regarding this boost request is not from Huokan and may attempt to scam you.")
-	var fields []*discordgo.MessageEmbedField
-
-	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
-		fields = make([]*discordgo.MessageEmbedField, 1)
-		fields[0] = &discordgo.MessageEmbedField{
-			Name:  "You are eligible for discounts",
-			Value: messenger.formatDiscounts(br),
-		}
-	}
-
-	message, err := messenger.discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
-		Color:       0x00FF00,
-		Title:       "Huokan Boosting Community Boost Request",
-		Description: sb.String(),
-		Fields:      fields,
-		Footer:      footer,
-		Timestamp:   time.Now().Format(time.RFC3339),
-		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: advertiser.AvatarURL(""),
-		},
-	})
 	return message, err
 }
 
