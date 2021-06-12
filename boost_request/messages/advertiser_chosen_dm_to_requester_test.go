@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -12,7 +13,7 @@ import (
 func TestAdvertisreChosenDMToRequester(t *testing.T) {
 	t.Parallel()
 	br := &repository.BoostRequest{}
-	m := message_generator.NewAdvertiserChosenDMToRequester(
+	m := messages.NewAdvertiserChosenDMToRequester(
 		emptyLocalizer(),
 		&mocks.MockUserProvider{
 			Value: &discordgo.User{
@@ -21,7 +22,7 @@ func TestAdvertisreChosenDMToRequester(t *testing.T) {
 				Discriminator: "1234",
 			},
 		},
-		message_generator.NewDiscountFormatter(
+		messages.NewDiscountFormatter(
 			emptyLocalizer(),
 			&mocks.MockRoleNameProvider{},
 		),

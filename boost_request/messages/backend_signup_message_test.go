@@ -3,8 +3,8 @@ package messages_test
 import (
 	"testing"
 
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator/mocks"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/shopspring/decimal"
 )
@@ -18,9 +18,9 @@ func TestBackendSignupMessage(t *testing.T) {
 		},
 	}
 
-	bsm := message_generator.NewBackendSignupMessage(
+	bsm := messages.NewBackendSignupMessage(
 		emptyLocalizer(),
-		&message_generator.DiscountFormatter{},
+		&messages.DiscountFormatter{},
 		br,
 	)
 
@@ -53,9 +53,9 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 	}
 
 	t.Run("NoRole", func(t *testing.T) {
-		bsm := message_generator.NewBackendSignupMessage(
+		bsm := messages.NewBackendSignupMessage(
 			emptyLocalizer(),
-			message_generator.NewDiscountFormatter(
+			messages.NewDiscountFormatter(
 				emptyLocalizer(),
 				&mocks.MockRoleNameProvider{},
 			),
@@ -75,9 +75,9 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 	})
 
 	t.Run("WithRole", func(t *testing.T) {
-		bsm := message_generator.NewBackendSignupMessage(
+		bsm := messages.NewBackendSignupMessage(
 			emptyLocalizer(),
-			message_generator.NewDiscountFormatter(
+			messages.NewDiscountFormatter(
 				emptyLocalizer(),
 				&mocks.MockRoleNameProvider{
 					Value: "booster",

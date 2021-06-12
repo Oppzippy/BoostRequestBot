@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator/mocks"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -17,7 +17,7 @@ func TestBackendAdvertiserChosenMessage(t *testing.T) {
 		Message:      "boost please!",
 		Channel:      repository.BoostRequestChannel{},
 	}
-	m := message_generator.NewBackendAdvertiserChosenMessage(emptyLocalizer(), &mocks.MockUserProvider{
+	m := messages.NewBackendAdvertiserChosenMessage(emptyLocalizer(), &mocks.MockUserProvider{
 		Value: &discordgo.User{},
 	}, br)
 	message, err := m.Message()

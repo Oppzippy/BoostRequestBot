@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
-	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator/mocks"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -17,7 +17,7 @@ func TestBoostRequestCreatedDM(t *testing.T) {
 			SkipsBuyerDM: false,
 		},
 	}
-	createdDM := message_generator.NewBoostRequestCreatedDM(
+	createdDM := messages.NewBoostRequestCreatedDM(
 		emptyLocalizer(),
 		&mocks.MockUserProvider{
 			Value: &discordgo.User{
