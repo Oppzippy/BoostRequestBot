@@ -13,7 +13,6 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/message_generator"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/roll"
-	"github.com/shopspring/decimal"
 )
 
 type BoostRequestMessenger struct {
@@ -110,13 +109,22 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
 func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
 	br *repository.BoostRequest,
 ) (*discordgo.Message, error) {
-	if br.EmbedFields != nil {
-		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithBotRequester(br)
-		return m, err
-	} else {
-		m, err := messenger.sendAdvertiserChosenDMToAdvertiserWithHumanRequester(br)
-		return m, err
-	}
+	localizer := messenger.localizer("en")
+	m := message_generator.NewAdvertiserChosenDMToAdvertiser(
+		localizer,
+		messenger.discord,
+		message_generator.NewDiscountFormatter(
+			localizer,
+			message_generator.NewDiscordRoleNameProvider(messenger.discord),
+		),
+		br,
+	)
+	message, err := messenger.send(&MessageDestination{
+		DestinationID:     br.AdvertiserID,
+		DestinationType:   DestinationUser,
+		FallbackChannelID: br.Channel.BackendChannelID,
+	}, m)
+	return message, err
 }
 
 func (messenger *BoostRequestMessenger) SendRoll(
@@ -156,78 +164,6 @@ func (messenger *BoostRequestMessenger) SendRoll(
 			Footer:      footer,
 		},
 		AllowedMentions: &discordgo.MessageAllowedMentions{},
-	})
-
-	return message, err
-}
-
-func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithHumanRequester(
-	br *repository.BoostRequest,
-) (*discordgo.Message, error) {
-	requester, err := messenger.discord.User(br.RequesterID)
-	if err != nil {
-		return nil, err
-	}
-	dmChannel, err := messenger.discord.UserChannelCreate(br.AdvertiserID)
-	if err != nil {
-		restErr, ok := err.(discordgo.RESTError)
-		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendDMBlockedMessage(br.Channel.BackendChannelID, br.AdvertiserID)
-			_, err := messenger.discord.ChannelMessageSend(br.Channel.BackendChannelID, "Please DM "+requester.Mention()+" ("+requester.String()+").")
-			if err != nil {
-				log.Printf("Failed to send backup message after failed DM: %v", err)
-			}
-		}
-		return nil, err
-	}
-
-	sb := strings.Builder{}
-	sb.WriteString("Please message ")
-	sb.WriteString(requester.Mention())
-	sb.WriteString(" ")
-	sb.WriteString(requester.String())
-	sb.WriteString(".")
-
-	fields := messenger.formatBoostRequest(br)
-
-	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:  "The requester is eligible for discounts",
-			Value: messenger.formatDiscounts(br),
-		})
-	}
-
-	message, err := messenger.discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
-		Color:       0xFF0000,
-		Title:       "You have been selected to handle a boost request.",
-		Description: sb.String(),
-		Fields:      fields,
-		Footer:      footer,
-		Timestamp:   time.Now().Format(time.RFC3339),
-	})
-
-	return message, err
-}
-
-func (messenger *BoostRequestMessenger) sendAdvertiserChosenDMToAdvertiserWithBotRequester(
-	br *repository.BoostRequest,
-) (*discordgo.Message, error) {
-	dmChannel, err := messenger.discord.UserChannelCreate(br.AdvertiserID)
-	if err != nil {
-		restErr, ok := err.(discordgo.RESTError)
-		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			messenger.sendDMBlockedMessage(br.Channel.BackendChannelID, br.AdvertiserID)
-		}
-		return nil, err
-	}
-
-	message, err := messenger.discord.ChannelMessageSendEmbed(dmChannel.ID, &discordgo.MessageEmbed{
-		Color:       0xFF0000,
-		Title:       "You have been selected to handle a boost request.",
-		Description: "Please message the user listed below.",
-		Fields:      messenger.formatBoostRequest(br),
-		Footer:      footer,
-		Timestamp:   time.Now().Format(time.RFC3339),
 	})
 
 	return message, err
@@ -285,55 +221,6 @@ func (messenger *BoostRequestMessenger) Destroy() {
 		close(messenger.quit)
 		messenger.waitGroup.Wait()
 	}
-}
-
-func (messenger *BoostRequestMessenger) formatBoostRequest(br *repository.BoostRequest) []*discordgo.MessageEmbedField {
-	var fields []*discordgo.MessageEmbedField
-	if br.EmbedFields != nil {
-		fields = repository.ToDiscordEmbedFields(br.EmbedFields)
-	} else {
-		fields = []*discordgo.MessageEmbedField{
-			{
-				Name:  "Boost Request",
-				Value: br.Message,
-			},
-		}
-	}
-	return fields
-}
-
-func (messenger *BoostRequestMessenger) formatDiscounts(br *repository.BoostRequest) string {
-	sb := strings.Builder{}
-	if br.RoleDiscounts != nil && len(br.RoleDiscounts) != 0 {
-		for _, roleDiscount := range br.RoleDiscounts {
-			sb.WriteString(roleDiscount.Discount.Mul(decimal.NewFromInt(100)).String())
-			sb.WriteString("% discount on ")
-			sb.WriteString(roleDiscount.BoostType)
-
-			roleName := messenger.getRoleName(roleDiscount.GuildID, roleDiscount.RoleID)
-			if roleName != "" {
-				sb.WriteString(" (")
-				sb.WriteString(roleName)
-				sb.WriteString(")")
-			}
-			sb.WriteString("\n")
-		}
-	}
-	return sb.String()
-}
-
-func (messenger *BoostRequestMessenger) getRoleName(guildID, roleID string) string {
-	guild, err := messenger.discord.State.Guild(guildID)
-
-	if err == nil {
-		roles := guild.Roles
-		for _, role := range roles {
-			if role.ID == roleID {
-				return role.Name
-			}
-		}
-	}
-	return ""
 }
 
 func (messenger *BoostRequestMessenger) formatFloat(f float64) string {

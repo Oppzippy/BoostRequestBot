@@ -15,7 +15,7 @@ func TestAdvertisreChosenDMToRequester(t *testing.T) {
 	br := &repository.BoostRequest{}
 	m := message_generator.NewAdvertiserChosenDMToRequester(
 		emptyLocalizer(),
-		&mocks.MockDMUserProvider{
+		&mocks.MockUserProvider{
 			Value: &discordgo.User{
 				ID:            "1111",
 				Username:      "test",

@@ -17,7 +17,7 @@ func TestBackendAdvertiserChosenMessage(t *testing.T) {
 		Message:      "boost please!",
 		Channel:      repository.BoostRequestChannel{},
 	}
-	m := message_generator.NewBackendAdvertiserChosenMessage(emptyLocalizer(), &mocks.MockDMUserProvider{
+	m := message_generator.NewBackendAdvertiserChosenMessage(emptyLocalizer(), &mocks.MockUserProvider{
 		Value: &discordgo.User{},
 	}, br)
 	message, err := m.Message()

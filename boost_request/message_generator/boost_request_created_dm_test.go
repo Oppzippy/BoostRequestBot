@@ -19,7 +19,7 @@ func TestBoostRequestCreatedDM(t *testing.T) {
 	}
 	createdDM := message_generator.NewBoostRequestCreatedDM(
 		emptyLocalizer(),
-		&mocks.MockDMUserProvider{
+		&mocks.MockUserProvider{
 			Value: &discordgo.User{
 				Username:      "test",
 				Discriminator: "1234",
