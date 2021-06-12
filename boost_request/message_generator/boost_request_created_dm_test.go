@@ -10,6 +10,7 @@ import (
 )
 
 func TestBoostRequestCreatedDM(t *testing.T) {
+	t.Parallel()
 	br := &repository.BoostRequest{
 		Message: "Boost please",
 		Channel: repository.BoostRequestChannel{

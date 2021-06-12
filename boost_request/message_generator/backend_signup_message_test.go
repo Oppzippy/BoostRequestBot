@@ -35,6 +35,7 @@ func TestBackendSignupMessage(t *testing.T) {
 }
 
 func TestBackendSignupMessageRoleDiscount(t *testing.T) {
+	t.Parallel()
 	discount, err := decimal.NewFromString("0.2")
 	if err != nil {
 		t.Errorf("parsing discount: %v", err)

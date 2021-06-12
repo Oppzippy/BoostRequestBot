@@ -41,13 +41,19 @@ func NewBoostRequestMessenger(discord *discordgo.Session, bundle *i18n.Bundle) *
 }
 
 func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.BoostRequest) (*discordgo.Message, error) {
-	gen := message_generator.NewGenerator(messenger.localizer("en"), messenger.discord)
-	bsm := gen.BackendSignupMessage(br)
+	m := message_generator.NewBackendSignupMessage(
+		messenger.localizer("en"),
+		message_generator.NewDiscountFormatter(
+			messenger.localizer("en"),
+			message_generator.NewDiscordRoleNameProvider(messenger.discord),
+		),
+		br,
+	)
 
 	message, err := messenger.send(&MessageDestination{
 		DestinationID:   br.Channel.BackendChannelID,
 		DestinationType: DestinationChannel,
-	}, bsm)
+	}, m)
 
 	return message, err
 }
@@ -55,14 +61,13 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.
 func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository.BoostRequest) (*discordgo.Message, error) {
 	localizer := messenger.localizer("en")
 
-	gen := message_generator.NewGenerator(localizer, messenger.discord)
-	brcDM := gen.BoostRequestCreatedDM(br)
+	m := message_generator.NewBoostRequestCreatedDM(localizer, messenger.discord, br)
 
 	message, err := messenger.send(&MessageDestination{
 		DestinationID:     br.RequesterID,
 		DestinationType:   DestinationUser,
 		FallbackChannelID: br.Channel.FrontendChannelID,
-	}, brcDM)
+	}, m)
 
 	return message, err
 }
@@ -71,20 +76,16 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 	br *repository.BoostRequest,
 ) (*discordgo.Message, error) {
 	advertiser, err := messenger.discord.User(br.AdvertiserID)
-
 	if err != nil {
 		return nil, err
 	}
 
-	message, err := messenger.discord.ChannelMessageSendEmbed(br.Channel.BackendChannelID, &discordgo.MessageEmbed{
-		Color:       0xFF0000,
-		Title:       "An advertiser has been selected.",
-		Description: advertiser.Mention() + " will handle the following boost request.",
-		Fields:      messenger.formatBoostRequest(br),
-		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: advertiser.AvatarURL(""),
-		},
-	})
+	m := message_generator.NewBackendAdvertiserChosenMessage(messenger.localizer("en"), br, advertiser.AvatarURL(""))
+
+	message, err := messenger.send(&MessageDestination{
+		DestinationID:   br.Channel.BackendChannelID,
+		DestinationType: DestinationChannel,
+	}, m)
 
 	return message, err
 }
@@ -410,9 +411,8 @@ func (messenger *BoostRequestMessenger) send(dest *MessageDestination, sendableM
 }
 
 func (messenger *BoostRequestMessenger) sendDMBlockedMessage(channelID, userID string) {
-	gen := message_generator.NewGenerator(messenger.localizer("en"), messenger.discord)
-	dmBlockedMessage := gen.DMBlockedMessage(userID)
-	message, err := dmBlockedMessage.Message()
+	m := message_generator.NewDMBlockedMessage(messenger.localizer("en"), userID)
+	message, err := m.Message()
 	if err != nil {
 		log.Printf("error generating dm blocked message: %v", err)
 		return
