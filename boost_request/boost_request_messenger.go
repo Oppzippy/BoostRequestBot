@@ -1,10 +1,8 @@
 package boost_request
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
@@ -21,11 +19,6 @@ type BoostRequestMessenger struct {
 	bundle    *i18n.Bundle
 	waitGroup *sync.WaitGroup
 	quit      chan struct{}
-}
-
-var footer = &discordgo.MessageEmbedFooter{
-	Text:    "Huokan Boosting Community",
-	IconURL: "https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png",
 }
 
 func NewBoostRequestMessenger(discord *discordgo.Session, bundle *i18n.Bundle) *BoostRequestMessenger {
@@ -130,41 +123,11 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
 func (messenger *BoostRequestMessenger) SendRoll(
 	channelID string, br *repository.BoostRequest, rollResults *roll.WeightedRollResults,
 ) (*discordgo.Message, error) {
-	if rollResults == nil {
-		return nil, errors.New("rollResults must not be nil")
-	}
-
-	sb := strings.Builder{}
-	var weightAccumulator float64
-	for iter := rollResults.Iterator(); iter.HasNext(); {
-		advertiserID, weight, isChosenItem := iter.Next()
-		weightAccumulator += weight
-
-		sb.WriteString(fmt.Sprintf(
-			"<@%s>: %s to %s",
-			advertiserID,
-			messenger.formatFloat(weightAccumulator-weight),
-			messenger.formatFloat(weightAccumulator),
-		))
-		if isChosenItem {
-			sb.WriteString(fmt.Sprintf(
-				"   **<-- %s**",
-				messenger.formatFloat(rollResults.Roll()),
-			))
-		}
-		sb.WriteString("\n")
-	}
-
-	message, err := messenger.discord.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
-		Content: br.Message,
-		Embed: &discordgo.MessageEmbed{
-			Title:       "Roll Results",
-			Description: sb.String(),
-			Timestamp:   time.Now().Format(time.RFC3339),
-			Footer:      footer,
-		},
-		AllowedMentions: &discordgo.MessageAllowedMentions{},
-	})
+	m := messages.NewBoostRequestRollMessage(messenger.localizer("en"), br, rollResults)
+	message, err := messenger.send(&MessageDestination{
+		DestinationID:   channelID,
+		DestinationType: DestinationChannel,
+	}, m)
 
 	return message, err
 }
@@ -173,45 +136,20 @@ func (messenger *BoostRequestMessenger) SendRoll(
 func (messenger *BoostRequestMessenger) SendLogChannelMessage(
 	br *repository.BoostRequest, channelID string,
 ) (*discordgo.Message, error) {
-	if br.EmbedFields != nil {
-		// TODO return an error
-		return nil, nil
-	}
-	user, err := messenger.discord.User(br.RequesterID)
-	if err != nil {
-		return nil, err
-	}
-
-	embed := &discordgo.MessageEmbed{
-		Color:       0x0000FF,
-		Title:       "New Boost Request",
-		Description: br.Message,
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:  "Requested By",
-				Value: user.Mention() + " " + user.String(),
-			},
-		},
-		Footer:    footer,
-		Timestamp: time.Now().Format(time.RFC3339),
-	}
-	message, err := messenger.discord.ChannelMessageSendEmbed(channelID, embed)
+	m := messages.NewLogChannelMessage(messenger.localizer("en"), messenger.discord, br)
+	message, err := messenger.send(&MessageDestination{
+		DestinationID:   channelID,
+		DestinationType: DestinationChannel,
+	}, m)
 	return message, err
 }
 
 func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(userID string, credits int) (*discordgo.Message, error) {
-	dmChannel, err := messenger.discord.UserChannelCreate(userID)
-	if err != nil {
-		return nil, err
-	}
-	var plural string
-	if credits != 1 {
-		plural = "s"
-	}
-	message, err := messenger.discord.ChannelMessageSend(
-		dmChannel.ID,
-		fmt.Sprintf("You now have %d boost request steal credit%s.", credits, plural),
-	)
+	m := messages.NewCreditsUpdatedDM(messenger.localizer("en"), credits)
+	message, err := messenger.send(&MessageDestination{
+		DestinationID:   userID,
+		DestinationType: DestinationUser,
+	}, m)
 	return message, err
 }
 
@@ -221,13 +159,6 @@ func (messenger *BoostRequestMessenger) Destroy() {
 		close(messenger.quit)
 		messenger.waitGroup.Wait()
 	}
-}
-
-func (messenger *BoostRequestMessenger) formatFloat(f float64) string {
-	return strings.TrimRight(
-		strings.TrimRight(fmt.Sprintf("%.2f", f), "0"),
-		".",
-	)
 }
 
 func (messenger *BoostRequestMessenger) localizer(langs ...string) *i18n.Localizer {
