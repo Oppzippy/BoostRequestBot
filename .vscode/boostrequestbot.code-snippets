@@ -18,5 +18,34 @@
       "\t$6",
       "}"
     ]
+  },
+  "Message": {
+    "scope": "go",
+    "prefix": "message",
+    "description": "Struct with a Message() (discordgo.MessageSend, Error) function",
+    "body": [
+      "import (",
+      "\t\"github.com/bwmarrin/discordgo\"",
+      "\t\"github.com/nicksnyder/go-i18n/v2/i18n\"",
+      "\t\"github.com/oppzippy/BoostRequestBot/boost_request/repository\"",
+      ")",
+      "",
+      "type $1 struct {",
+      "\tlocalizer *i18n.Localizer",
+      "\tboostRequest *repository.BoostRequest",
+      "}",
+      "",
+      "func New$1(",
+      "\tlocalizer *i18n.Localizer, br *repository.BoostRequest,",
+      ") *$1 {",
+      "\treturn &$1{",
+      "\t\tlocalizer: localizer,",
+      "\t\tboostRequest: br,",
+      "\t}",
+      "}",
+      "",
+      "func (m *$1) Message() (*discordgo.MessageSend, error) {",
+      "}"
+    ]
   }
 }
