@@ -1,6 +1,7 @@
 package messages_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
@@ -49,52 +50,35 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 				BoostType: "mythic+",
 				Discount:  discount,
 			},
+			{
+				RoleID:    "1",
+				BoostType: "raid",
+				Discount:  discount,
+			},
 		},
 	}
-
-	t.Run("NoRole", func(t *testing.T) {
-		bsm := messages.NewBackendSignupMessage(
+	bsm := messages.NewBackendSignupMessage(
+		emptyLocalizer(),
+		messages.NewDiscountFormatter(
 			emptyLocalizer(),
-			messages.NewDiscountFormatter(
-				emptyLocalizer(),
-				&mocks.MockRoleNameProvider{},
-			),
-			br,
-		)
+			&mocks.MockRoleNameProvider{
+				Value: "booster",
+			},
+		),
+		br,
+	)
 
-		message, err := bsm.Message()
-		if err != nil {
-			t.Errorf("error generating message: %v", err)
-			return
-		}
-		actual := message.Embed.Fields[0].Value
+	message, err := bsm.Message()
+	if err != nil {
+		t.Errorf("error generating message: %v", err)
+		return
+	}
+	lines := strings.Split(message.Embed.Fields[0].Value, "\n")
 
-		if expected := "20% discount on mythic+"; actual != expected {
-			t.Errorf("Expected %s, got %s", expected, actual)
-		}
-	})
-
-	t.Run("WithRole", func(t *testing.T) {
-		bsm := messages.NewBackendSignupMessage(
-			emptyLocalizer(),
-			messages.NewDiscountFormatter(
-				emptyLocalizer(),
-				&mocks.MockRoleNameProvider{
-					Value: "booster",
-				},
-			),
-			br,
-		)
-
-		message, err := bsm.Message()
-		if err != nil {
-			t.Errorf("error generating message: %v", err)
-			return
-		}
-		actual := message.Embed.Fields[0].Value
-
-		if expected := "20% discount on mythic+ (booster)"; actual != expected {
-			t.Errorf("Expected %s, got %s", expected, actual)
-		}
-	})
+	if expected := "20% discount on mythic+ (booster)"; lines[0] != expected {
+		t.Errorf("Expected %s, got %s", expected, lines[0])
+	}
+	if expected := "20% discount on raid (booster)"; lines[1] != expected {
+		t.Errorf("Expected %s, got %s", expected, lines[1])
+	}
 }

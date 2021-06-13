@@ -25,9 +25,10 @@ func (df *DiscountFormatter) FormatDiscounts(discounts []*repository.RoleDiscoun
 	if len(discounts) != 0 {
 		for _, rd := range discounts {
 			sb.WriteString(df.FormatDiscount(rd))
+			sb.WriteString("\n")
 		}
 	}
-	return sb.String()
+	return strings.TrimRight(sb.String(), "\n")
 }
 
 func (df *DiscountFormatter) FormatDiscount(roleDiscount *repository.RoleDiscount) string {
