@@ -46,7 +46,23 @@ jobs:
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
           script: screen -dm bash -c "./update"
-  
+
+  changelog:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 100
+      - name: Generate changelog
+        run: git log $(git describe --always --abbrev=0 --tags $(git describe --abbrev=0 --tags --always)^)..HEAD --oneline --pretty="- %s" > CHANGELOG.md
+      - name: Upload changelog
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   generate-sdk:
     runs-on: ubuntu-latest
     steps:
@@ -71,7 +87,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files:
-            sdk_zip/*
+          files: sdk_zip/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
