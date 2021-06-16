@@ -6,7 +6,6 @@ CantDM = "<@{{.UserID}}>, I can't DM you. Please allow DMs from server members b
 DiscountOnBoostType = "{{.DiscountPercentage}}% discount on {{.BoostType}}"
 DiscountOnBoostTypeForRole = "{{.DiscountPercentage}}% discount on {{.BoostType}} ({{.Role}})"
 MessageUserBelow = "Please message the user listed below."
-NewBoostRequest = "New Boost Request"
 PleaseMessage = "Please message {{.RequesterMention}} {{.RequesterTag}}."
 RequestedBy = "Requested By"
 RequesterEligibleForDiscounts = "The requester is eligible for discounts"
@@ -21,6 +20,10 @@ other = "{{.AdvertiserMention}}: {{.Min}} to {{.Max}}"
 [BoostRequest]
 one = "Boost Request"
 other = "Boost Requests"
+
+[NewBoostRequest]
+one = "New Boost Request"
+other = "New Boost Requests"
 
 [YourCreditsUpdated]
 one = "You now have {{.Credits}} boost request steal credit."

@@ -39,7 +39,8 @@ func (m *LogChannelMessage) Message() (*discordgo.MessageSend, error) {
 			Title: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "NewBoostRequest",
-					Other: "New Boost Request",
+					One:   "New Boost Request",
+					Other: "New Boost Requests",
 				},
 			}),
 			Description: m.boostRequest.Message,

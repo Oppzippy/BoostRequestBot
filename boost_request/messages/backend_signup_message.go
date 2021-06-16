@@ -35,8 +35,9 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 			Color: 0x0000FF,
 			Title: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
-					ID:  "NewBoostRequest",
-					One: "New Boost Request",
+					ID:    "NewBoostRequest",
+					One:   "New Boost Request",
+					Other: "New Boost Requests",
 				},
 				PluralCount: 1,
 			}),
