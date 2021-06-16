@@ -42,6 +42,7 @@ func (m *LogChannelMessage) Message() (*discordgo.MessageSend, error) {
 					One:   "New Boost Request",
 					Other: "New Boost Requests",
 				},
+				PluralCount: 1,
 			}),
 			Description: m.boostRequest.Message,
 			Fields: []*discordgo.MessageEmbedField{
