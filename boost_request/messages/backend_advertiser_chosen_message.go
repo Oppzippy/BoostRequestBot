@@ -65,8 +65,9 @@ func formatBoostRequest(localizer *i18n.Localizer, br *repository.BoostRequest) 
 			{
 				Name: localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
-						ID:  "BoostRequest",
-						One: "Boost Request",
+						ID:    "BoostRequest",
+						One:   "Boost Request",
+						Other: "Boost Requests",
 					},
 					PluralCount: 1,
 				}),

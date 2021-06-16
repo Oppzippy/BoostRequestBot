@@ -20,6 +20,7 @@ other = "{{.AdvertiserMention}}: {{.Min}} to {{.Max}}"
 
 [BoostRequest]
 one = "Boost Request"
+other = "Boost Requests"
 
 [YourCreditsUpdated]
 one = "You now have {{.Credits}} boost request steal credit."
