@@ -21,6 +21,7 @@ func (m *DMBlockedMessage) Message() (*discordgo.MessageSend, error) {
 	return &discordgo.MessageSend{
 		Content: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
+				ID:    "CantDM",
 				Other: "<@{{.UserID}}>, I can't DM you. Please allow DMs from server members by right clicking the server and enabling \"Allow direct messages from server members.\" in Privacy Settings.",
 			},
 			TemplateData: map[string]string{

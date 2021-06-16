@@ -59,6 +59,7 @@ func TestBoostRequestRollMessage(t *testing.T) {
 func localizeFloat(f float64) string {
 	return emptyLocalizer().MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
+			ID:    "Float64",
 			Other: "{{.Float}}",
 		},
 		TemplateData: map[string]float64{

@@ -6,17 +6,17 @@ import (
 	"io"
 	"log"
 
+	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v2"
 )
 
-//go:embed *.yaml
+//go:embed active.*.toml
 var locales embed.FS
 
 func Bundle() *i18n.Bundle {
 	bundle := i18n.NewBundle(language.English)
-	bundle.RegisterUnmarshalFunc("yaml", yaml.Unmarshal)
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 	err := addLocalesToBundle(bundle)
 	if err != nil {
 		log.Fatalf("failed to register locales: %v", err)

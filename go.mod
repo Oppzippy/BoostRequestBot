@@ -3,6 +3,7 @@ module github.com/oppzippy/BoostRequestBot
 go 1.16
 
 require (
+	github.com/BurntSushi/toml v0.3.1
 	github.com/bwmarrin/discordgo v0.23.2
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
@@ -13,10 +14,9 @@ require (
 	github.com/johejo/golang-migrate-extra v0.0.0-20210217013041-51a992e50d16
 	github.com/joho/godotenv v1.3.0
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/lus/dgc v1.0.9-0.20210403172310-4006663fca90
+	github.com/lus/dgc v1.1.0
 	github.com/nicksnyder/go-i18n/v2 v2.1.2
 	github.com/shopspring/decimal v1.2.0
-	golang.org/x/text v0.3.3
+	golang.org/x/text v0.3.6
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/yaml.v2 v2.3.0
 )
