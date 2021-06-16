@@ -26,7 +26,6 @@ func NewLogChannelMessage(
 
 func (m *LogChannelMessage) Message() (*discordgo.MessageSend, error) {
 	if m.boostRequest.Channel.UsesBuyerMessage {
-		// TODO maybe return an error? no need to log if we aren't deleting the buyer's message.
 		return nil, errors.New("UsesBuyerMessage logging not implemented")
 	}
 	user, err := m.userProvider.User(m.boostRequest.RequesterID)
