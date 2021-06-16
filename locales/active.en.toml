@@ -24,4 +24,4 @@ other = "Boost Requests"
 
 [YourCreditsUpdated]
 one = "You now have {{.Credits}} boost request steal credit."
-other = "You now have {{.Credits}} boost request steal credit."
+other = "You now have {{.Credits}} boost request steal credits."

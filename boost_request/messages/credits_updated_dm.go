@@ -25,7 +25,7 @@ func (m *CreditsUpdatedDM) Message() (*discordgo.MessageSend, error) {
 			DefaultMessage: &i18n.Message{
 				ID:    "YourCreditsUpdated",
 				One:   "You now have {{.Credits}} boost request steal credit.",
-				Other: "You now have {{.Credits}} boost request steal credit.",
+				Other: "You now have {{.Credits}} boost request steal credits.",
 			},
 			TemplateData: map[string]int{
 				"Credits": m.credits,
