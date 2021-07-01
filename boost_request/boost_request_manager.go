@@ -310,12 +310,12 @@ func (brm *BoostRequestManager) setWinner(event *AdvertiserChosenEvent) {
 	rollChannel, err := brm.repo.GetRollChannel(br.Channel.GuildID)
 	if err != nil {
 		if err != repository.ErrNoResults {
-			fmt.Printf("Error fetching log channel: %v", err)
+			log.Printf("Error fetching log channel: %v", err)
 		}
 	} else {
 		_, err := brm.messenger.SendRoll(rollChannel, &br, event.RollResults)
 		if err != nil {
-			fmt.Printf("Error sending roll message: %v", err)
+			log.Printf("Error sending roll message: %v", err)
 		}
 	}
 }

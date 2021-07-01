@@ -26,13 +26,13 @@ import (
 )
 
 func main() {
-	log.Println("Starting bot")
+	fmt.Println("Starting bot")
 	rand.Seed(time.Now().UnixNano())
 	localeBundle := locales.Bundle()
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Printf("Error loading .env file: %v", err)
+		fmt.Printf("Error loading .env file: %v", err)
 	}
 
 	db, err := initialization.GetDBC()
@@ -74,7 +74,7 @@ func main() {
 
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
-	log.Println("Stopping bot")
+	fmt.Println("Stopping bot")
 }
 
 func setUpDiscord() (*discordgo.Session, error) {

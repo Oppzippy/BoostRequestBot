@@ -1,7 +1,7 @@
 package roll
 
 import (
-	"fmt"
+	"log"
 	"math/rand"
 )
 
@@ -40,7 +40,7 @@ func (roll *WeightedRoll) Roll() (results *WeightedRollResults, ok bool) {
 	}
 
 	if chosenIndex == -1 {
-		fmt.Printf("WeightedRoll failed to choose an item! %f/%f", chosenWeight, weightAccumulator)
+		log.Printf("WeightedRoll failed to choose an item! %f/%f", chosenWeight, weightAccumulator)
 		return nil, false
 	}
 
