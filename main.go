@@ -85,10 +85,10 @@ func setUpDiscord() (*discordgo.Session, error) {
 	discord.Identify.Intents = discordgo.IntentsNone
 
 	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Connect) {
-		log.Println("Connected to discord")
+		fmt.Println("Connected to discord")
 	})
 	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Disconnect) {
-		log.Println("Disconnected from discord")
+		fmt.Println("Disconnected from discord")
 	})
 	return discord, nil
 }
