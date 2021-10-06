@@ -14,7 +14,6 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/johejo/golang-migrate-extra v0.0.0-20211005021153-c17dd75f8b4a
 	github.com/joho/godotenv v1.4.0
 	github.com/karrick/tparse/v2 v2.8.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect

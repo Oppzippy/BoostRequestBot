@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
-	"github.com/johejo/golang-migrate-extra/source/iofs"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/oppzippy/BoostRequestBot/migrations"
 )
 
