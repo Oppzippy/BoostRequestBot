@@ -1,51 +1,41 @@
 package routes
 
 import (
-	"encoding/json"
-	"log"
+	"context"
 	"net/http"
+
+	"github.com/oppzippy/BoostRequestBot/api/middleware"
+	"github.com/oppzippy/BoostRequestBot/api/models"
 )
 
-type GenericResponse struct {
-	StatusCode int    `json:"statusCode"`
-	Error      string `json:"error,omitempty"`
-	Message    string `json:"message"`
-}
-
-func (er *GenericResponse) Write(rw http.ResponseWriter) {
-	marshaledResp, err := json.Marshal(er)
-	if err != nil {
-		log.Printf("Error marshalling internal server error json: %v", err)
-	}
-	rw.WriteHeader(er.StatusCode)
-	rw.Write(marshaledResp)
-}
-
-func respondOK(rw http.ResponseWriter) {
-	response := GenericResponse{
+func respondOK(rw http.ResponseWriter, r *http.Request) {
+	response := models.GenericResponse{
 		StatusCode: http.StatusOK,
 		Message:    "OK",
 	}
-	response.Write(rw)
+	ctx := context.WithValue(r.Context(), middleware.MiddlewareJsonResponse, response)
+	*r = *r.Clone(ctx)
 }
 
-func internalServerError(rw http.ResponseWriter, message string) {
+func internalServerError(rw http.ResponseWriter, r *http.Request, message string) {
 	if message == "" {
 		message = "An unexpected error has occurred."
 	}
-	response := GenericResponse{
+	response := models.GenericResponse{
 		StatusCode: http.StatusInternalServerError,
 		Error:      "Internal Server Error",
 		Message:    message,
 	}
-	response.Write(rw)
+	ctx := context.WithValue(r.Context(), middleware.MiddlewareJsonResponse, response)
+	*r = *r.Clone(ctx)
 }
 
-func badRequest(rw http.ResponseWriter, message string) {
-	resp := GenericResponse{
+func badRequest(rw http.ResponseWriter, r *http.Request, message string) {
+	response := models.GenericResponse{
 		StatusCode: http.StatusBadRequest,
 		Error:      "Bad Request",
 		Message:    message,
 	}
-	resp.Write(rw)
+	ctx := context.WithValue(r.Context(), middleware.MiddlewareJsonResponse, response)
+	*r = *r.Clone(ctx)
 }

@@ -1,14 +1,19 @@
 package routes
 
 import (
+	"context"
 	"net/http"
+
+	"github.com/oppzippy/BoostRequestBot/api/middleware"
+	"github.com/oppzippy/BoostRequestBot/api/models"
 )
 
 func NotFoundHandler(rw http.ResponseWriter, r *http.Request) {
-	resp := GenericResponse{
+	resp := models.GenericResponse{
 		StatusCode: http.StatusNotFound,
 		Error:      "Not Found",
 		Message:    "The requested API endpoint does not exist.",
 	}
-	resp.Write(rw)
+	ctx := context.WithValue(r.Context(), middleware.MiddlewareJsonResponse, resp)
+	*r = *r.Clone(ctx)
 }

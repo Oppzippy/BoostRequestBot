@@ -36,6 +36,7 @@ func router(repo repository.Repository) http.Handler {
 	v1.Handle("/users/{userID:[0-9]+}/stealCredits", routes.NewStealCreditsPatchHandler(repo)).Methods("PATCH")
 
 	v1.Use(middleware.ContentTypeMiddleware("application/json"))
+	v1.Use(middleware.JsonResponseMiddleware())
 	v1.Use(middleware.APIKeyMiddleware(repo))
 	v1.Use(middleware.RequireAuthorizationMiddleware())
 

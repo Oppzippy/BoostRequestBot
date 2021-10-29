@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
-	"github.com/oppzippy/BoostRequestBot/api/routes"
+	"github.com/oppzippy/BoostRequestBot/api/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -23,18 +23,19 @@ func APIKeyMiddleware(repo repository.Repository) mux.MiddlewareFunc {
 					ctx := context.WithValue(r.Context(), context_key.K("isAuthorized"), true)
 					ctx = context.WithValue(ctx, context_key.K("guildID"), apiKey.GuildID)
 
-					*r = *r.WithContext(ctx)
+					*r = *r.Clone(ctx)
 					next.ServeHTTP(rw, r)
 					return
 				}
 			}
 
-			resp := routes.GenericResponse{
+			resp := models.GenericResponse{
 				StatusCode: http.StatusUnauthorized,
 				Error:      "Unauthorized",
 				Message:    "You must specify an api key with the header X-API-Key: your_api_key",
 			}
-			resp.Write(rw)
+			ctx := context.WithValue(r.Context(), MiddlewareJsonResponse, resp)
+			*r = *r.Clone(ctx)
 		})
 	}
 }
