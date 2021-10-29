@@ -1,4 +1,4 @@
-package boost_request_test
+package messenger_test
 
 import (
 	"testing"

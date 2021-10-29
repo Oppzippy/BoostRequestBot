@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -20,7 +21,7 @@ func (repo *dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, ba
 
 func (repo *dbRepository) GetUnresolvedBoostRequests() ([]*repository.BoostRequest, error) {
 	// TODO don't load really old boost requests
-	boostRequests, err := repo.getBoostRequests("WHERE resolved_at IS NULL")
+	boostRequests, err := repo.getBoostRequests("WHERE resolved_at IS NULL AND deleted_at IS NULL")
 	return boostRequests, err
 }
 
@@ -39,10 +40,12 @@ func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*r
 func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([]*repository.BoostRequest, error) {
 	row, err := repo.db.Query(
 		`SELECT
-			br.id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.created_at, br.resolved_at,
+			br.id, br.external_id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.created_at, br.resolved_at,
 			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
-		FROM boost_request br
-			INNER JOIN boost_request_channel brc ON br.boost_request_channel_id = brc.id
+		FROM
+			boost_request br
+		INNER JOIN boost_request_channel brc ON
+			br.boost_request_channel_id = brc.id
 		`+where,
 		args...,
 	)
@@ -81,7 +84,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	var resolvedAt sql.NullTime
 	var embedFieldsJSON sql.NullString
 	err := row.Scan(
-		&br.ID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &br.CreatedAt, &resolvedAt,
+		&br.ID, &br.ExternalID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &br.CreatedAt, &resolvedAt,
 		&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
 	)
 	if err != nil {
@@ -104,6 +107,10 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 
 // Inserts the boost request into the database and updates the ID field to match the newly inserted row's id
 func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error {
+	externalID, err := uuid.NewRandom()
+	if err != nil {
+		return err
+	}
 	var advertiserID *string
 	if br.AdvertiserID != "" {
 		advertiserID = &br.AdvertiserID
@@ -124,8 +131,9 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 	}
 	res, err := tx.Exec(
 		`INSERT INTO boost_request
-			(boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			(external_id, boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		externalID.String(),
 		br.Channel.ID,
 		br.RequesterID,
 		advertiserID,
@@ -149,6 +157,7 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		return err
 	}
 	br.ID = id
+	br.ExternalID = &externalID
 	err = tx.Commit()
 	return err
 }
@@ -253,4 +262,20 @@ func getBoostRequestRoleDiscounts(db queryable, boostRequestID int64) ([]*reposi
 		discounts = append(discounts, &rd)
 	}
 	return discounts, nil
+}
+
+func (repo *dbRepository) DeleteBoostRequest(br *repository.BoostRequest) error {
+	_, err := repo.db.Exec(`
+		UPDATE
+			boost_request
+		SET
+			deleted_at = ?
+		WHERE
+			id = ?
+		AND
+			deleted_at IS NULL`,
+		time.Now(),
+		br.ID,
+	)
+	return err
 }

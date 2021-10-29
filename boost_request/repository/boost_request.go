@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 )
 
 type MessageEmbedField struct {
@@ -13,7 +14,9 @@ type MessageEmbedField struct {
 }
 
 type BoostRequest struct {
-	ID               int64
+	ID int64
+	// TODO generate uuids for all nulls and make the column not null
+	ExternalID       *uuid.UUID
 	Channel          BoostRequestChannel
 	RequesterID      string
 	AdvertiserID     string

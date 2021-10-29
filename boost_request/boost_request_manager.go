@@ -8,7 +8,10 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/active_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+	"github.com/oppzippy/BoostRequestBot/boost_request/sequences"
 )
 
 const AcceptEmoji = "👍"
@@ -19,87 +22,27 @@ type BoostRequestManager struct {
 	discord        *discordgo.Session
 	repo           repository.Repository
 	bundle         *i18n.Bundle
-	messenger      *BoostRequestMessenger
+	messenger      *messenger.BoostRequestMessenger
 	activeRequests *sync.Map
 	isLoaded       bool
 	isLoadedLock   *sync.Mutex
 }
 
 func NewBoostRequestManager(discord *discordgo.Session, repo repository.Repository, bundle *i18n.Bundle) *BoostRequestManager {
-	brm := BoostRequestManager{
+	brm := &BoostRequestManager{
 		discord:        discord,
 		repo:           repo,
 		bundle:         bundle,
-		messenger:      NewBoostRequestMessenger(discord, bundle),
+		messenger:      messenger.NewBoostRequestMessenger(discord, bundle),
 		activeRequests: new(sync.Map),
 		isLoadedLock:   new(sync.Mutex),
 	}
 
-	discord.Identify.Intents |= discordgo.IntentsGuilds
-	discord.Identify.Intents |= discordgo.IntentsGuildMessages
-	discord.Identify.Intents |= discordgo.IntentsGuildMessageReactions
-	discord.Identify.Intents |= discordgo.IntentsDirectMessages
-
-	discord.AddHandler(brm.onMessageCreate)
-	discord.AddHandler(brm.onMessageReactionAdd)
-	discord.AddHandler(brm.onMessageReactionRemove)
-
-	return &brm
+	return brm
 }
 
 func (brm *BoostRequestManager) Destroy() {
 	brm.messenger.Destroy()
-}
-
-func (brm *BoostRequestManager) onMessageCreate(discord *discordgo.Session, event *discordgo.MessageCreate) {
-	if event.Author.ID != discord.State.User.ID && event.GuildID != "" {
-		brc, err := brm.repo.GetBoostRequestChannelByFrontendChannelID(event.GuildID, event.ChannelID)
-		if err != nil && err != repository.ErrNoResults {
-			log.Printf("Error fetching boost request channel: %v", err)
-			return
-		}
-		if brc != nil {
-			if !brc.UsesBuyerMessage {
-				err := discord.ChannelMessageDelete(event.ChannelID, event.ID)
-				if err != nil {
-					log.Printf("Error deleting message: %v", err)
-				}
-			}
-			_, err = brm.CreateBoostRequest(brc, event.Author.ID, event.Message)
-			if err != nil {
-				log.Printf("Error creating boost request: %v", err)
-				return
-			}
-		}
-	}
-}
-
-func (brm *BoostRequestManager) onMessageReactionAdd(discord *discordgo.Session, event *discordgo.MessageReactionAdd) {
-	if event.UserID != discord.State.User.ID {
-		br, err := brm.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.MessageID)
-		if err != nil && err != repository.ErrNoResults {
-			log.Printf("Error fetching boost request: %v", err)
-			return
-		}
-		if br != nil {
-			switch event.Emoji.Name {
-			case AcceptEmoji:
-				brm.addAdvertiserToBoostRequest(br, event.UserID)
-			case StealEmoji:
-				brm.stealBoostRequest(br, event.UserID)
-			}
-		}
-	}
-}
-
-func (brm *BoostRequestManager) onMessageReactionRemove(discord *discordgo.Session, event *discordgo.MessageReactionRemove) {
-	req, ok := brm.activeRequests.Load(event.MessageID)
-	if ok {
-		ar, ok := req.(*activeRequest)
-		if ok {
-			ar.RemoveSignup(event.UserID)
-		}
-	}
 }
 
 func (brm *BoostRequestManager) LoadBoostRequests() {
@@ -113,32 +56,38 @@ func (brm *BoostRequestManager) LoadBoostRequests() {
 		}
 		brm.isLoaded = true
 		for _, br := range boostRequests {
-			brm.activeRequests.Store(br.BackendMessageID, NewActiveRequest(*br, brm.setWinner))
+			brm.activeRequests.Store(br.BackendMessageID, active_request.NewActiveRequest(*br, brm.setWinner))
 		}
 	}
 }
 
+type BoostRequestPartial struct {
+	RequesterID      string
+	Message          string
+	EmbedFields      []*repository.MessageEmbedField
+	BackendMessageID string
+}
+
 func (brm *BoostRequestManager) CreateBoostRequest(
-	brc *repository.BoostRequestChannel, requesterID string, message *discordgo.Message,
+	brc *repository.BoostRequestChannel, brPartial BoostRequestPartial,
 ) (*repository.BoostRequest, error) {
 	createdAt := time.Now().UTC()
 
-	var embedFields []*discordgo.MessageEmbedField
-	if len(message.Embeds) == 1 {
-		embedFields = message.Embeds[0].Fields
-	}
 	br := &repository.BoostRequest{
 		Channel:     *brc,
-		RequesterID: requesterID,
-		Message:     message.Content,
-		EmbedFields: repository.FromDiscordEmbedFields(embedFields),
+		RequesterID: brPartial.RequesterID,
+		Message:     brPartial.Message,
+		EmbedFields: brPartial.EmbedFields,
 		CreatedAt:   createdAt,
+	}
+
+	if brc.UsesBuyerMessage {
+		br.BackendMessageID = brPartial.BackendMessageID
 	}
 
 	// Essentially checking if the user is a bot
 	// TODO add IsBot to BoostRequest
 	if br.EmbedFields == nil {
-		var err error
 		rd, err := brm.getRoleDiscountsForUser(br.Channel.GuildID, br.RequesterID)
 		if err != nil {
 			// They won't get their discounts, but we don't have to abort
@@ -147,55 +96,26 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		br.RoleDiscounts = rd
 	}
 
-	var backendMessage *discordgo.Message
-	if brc.UsesBuyerMessage {
-		backendMessage = message
+	sequenceArgs := sequences.CreateSequenceArgs{
+		Repository:        brm.repo,
+		BoostRequest:      br,
+		Discord:           brm.discord,
+		Messenger:         brm.messenger,
+		ActiveRequests:    brm.activeRequests,
+		SetWinnerCallback: brm.setWinner,
+	}
+	if br.EmbedFields == nil {
+		err := sequences.RunCreateHumanRequesterSequence(sequenceArgs)
+		if err != nil {
+			return nil, fmt.Errorf("boost request creation failed with human requester: %v", err)
+		}
 	} else {
-		var err error
-		backendMessage, err = brm.messenger.SendBackendSignupMessage(br)
+		err := sequences.RunCreateBotRequesterSequence(sequenceArgs)
 		if err != nil {
-			return nil, fmt.Errorf("sending backend signup message: %w", err)
+			return nil, fmt.Errorf("boost request creation failed with bot requester: %v", err)
 		}
 	}
-	br.BackendMessageID = backendMessage.ID
-
-	err := brm.React(br)
-	if err != nil {
-		return nil, fmt.Errorf("reacting to boost request: %v", err)
-	}
-
-	err = brm.repo.InsertBoostRequest(br)
-	if err != nil {
-		return nil, fmt.Errorf("inserting new boost request in db: %w", err)
-	}
-
-	if !brc.SkipsBuyerDM {
-		brm.messenger.SendBoostRequestCreatedDM(br)
-	}
-	brm.activeRequests.Store(br.BackendMessageID, NewActiveRequest(*br, brm.setWinner))
-
-	logChannel, err := brm.repo.GetLogChannel(brc.GuildID)
-	if err != repository.ErrNoResults {
-		if err != nil {
-			log.Printf("Error fetching log channel: %v", err)
-		} else {
-			brm.messenger.SendLogChannelMessage(br, logChannel)
-		}
-	}
-
 	return br, nil
-}
-
-func (brm *BoostRequestManager) React(br *repository.BoostRequest) error {
-	err := brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, AcceptEmoji)
-	if err != nil {
-		return err
-	}
-	err = brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, StealEmoji)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Best is defined as the role with the highest weight
@@ -216,7 +136,7 @@ func (brm *BoostRequestManager) GetBestRolePrivileges(guildID string, roles []st
 	return bestPrivileges
 }
 
-func (brm *BoostRequestManager) addAdvertiserToBoostRequest(br *repository.BoostRequest, userID string) {
+func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.BoostRequest, userID string) {
 	// TODO cache roles
 	guildMember, err := brm.discord.GuildMember(br.Channel.GuildID, userID)
 	if err != nil {
@@ -229,7 +149,7 @@ func (brm *BoostRequestManager) addAdvertiserToBoostRequest(br *repository.Boost
 	}
 }
 
-func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, userID string) (ok bool) {
+func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, userID string) (ok bool) {
 	credits, err := brm.repo.GetStealCreditsForUser(br.Channel.GuildID, userID)
 	if err != nil {
 		log.Printf("Error fetching steal credits: %v", err)
@@ -253,7 +173,7 @@ func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, u
 	if !ok {
 		return false
 	}
-	r := req.(*activeRequest)
+	r := req.(*active_request.ActiveRequest)
 	endTime := br.CreatedAt.Add(time.Duration(privileges.Delay) * time.Second)
 	now := time.Now()
 	ok = r.SetAdvertiser(userID)
@@ -269,7 +189,7 @@ func (brm *BoostRequestManager) stealBoostRequest(br *repository.BoostRequest, u
 	return ok
 }
 
-func (brm *BoostRequestManager) setWinner(event *AdvertiserChosenEvent) {
+func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosenEvent) {
 	br := event.BoostRequest
 	userID := event.UserID
 
@@ -334,6 +254,6 @@ func (brm *BoostRequestManager) signUp(br *repository.BoostRequest, userID strin
 	if !ok {
 		return
 	}
-	r := req.(*activeRequest)
+	r := req.(*active_request.ActiveRequest)
 	r.AddSignup(userID, *privileges)
 }

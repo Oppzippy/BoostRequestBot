@@ -1,11 +1,11 @@
-package boost_request_test
+package active_request_test
 
 import (
 	"math"
 	"testing"
 	"time"
 
-	"github.com/oppzippy/BoostRequestBot/boost_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/active_request"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -13,7 +13,7 @@ func TestImmediateSignup(t *testing.T) {
 	t.Parallel()
 	start := time.Now()
 	c := make(chan struct{})
-	ar := boost_request.NewActiveRequest(repository.BoostRequest{
+	ar := active_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{
 			GuildID:           "guild",
 			FrontendChannelID: "frontend",
@@ -23,7 +23,7 @@ func TestImmediateSignup(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        start,
-	}, func(event *boost_request.AdvertiserChosenEvent) {
+	}, func(event *active_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 
@@ -53,7 +53,7 @@ func TestImmediateSignup(t *testing.T) {
 func TestLateSignup(t *testing.T) {
 	t.Parallel()
 	c := make(chan struct{})
-	ar := boost_request.NewActiveRequest(repository.BoostRequest{
+	ar := active_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{
 			GuildID:           "guild",
 			FrontendChannelID: "frontend",
@@ -63,7 +63,7 @@ func TestLateSignup(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(event *boost_request.AdvertiserChosenEvent) {
+	}, func(event *active_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 	<-time.After(2 * time.Second)
@@ -84,7 +84,7 @@ func TestLateSignup(t *testing.T) {
 func TestSetAdvertiser(t *testing.T) {
 	t.Parallel()
 	c := make(chan struct{})
-	ar := boost_request.NewActiveRequest(repository.BoostRequest{
+	ar := active_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{
 			GuildID:           "guild",
 			FrontendChannelID: "frontend",
@@ -94,7 +94,7 @@ func TestSetAdvertiser(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(event *boost_request.AdvertiserChosenEvent) {
+	}, func(event *active_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 
@@ -109,7 +109,7 @@ func TestSetAdvertiser(t *testing.T) {
 func TestRepeatedSetAdvertiser(t *testing.T) {
 	t.Parallel()
 	c := make(chan struct{})
-	ar := boost_request.NewActiveRequest(repository.BoostRequest{
+	ar := active_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{
 			GuildID:           "guild",
 			FrontendChannelID: "frontend",
@@ -119,7 +119,7 @@ func TestRepeatedSetAdvertiser(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(event *boost_request.AdvertiserChosenEvent) {
+	}, func(event *active_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 
@@ -146,7 +146,7 @@ func TestRepeatedSetAdvertiser(t *testing.T) {
 func TestRepeatedSignupOfSameUser(t *testing.T) {
 	t.Parallel()
 	c := make(chan struct{})
-	ar := boost_request.NewActiveRequest(repository.BoostRequest{
+	ar := active_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{
 			GuildID:           "guild",
 			FrontendChannelID: "frontend",
@@ -156,7 +156,7 @@ func TestRepeatedSignupOfSameUser(t *testing.T) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(event *boost_request.AdvertiserChosenEvent) {
+	}, func(event *active_request.AdvertiserChosenEvent) {
 		c <- struct{}{}
 	})
 
@@ -217,7 +217,7 @@ func TestRandomness(t *testing.T) {
 }
 
 func runIteration(winners chan string) {
-	ar := boost_request.NewActiveRequest(repository.BoostRequest{
+	ar := active_request.NewActiveRequest(repository.BoostRequest{
 		Channel: repository.BoostRequestChannel{
 			GuildID:           "guild",
 			FrontendChannelID: "frontend",
@@ -227,7 +227,7 @@ func runIteration(winners chan string) {
 		BackendMessageID: "backendMessage",
 		Message:          "I would like one boost please!",
 		CreatedAt:        time.Now(),
-	}, func(event *boost_request.AdvertiserChosenEvent) {
+	}, func(event *active_request.AdvertiserChosenEvent) {
 		winners <- event.UserID
 	})
 

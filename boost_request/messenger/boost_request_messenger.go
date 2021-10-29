@@ -1,4 +1,4 @@
-package boost_request
+package messenger
 
 import (
 	"fmt"

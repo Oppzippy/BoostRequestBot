@@ -48,10 +48,11 @@ func main() {
 
 	var repo repository.Repository = db_repository.NewRepository(db)
 	brm := boost_request.NewBoostRequestManager(discord, repo, localeBundle)
-	brm.LoadBoostRequests()
-	registerCommandRouter(discord, repo)
-
 	defer brm.Destroy()
+	brm.LoadBoostRequests()
+
+	_ = boost_request.NewBoostRequestDiscordHandler(discord, repo, brm)
+	registerCommandRouter(discord, repo)
 
 	server := api.NewWebAPI(repo, os.Getenv("HTTP_LISTEN_ADDRESS"))
 
