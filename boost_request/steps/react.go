@@ -7,8 +7,10 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-const AcceptEmoji = "👍"
-const StealEmoji = "⏭"
+const (
+	AcceptEmoji = "👍"
+	StealEmoji  = "⏭"
+)
 
 type reactStep struct {
 	discord *discordgo.Session

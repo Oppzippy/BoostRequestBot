@@ -14,9 +14,11 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/sequences"
 )
 
-const AcceptEmoji = "👍"
-const StealEmoji = "⏭"
-const ResolvedEmoji = "✅"
+const (
+	AcceptEmoji   = "👍"
+	StealEmoji    = "⏭"
+	ResolvedEmoji = "✅"
+)
 
 type BoostRequestManager struct {
 	discord        *discordgo.Session

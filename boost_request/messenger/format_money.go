@@ -6,8 +6,10 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
-const copperPerSilver = 1_00
-const copperPerGold = 1_00_00
+const (
+	copperPerSilver int64 = 1_00
+	copperPerGold   int64 = 1_00_00
+)
 
 func FormatCopper(localizer *i18n.Localizer, totalCopper int64) string {
 	copper := totalCopper % 100
