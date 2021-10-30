@@ -1,9 +1,10 @@
-openapi: '3.0.2'
+openapi: "3.0.2"
 info:
   title: Boost Request Bot
-  version: '1.0'
+  version: "1.0"
 servers:
   - url: https://boostrequestbot.oppzippy.com/v1
+  - url: http://localhost:8080
 paths:
   /users/{userId}/stealCredits:
     get:
@@ -18,16 +19,16 @@ paths:
           required: true
           description: User's discord id
       responses:
-        '200':
+        "200":
           description: Number of boost request steal credits available to the user in a JSON object.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserStealCredits'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/UserStealCredits"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
     patch:
       operationId: updateUserStealCredits
       tags:
@@ -43,21 +44,44 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchStealCreditsRequest'
+              $ref: "#/components/schemas/PatchStealCreditsRequest"
         required: true
       responses:
-        '200':
+        "200":
           description: New number of boost request steal credits available to the user in a JSON object.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserStealCredits'
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/UserStealCredits"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /boostRequests:
+    post:
+      operationId: createBoostRequest
+      tags:
+        - "boostRequests"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostBoostRequestsRequest"
+      responses:
+        "200":
+          description: The boost request was successfully created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoostRequest"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
 components:
   securitySchemes:
@@ -71,7 +95,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/GenericResponse'
+            $ref: "#/components/schemas/GenericResponse"
     BadRequestError:
       description: The request schema is invalid.
       content:
@@ -102,8 +126,8 @@ components:
           type: string
           description: Description of what went wrong.
       required:
-        - "statusCode"
-        - "message"
+        - statusCode
+        - message
     ErrorResponse:
       description: Error response.
       type: object
@@ -118,9 +142,9 @@ components:
           type: string
           description: Description of what went wrong.
       required:
-        - "statusCode"
-        - "error"
-        - "message"
+        - statusCode
+        - error
+        - message
     UserStealCredits:
       description: Number of boost request steal credits available to a user in a Discord guild.
       type: object
@@ -135,9 +159,9 @@ components:
           type: integer
           description: Number of boost request credits available to the user.
       required:
-        - "guildId"
-        - "userId"
-        - "credits"
+        - guildId
+        - userId
+        - credits
     PatchStealCreditsRequest:
       type: object
       properties:
@@ -146,14 +170,78 @@ components:
         operation:
           type: string
           enum:
-            - '+'
-            - '-'
-            - '*'
-            - '/'
-            - '='
+            - "+"
+            - "-"
+            - "*"
+            - "/"
+            - "="
       required:
-        - "credits"
-        - "operation"
+        - credits
+        - operation
+    PostBoostRequestsRequest:
+      type: object
+      properties:
+        requesterId:
+          type: string
+        backendChannelId:
+          type: string
+        message:
+          type: string
+        price:
+          type: integer
+          format: int64
+        advertiserCut:
+          type: integer
+          format: int64
+        preferredAdvertiserIds:
+          type: array
+          items:
+            type: string
+      required:
+        - requesterId
+        - backendChannelId
+        - message
+    BoostRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        requesterId:
+          type: string
+        isAdvertiserSelected:
+          type: boolean
+        backendChannelId:
+          type: string
+        backendMessageId:
+          type: string
+        message:
+          type: string
+        price:
+          type: integer
+          format: int64
+        advertiserCut:
+          type: integer
+          format: int64
+        preferredAdvertiserIds:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        advertiserSelectedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - requesterId
+        - isAdvertiserSelected
+        - backendChannelId
+        - backendMessageId
+        - message
+        - preferredAdvertiserIds
+        - createdAt
 
 security:
   - ApiKeyAuth: []

@@ -24,10 +24,19 @@ func NewBackendSignupMessage(
 
 func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 	br := m.boostRequest
-	var fields []*discordgo.MessageEmbedField
+	fields := make([]*discordgo.MessageEmbedField, 0, 3)
+	if price := m.priceField(); price != nil {
+		fields = append(fields, price)
+	}
+	if advertiserCut := m.advertiserCutField(); advertiserCut != nil {
+		fields = append(fields, advertiserCut)
+	}
 	if rd := m.roleDiscountField(); rd != nil {
-		fields = make([]*discordgo.MessageEmbedField, 1)
-		fields[0] = rd
+		fields = append(fields, rd)
+	}
+
+	if len(fields) == 0 {
+		fields = nil
 	}
 
 	return &discordgo.MessageSend{
@@ -57,6 +66,26 @@ func (m *BackendSignupMessage) roleDiscountField() *discordgo.MessageEmbedField 
 				},
 			}),
 			Value: m.discountFormatter.FormatDiscounts(m.boostRequest.RoleDiscounts),
+		}
+	}
+	return nil
+}
+
+func (m *BackendSignupMessage) priceField() *discordgo.MessageEmbedField {
+	if m.boostRequest.Price != 0 {
+		return &discordgo.MessageEmbedField{
+			Name:  "Price",
+			Value: formatCopper(m.localizer, m.boostRequest.Price),
+		}
+	}
+	return nil
+}
+
+func (m *BackendSignupMessage) advertiserCutField() *discordgo.MessageEmbedField {
+	if m.boostRequest.AdvertiserCut != 0 {
+		return &discordgo.MessageEmbedField{
+			Name:  "Advertiser Cut",
+			Value: formatCopper(m.localizer, m.boostRequest.AdvertiserCut),
 		}
 	}
 	return nil

@@ -19,17 +19,16 @@ func NewWebAPI(repo repository.Repository, brm *boost_request.BoostRequestManage
 		Addr:         listenAddress,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		Handler:      router(repo),
+		Handler:      router(repo, brm),
 		BaseContext: func(l net.Listener) context.Context {
 			ctx := context.WithValue(context.Background(), context_key.Repository, repo)
-			ctx = context.WithValue(ctx, context_key.BooostRequestManager, brm)
 			return ctx
 		},
 	}
 	return &server
 }
 
-func router(repo repository.Repository) http.Handler {
+func router(repo repository.Repository, brm *boost_request.BoostRequestManager) http.Handler {
 	r := mux.NewRouter()
 
 	v1 := r.PathPrefix("/v1").Subrouter()
@@ -38,7 +37,7 @@ func router(repo repository.Repository) http.Handler {
 	v1.Handle("/users/{userID:[0-9]+}/stealCredits", routes.NewStealCreditsPatchHandler(repo)).Methods("PATCH")
 
 	// v1.Handle("/boostRequests/{boostRequestID}", routes.NewBoostRequestGetHandler(repo)).Methods("GET")
-	v1.Handle("/boostRequests", routes.NewBoostRequestPostHandler(repo)).Methods("POST")
+	v1.Handle("/boostRequests", routes.NewBoostRequestPostHandler(repo, brm)).Methods("POST")
 
 	v1.Use(middleware.ContentTypeMiddleware("application/json"))
 	v1.Use(middleware.JsonResponseMiddleware())

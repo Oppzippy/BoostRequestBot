@@ -39,7 +39,12 @@ func (m *AdvertiserChosenDMToAdvertiser) humanMessage() (*discordgo.MessageSend,
 	}
 
 	fields := formatBoostRequest(m.localizer, m.boostRequest)
-
+	if price := m.priceField(); price != nil {
+		fields = append(fields, price)
+	}
+	if advertiserCut := m.advertiserCutField(); advertiserCut != nil {
+		fields = append(fields, advertiserCut)
+	}
 	if len(m.boostRequest.RoleDiscounts) != 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -90,4 +95,24 @@ func (m *AdvertiserChosenDMToAdvertiser) botMessage() (*discordgo.MessageSend, e
 			Fields: formatBoostRequest(m.localizer, m.boostRequest),
 		},
 	}, nil
+}
+
+func (m *AdvertiserChosenDMToAdvertiser) priceField() *discordgo.MessageEmbedField {
+	if m.boostRequest.Price != 0 {
+		return &discordgo.MessageEmbedField{
+			Name:  "Price",
+			Value: formatCopper(m.localizer, m.boostRequest.Price),
+		}
+	}
+	return nil
+}
+
+func (m *AdvertiserChosenDMToAdvertiser) advertiserCutField() *discordgo.MessageEmbedField {
+	if m.boostRequest.AdvertiserCut != 0 {
+		return &discordgo.MessageEmbedField{
+			Name:  "Advertiser Cut",
+			Value: formatCopper(m.localizer, m.boostRequest.AdvertiserCut),
+		}
+	}
+	return nil
 }

@@ -19,9 +19,10 @@ type BoostRequestPost struct {
 	brm         *boost_request.BoostRequestManager
 }
 
-func NewBoostRequestPostHandler(repo repository.Repository) *BoostRequestPost {
+func NewBoostRequestPostHandler(repo repository.Repository, brm *boost_request.BoostRequestManager) *BoostRequestPost {
 	return &BoostRequestPost{
 		repo:        repo,
+		brm:         brm,
 		unmarshaler: json_unmarshaler.New(),
 	}
 }

@@ -1,4 +1,4 @@
-package messenger
+package messages
 
 import (
 	"strings"
@@ -11,7 +11,7 @@ const (
 	copperPerGold   int64 = 1_00_00
 )
 
-func FormatCopper(localizer *i18n.Localizer, totalCopper int64) string {
+func formatCopper(localizer *i18n.Localizer, totalCopper int64) string {
 	copper := totalCopper % 100
 	silver := (totalCopper / copperPerSilver) % 100
 	gold := totalCopper / copperPerGold
