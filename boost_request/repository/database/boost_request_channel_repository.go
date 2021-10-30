@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
@@ -16,7 +17,7 @@ func (repo *dbRepository) GetBoostRequestChannelByFrontendChannelID(guildID, fro
 }
 
 func (repo *dbRepository) GetBoostRequestChannels(guildID string) ([]*repository.BoostRequestChannel, error) {
-	channels, err := repo.getBoostRequestChannels("WHERE guild_id = ?", guildID)
+	channels, err := repo.getBoostRequestChannels("WHERE guild_id = ? AND frontend_channel_id IS NOT NULL", guildID)
 	return channels, err
 }
 
@@ -79,7 +80,10 @@ func (repo *dbRepository) InsertBoostRequestChannel(brc *repository.BoostRequest
 			uses_buyer_message = VALUES(uses_buyer_message),
 			skips_buyer_dm = VALUES(skips_buyer_dm)`,
 		brc.GuildID,
-		brc.FrontendChannelID,
+		sql.NullString{
+			String: brc.FrontendChannelID,
+			Valid:  brc.FrontendChannelID != "",
+		},
 		brc.BackendChannelID,
 		usesBuyerMessage,
 		skipsBuyerDM,

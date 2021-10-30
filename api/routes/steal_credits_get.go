@@ -31,7 +31,7 @@ func (h *StealCreditsGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	guildID := ctx.Value(context_key.K("guildID")).(string)
+	guildID := ctx.Value(context_key.GuildID).(string)
 	userID := vars["userID"]
 
 	credits, err := h.repo.GetStealCreditsForUser(guildID, userID)

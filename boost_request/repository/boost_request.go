@@ -16,17 +16,20 @@ type MessageEmbedField struct {
 type BoostRequest struct {
 	ID int64
 	// TODO generate uuids for all nulls and make the column not null
-	ExternalID       *uuid.UUID
-	Channel          BoostRequestChannel
-	RequesterID      string
-	AdvertiserID     string
-	BackendMessageID string
-	Message          string
-	EmbedFields      []*MessageEmbedField
-	RoleDiscounts    []*RoleDiscount
-	CreatedAt        time.Time
-	IsResolved       bool
-	ResolvedAt       time.Time
+	ExternalID             *uuid.UUID
+	Channel                BoostRequestChannel
+	RequesterID            string
+	AdvertiserID           string
+	BackendMessageID       string
+	Message                string
+	EmbedFields            []*MessageEmbedField
+	Price                  int64
+	AdvertiserCut          int64
+	PreferredAdvertiserIDs []string
+	RoleDiscounts          []*RoleDiscount
+	CreatedAt              time.Time
+	IsResolved             bool
+	ResolvedAt             time.Time
 }
 
 func FromDiscordEmbedFields(fields []*discordgo.MessageEmbedField) []*MessageEmbedField {

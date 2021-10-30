@@ -1,16 +1,16 @@
 package models
 
 type BoostRequest struct {
-	Id                     string   `json:"id"`
+	ID                     string   `json:"id"`
 	RequesterID            string   `json:"requesterId"`
 	IsAdvertiserSelected   bool     `json:"isAdvertiserSelected"`
 	AdvertiserID           string   `json:"advertiserId,omitempty"`
 	BackendChannelID       string   `json:"backendChannelId"`
 	BackendMessageID       string   `json:"backendMessageID"`
 	Message                string   `json:"message"`
-	Price                  int64    `json:"price"`
-	AdvertiserCut          int64    `json:"advertiserCut"`
-	PreferredAdvertiserIds []string `json:"preferredAdvertiserIds,omitempty"`
+	Price                  int64    `json:"price,omitempty"`
+	AdvertiserCut          int64    `json:"advertiserCut,omitempty"`
+	PreferredAdvertiserIDs []string `json:"preferredAdvertiserIds"`
 	CreatedAt              string   `json:"createdAt"`
 	AdvertiserSelectedAt   string   `json:"advertiserSelectedAt,omitempty"`
 }
@@ -21,5 +21,5 @@ type BoostRequestPartial struct {
 	Message                string   `json:"message" validate:"required"`
 	Price                  int64    `json:"price" validate:"required"`
 	AdvertiserCut          int64    `json:"advertiserCut" validate:"required"`
-	PreferredAdvertiserIds []string `json:"preferredAdvertiserIds,omitempty"`
+	PreferredAdvertiserIDs []string `json:"preferredAdvertiserIds"`
 }

@@ -62,23 +62,25 @@ func (brm *BoostRequestManager) LoadBoostRequests() {
 }
 
 type BoostRequestPartial struct {
-	RequesterID      string
-	Message          string
-	EmbedFields      []*repository.MessageEmbedField
-	BackendMessageID string
+	RequesterID            string
+	Message                string
+	EmbedFields            []*repository.MessageEmbedField
+	PreferredAdvertiserIDs []string
+	BackendMessageID       string
+	Price                  int64
+	AdvertiserCut          int64
 }
 
 func (brm *BoostRequestManager) CreateBoostRequest(
 	brc *repository.BoostRequestChannel, brPartial BoostRequestPartial,
 ) (*repository.BoostRequest, error) {
-	createdAt := time.Now().UTC()
-
 	br := &repository.BoostRequest{
-		Channel:     *brc,
-		RequesterID: brPartial.RequesterID,
-		Message:     brPartial.Message,
-		EmbedFields: brPartial.EmbedFields,
-		CreatedAt:   createdAt,
+		Channel:                *brc,
+		RequesterID:            brPartial.RequesterID,
+		Message:                brPartial.Message,
+		EmbedFields:            brPartial.EmbedFields,
+		PreferredAdvertiserIDs: brPartial.PreferredAdvertiserIDs,
+		CreatedAt:              time.Now().UTC(),
 	}
 
 	if brc.UsesBuyerMessage {
@@ -94,6 +96,24 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 			log.Printf("Error searching roles for discounts: %v", err)
 		}
 		br.RoleDiscounts = rd
+	}
+
+	localizer := i18n.NewLocalizer(brm.bundle, "en")
+
+	if br.EmbedFields == nil && br.Price != 0 || br.AdvertiserCut != 0 {
+		br.EmbedFields = make([]*repository.MessageEmbedField, 0, 2)
+	}
+	if br.Price != 0 {
+		br.EmbedFields = append(br.EmbedFields, &repository.MessageEmbedField{
+			Name:  "Price",
+			Value: messenger.FormatCopper(localizer, br.Price),
+		})
+	}
+	if br.AdvertiserCut != 0 {
+		br.EmbedFields = append(br.EmbedFields, &repository.MessageEmbedField{
+			Name:  "Advertiser Cut",
+			Value: messenger.FormatCopper(localizer, br.AdvertiserCut),
+		})
 	}
 
 	sequenceArgs := sequences.CreateSequenceArgs{

@@ -40,7 +40,7 @@ func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*r
 func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([]*repository.BoostRequest, error) {
 	row, err := repo.db.Query(
 		`SELECT
-			br.id, br.external_id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.created_at, br.resolved_at,
+			br.id, br.external_id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.price, br.advertiser_cut, br.created_at, br.resolved_at,
 			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM
 			boost_request br
@@ -67,6 +67,13 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 			return nil, err
 		}
 		br.RoleDiscounts = rd
+
+		preferredAdvertiserIDs, err := repo.getPreferredAdvertisers(br)
+		if err != nil {
+			return nil, err
+		}
+		br.PreferredAdvertiserIDs = preferredAdvertiserIDs
+
 		boostRequests = append(boostRequests, br)
 	}
 
@@ -84,7 +91,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	var resolvedAt sql.NullTime
 	var embedFieldsJSON sql.NullString
 	err := row.Scan(
-		&br.ID, &br.ExternalID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &br.CreatedAt, &resolvedAt,
+		&br.ID, &br.ExternalID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &br.CreatedAt, &br.Price, &br.AdvertiserCut, &resolvedAt,
 		&brc.ID, &brc.GuildID, &brc.FrontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
 	)
 	if err != nil {
@@ -131,7 +138,7 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 	}
 	res, err := tx.Exec(
 		`INSERT INTO boost_request
-			(external_id, boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, created_at)
+			(external_id, boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, price, advertiser_cut, created_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		externalID.String(),
 		br.Channel.ID,
@@ -140,6 +147,14 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		br.BackendMessageID,
 		br.Message,
 		embedFieldsJSON,
+		sql.NullInt64{
+			Int64: br.Price,
+			Valid: br.Price != 0,
+		},
+		sql.NullInt64{
+			Int64: br.AdvertiserCut,
+			Valid: br.AdvertiserCut != 0,
+		},
 		br.CreatedAt,
 	)
 	err = rollbackIfErr(tx, err)
@@ -147,6 +162,10 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		return err
 	}
 	err = rollbackIfErr(tx, insertRoleDiscounts(tx, br))
+	if err != nil {
+		return err
+	}
+	err = rollbackIfErr(tx, repo.updatePreferredAdvertisers(tx, br))
 	if err != nil {
 		return err
 	}

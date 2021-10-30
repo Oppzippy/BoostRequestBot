@@ -6,17 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/oppzippy/BoostRequestBot/api/context_key"
 	"github.com/oppzippy/BoostRequestBot/api/json_unmarshaler"
 	"github.com/oppzippy/BoostRequestBot/api/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
-
-type BoostRequestPostResponse struct {
-	GuildID      string `json:"guildId"`
-	UserID       string `json:"userId"`
-	BoostRequest int    `json:"credits"`
-}
 
 type BoostRequestPost struct {
 	repo        repository.Repository
@@ -32,9 +27,9 @@ func NewBoostRequestPostHandler(repo repository.Repository) *BoostRequestPost {
 }
 
 func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	// ctx := r.Context()
+	ctx := r.Context()
 
-	// guildID := ctx.Value(context_key.K("guildID")).(string)
+	guildID := ctx.Value(context_key.GuildID).(string)
 
 	body := models.BoostRequestPartial{}
 	err := h.unmarshaler.UnmarshalReader(r.Body, &body)
@@ -43,24 +38,46 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	br, err := h.brm.CreateBoostRequest(&repository.BoostRequestChannel{}, boost_request.BoostRequestPartial{
-		RequesterID: body.RequesterID,
-		Message:     body.Message,
+	brc := &repository.BoostRequestChannel{
+		FrontendChannelID: "",
+		GuildID:           guildID,
+		BackendChannelID:  body.BackendChannelID,
+		UsesBuyerMessage:  false,
+		SkipsBuyerDM:      false,
+	}
+	err = h.repo.InsertBoostRequestChannel(brc)
+	if err != nil {
+		log.Printf("error inserting internal boost request channel (no frontend channel): %v", err)
+		internalServerError(rw, r, "")
+		return
+	}
+
+	br, err := h.brm.CreateBoostRequest(brc, boost_request.BoostRequestPartial{
+		RequesterID:            body.RequesterID,
+		Message:                body.Message,
+		PreferredAdvertiserIDs: body.PreferredAdvertiserIDs,
+		Price:                  body.Price,
+		AdvertiserCut:          body.AdvertiserCut,
 	})
+	if err != nil {
+		log.Printf("Error creating boost request via api: %v", err)
+		internalServerError(rw, r, "")
+		return
+	}
 
 	responseJSON, err := json.Marshal(models.BoostRequest{
-		Id:                   br.ExternalID.String(), // Since we created the boost request after the UUID update, this will never be null
-		RequesterID:          br.RequesterID,
-		IsAdvertiserSelected: br.IsResolved,
-		AdvertiserID:         br.AdvertiserID,
-		BackendChannelID:     br.Channel.BackendChannelID,
-		BackendMessageID:     br.BackendMessageID,
-		Message:              br.Message,
-		// Price:                  br.Price,
-		// AdvertiserCut:          br.AdvertiserCut,
-		// PreferredAdvertiserIds: br.PreferredAdvertiserIds,
-		CreatedAt:            br.CreatedAt.Format(time.RFC3339),
-		AdvertiserSelectedAt: br.ResolvedAt.Format(time.RFC3339),
+		ID:                     br.ExternalID.String(), // Since we created the boost request after the UUID update, this will never be null
+		RequesterID:            br.RequesterID,
+		IsAdvertiserSelected:   br.IsResolved,
+		AdvertiserID:           br.AdvertiserID,
+		BackendChannelID:       br.Channel.BackendChannelID,
+		BackendMessageID:       br.BackendMessageID,
+		Message:                br.Message,
+		Price:                  br.Price,
+		AdvertiserCut:          br.AdvertiserCut,
+		PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
+		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
+		AdvertiserSelectedAt:   br.ResolvedAt.Format(time.RFC3339),
 	})
 	if err != nil {
 		log.Printf("Error marshalling POST boost request response: %v", err)

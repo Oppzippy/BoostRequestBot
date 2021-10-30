@@ -7,7 +7,8 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-func (repo *dbRepository) GetPreferredAdvertisers(br *repository.BoostRequest) ([]string, error) {
+// Returns a slice of preferred advertiser ids or an empty slice if no preferred advertisers are set
+func (repo *dbRepository) getPreferredAdvertisers(br *repository.BoostRequest) ([]string, error) {
 	rows, err := repo.db.Query(
 		`SELECT
 			discord_user_id
@@ -17,6 +18,9 @@ func (repo *dbRepository) GetPreferredAdvertisers(br *repository.BoostRequest) (
 			boost_request_id = ?`,
 		br.ID,
 	)
+	if err == sql.ErrNoRows {
+		return []string{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -33,20 +37,12 @@ func (repo *dbRepository) GetPreferredAdvertisers(br *repository.BoostRequest) (
 	return userIDs, nil
 }
 
-func (repo *dbRepository) SetPreferredAdvertisers(br *repository.BoostRequest, advertiserIDs []string) error {
-	tx, err := repo.db.Begin()
+func (repo *dbRepository) updatePreferredAdvertisers(tx *sql.Tx, br *repository.BoostRequest) error {
+	err := repo.deletePreferredAdvertisersExcept(tx, br, br.PreferredAdvertiserIDs)
 	if err != nil {
 		return err
 	}
-	err = repo.deletePreferredAdvertisersExcept(tx, br, advertiserIDs)
-	if err = rollbackIfErr(tx, err); err != nil {
-		return err
-	}
-	err = repo.insertPreferredAdvertisers(tx, br, advertiserIDs)
-	if err = rollbackIfErr(tx, err); err != nil {
-		return err
-	}
-	err = tx.Commit()
+	err = repo.insertPreferredAdvertisers(tx, br, br.PreferredAdvertiserIDs)
 	return err
 }
 

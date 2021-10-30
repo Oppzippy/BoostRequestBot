@@ -14,7 +14,6 @@ type Repository interface {
 	ApiKeyRepository
 	BoostRequestChannelRepository
 	BoostRequestRepository
-	BoostRequestPreferredAdvertiserRepository
 	AdvertiserPrivilegesRepository
 	LogChannelRepository
 	RoleDiscountRepository
@@ -41,13 +40,6 @@ type BoostRequestRepository interface {
 	ResolveBoostRequest(br *BoostRequest) error
 	// Deletes a boost request
 	DeleteBoostRequest(br *BoostRequest) error
-}
-
-type BoostRequestPreferredAdvertiserRepository interface {
-	// Returns advertiser discord ids that should be preferred when selecting a winner for a boost request
-	GetPreferredAdvertisers(br *BoostRequest) ([]string, error)
-	// Sets advertiser discord ids that should be preferred when selecting a winner for a boost request
-	SetPreferredAdvertisers(br *BoostRequest, advertiserIDs []string) error
 }
 
 type BoostRequestChannelRepository interface {

@@ -13,7 +13,7 @@ import (
 func RequireAuthorizationMiddleware() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			isAuthorized, ok := r.Context().Value(context_key.K("isAuthorized")).(bool)
+			isAuthorized, ok := r.Context().Value(context_key.IsAuthorized).(bool)
 			if ok && isAuthorized {
 				next.ServeHTTP(rw, r)
 				return

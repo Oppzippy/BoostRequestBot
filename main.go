@@ -54,7 +54,7 @@ func main() {
 	_ = boost_request.NewBoostRequestDiscordHandler(discord, repo, brm)
 	registerCommandRouter(discord, repo)
 
-	server := api.NewWebAPI(repo, os.Getenv("HTTP_LISTEN_ADDRESS"))
+	server := api.NewWebAPI(repo, brm, os.Getenv("HTTP_LISTEN_ADDRESS"))
 
 	err = discord.Open()
 	if err != nil {

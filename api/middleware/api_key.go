@@ -20,8 +20,8 @@ func APIKeyMiddleware(repo repository.Repository) mux.MiddlewareFunc {
 			if key != "" {
 				apiKey, err := repo.GetAPIKey(key)
 				if err == nil {
-					ctx := context.WithValue(r.Context(), context_key.K("isAuthorized"), true)
-					ctx = context.WithValue(ctx, context_key.K("guildID"), apiKey.GuildID)
+					ctx := context.WithValue(r.Context(), context_key.IsAuthorized, true)
+					ctx = context.WithValue(ctx, context_key.GuildID, apiKey.GuildID)
 
 					*r = *r.Clone(ctx)
 					next.ServeHTTP(rw, r)
