@@ -25,6 +25,18 @@ func (repo *dbRepository) GetUnresolvedBoostRequests() ([]*repository.BoostReque
 	return boostRequests, err
 }
 
+func (repo *dbRepository) GetBoostRequestById(guildID string, boostRequestID uuid.UUID) (*repository.BoostRequest, error) {
+	br, err := repo.getBoostRequest(`
+		WHERE
+			brc.guild_id = ?
+			AND br.external_id = ?
+			AND deleted_at IS NULL`,
+		guildID,
+		boostRequestID,
+	)
+	return br, err
+}
+
 func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*repository.BoostRequest, error) {
 	boostRequests, err := repo.getBoostRequests(where, args...)
 	if err != nil {
@@ -68,6 +80,7 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 		}
 		br.RoleDiscounts = rd
 
+		// TODO another n+1
 		preferredAdvertiserIDs, err := repo.getPreferredAdvertisers(br)
 		if err != nil {
 			return nil, err
@@ -175,20 +188,21 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 	if err != nil {
 		return err
 	}
-	err = rollbackIfErr(tx, insertRoleDiscounts(tx, br))
-	if err != nil {
-		return err
-	}
-	err = rollbackIfErr(tx, repo.updatePreferredAdvertisers(tx, br))
-	if err != nil {
-		return err
-	}
-
 	id, err := res.LastInsertId()
 	err = rollbackIfErr(tx, err)
 	if err != nil {
 		return err
 	}
+
+	err = rollbackIfErr(tx, insertRoleDiscounts(tx, br))
+	if err != nil {
+		return err
+	}
+	err = rollbackIfErr(tx, repo.updatePreferredAdvertisers(tx, id, br.PreferredAdvertiserIDs))
+	if err != nil {
+		return err
+	}
+
 	br.ID = id
 	br.ExternalID = &externalID
 	err = tx.Commit()

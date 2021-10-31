@@ -2,6 +2,8 @@ package repository
 
 import (
 	"errors"
+
+	"github.com/google/uuid"
 )
 
 var ErrNoResults = errors.New("not found")
@@ -33,12 +35,14 @@ type BoostRequestRepository interface {
 	GetUnresolvedBoostRequests() ([]*BoostRequest, error)
 	// GetBoostRequestByBackendMessageID Returns the boost request associated with a backend message or ErrNoResults.
 	GetBoostRequestByBackendMessageID(backendChannelID, backendMessageID string) (*BoostRequest, error)
+	// GetBoostRequestById Returns a boost request in the specified guild with the specified id
+	GetBoostRequestById(guildID string, boostRequestID uuid.UUID) (*BoostRequest, error)
 	// InsertBoostRequest Stores a boost request. Boost requests are unique by backend message id, so this will error if a boost request already exists.
 	// br will have its ID field updated to match the newly inserted row'd id.
 	InsertBoostRequest(br *BoostRequest) error
 	// ResolveBoostRequest Updates fields necessary to flag a boost request as resolved.
 	ResolveBoostRequest(br *BoostRequest) error
-	// Deletes a boost request
+	// DeleteBoostRequest Deletes a boost request
 	DeleteBoostRequest(br *BoostRequest) error
 }
 

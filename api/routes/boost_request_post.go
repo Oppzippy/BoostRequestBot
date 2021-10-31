@@ -66,6 +66,11 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var advertiserSelectedAt string
+	if !br.ResolvedAt.IsZero() {
+		advertiserSelectedAt = br.ResolvedAt.Format(time.RFC3339)
+	}
+
 	responseJSON, err := json.Marshal(models.BoostRequest{
 		ID:                     br.ExternalID.String(), // Since we created the boost request after the UUID update, this will never be null
 		RequesterID:            br.RequesterID,
@@ -78,7 +83,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		AdvertiserCut:          br.AdvertiserCut,
 		PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
 		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
-		AdvertiserSelectedAt:   br.ResolvedAt.Format(time.RFC3339),
+		AdvertiserSelectedAt:   advertiserSelectedAt,
 	})
 	if err != nil {
 		log.Printf("Error marshalling POST boost request response: %v", err)

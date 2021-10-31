@@ -36,7 +36,7 @@ func router(repo repository.Repository, brm *boost_request.BoostRequestManager) 
 	v1.Handle("/users/{userID:[0-9]+}/stealCredits", routes.NewStealCreditsGetHandler(repo)).Methods("GET")
 	v1.Handle("/users/{userID:[0-9]+}/stealCredits", routes.NewStealCreditsPatchHandler(repo)).Methods("PATCH")
 
-	// v1.Handle("/boostRequests/{boostRequestID}", routes.NewBoostRequestGetHandler(repo)).Methods("GET")
+	v1.Handle("/boostRequests/{boostRequestID}", routes.NewBoostRequestGetHandler(repo)).Methods("GET")
 	v1.Handle("/boostRequests", routes.NewBoostRequestPostHandler(repo, brm)).Methods("POST")
 
 	v1.Use(middleware.ContentTypeMiddleware("application/json"))

@@ -63,7 +63,7 @@ paths:
     post:
       operationId: createBoostRequest
       tags:
-        - "boostRequests"
+        - boostRequests
       requestBody:
         content:
           application/json:
@@ -80,6 +80,28 @@ paths:
           $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /boostRequests/{boostRequestId}:
+    get:
+      operationId: getBoostRequest
+      tags:
+        - boostRequest
+      parameters:
+        - in: path
+          name: boostRequestId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Boost request UUID
+      responses:
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -104,6 +126,12 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     UnauthorizedError:
       description: API key is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFoundError:
+      description: The requested resource could not be found.
       content:
         application/json:
           schema:

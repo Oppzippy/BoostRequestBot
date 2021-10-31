@@ -25,7 +25,7 @@ func (repo *dbRepository) getPreferredAdvertisers(br *repository.BoostRequest) (
 		return nil, err
 	}
 
-	userIDs := make([]string, 0, 1)
+	userIDs := make([]string, 0)
 	for rows.Next() {
 		var userID string
 		err := rows.Scan(&userID)
@@ -37,22 +37,22 @@ func (repo *dbRepository) getPreferredAdvertisers(br *repository.BoostRequest) (
 	return userIDs, nil
 }
 
-func (repo *dbRepository) updatePreferredAdvertisers(tx *sql.Tx, br *repository.BoostRequest) error {
-	err := repo.deletePreferredAdvertisersExcept(tx, br, br.PreferredAdvertiserIDs)
+func (repo *dbRepository) updatePreferredAdvertisers(tx *sql.Tx, id int64, advertiserIDs []string) error {
+	err := repo.deletePreferredAdvertisersExcept(tx, id, advertiserIDs)
 	if err != nil {
 		return err
 	}
-	err = repo.insertPreferredAdvertisers(tx, br, br.PreferredAdvertiserIDs)
+	err = repo.insertPreferredAdvertisers(tx, id, advertiserIDs)
 	return err
 }
 
-func (repo *dbRepository) deletePreferredAdvertisersExcept(tx *sql.Tx, br *repository.BoostRequest, advertiserIDs []string) error {
+func (repo *dbRepository) deletePreferredAdvertisersExcept(tx *sql.Tx, id int64, advertiserIDs []string) error {
 	query := "DELETE FROM boost_request_preferred_advertiser WHERE boost_request_id = ?"
 	if len(advertiserIDs) > 0 {
-		query += " AND NOT IN (?" + strings.Repeat(",?", len(advertiserIDs)-1) + ")"
+		query += " AND discord_user_id NOT IN (?" + strings.Repeat(",?", len(advertiserIDs)-1) + ")"
 	}
 	args := make([]interface{}, 0, len(advertiserIDs)+1)
-	args = append(args, br.ID)
+	args = append(args, id)
 	for _, advertiserID := range advertiserIDs {
 		args = append(args, advertiserID)
 	}
@@ -60,7 +60,7 @@ func (repo *dbRepository) deletePreferredAdvertisersExcept(tx *sql.Tx, br *repos
 	return err
 }
 
-func (repo *dbRepository) insertPreferredAdvertisers(tx *sql.Tx, br *repository.BoostRequest, advertiserIDs []string) error {
+func (repo *dbRepository) insertPreferredAdvertisers(tx *sql.Tx, id int64, advertiserIDs []string) error {
 	if len(advertiserIDs) == 0 {
 		return nil
 	}
@@ -68,7 +68,7 @@ func (repo *dbRepository) insertPreferredAdvertisers(tx *sql.Tx, br *repository.
 	query += strings.Repeat(", (?, ?)", len(advertiserIDs)-1)
 	args := make([]interface{}, 0, len(advertiserIDs)*2)
 	for _, advertiserID := range advertiserIDs {
-		args = append(args, br.ID)
+		args = append(args, id)
 		args = append(args, advertiserID)
 	}
 	_, err := tx.Exec(query, args...)
