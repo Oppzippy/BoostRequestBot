@@ -1,0 +1,3 @@
+ALTER TABLE boost_request_preferred_advertiser DROP FOREIGN KEY brpa_boost_request_id_fk;
+ALTER TABLE boost_request_role_discount DROP FOREIGN KEY brrd_role_discount_id_fk;
+ALTER TABLE boost_request_role_discount DROP FOREIGN KEY brrd_boost_request_id_fk;
