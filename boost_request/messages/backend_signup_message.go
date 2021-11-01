@@ -1,6 +1,9 @@
 package messages
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
@@ -39,7 +42,17 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 		fields = nil
 	}
 
+	var preferredAdvertiserMentions string
+	if len(br.PreferredAdvertiserIDs) > 0 {
+		mentions := make([]string, len(br.PreferredAdvertiserIDs))
+		for i, id := range br.PreferredAdvertiserIDs {
+			mentions[i] = fmt.Sprintf("<@%s>", id)
+		}
+		preferredAdvertiserMentions = strings.Join(mentions, " ")
+	}
+
 	return &discordgo.MessageSend{
+		Content: preferredAdvertiserMentions,
 		Embed: &discordgo.MessageEmbed{
 			Color: 0x0000FF,
 			Title: m.localizer.MustLocalize(&i18n.LocalizeConfig{

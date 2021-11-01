@@ -151,7 +151,24 @@ func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.Boost
 	}
 	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
 	if privileges != nil {
-		brm.signUp(br, userID, privileges)
+		var isPreferredAdvertiser bool
+		for _, id := range br.PreferredAdvertiserIDs {
+			if id == userID {
+				isPreferredAdvertiser = true
+				break
+			}
+		}
+		if isPreferredAdvertiser {
+			req, ok := brm.activeRequests.Load(br.BackendMessageID)
+			if !ok {
+				log.Printf("AddAdvertiserToBoostRequest: req is not ok")
+				return
+			}
+			r := req.(*active_request.ActiveRequest)
+			r.SetAdvertiser(userID)
+		} else {
+			brm.signUp(br, userID, privileges)
+		}
 	}
 }
 
