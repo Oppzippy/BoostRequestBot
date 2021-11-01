@@ -21,7 +21,7 @@ func (repo *dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, ba
 
 func (repo *dbRepository) GetUnresolvedBoostRequests() ([]*repository.BoostRequest, error) {
 	// TODO don't load really old boost requests
-	boostRequests, err := repo.getBoostRequests("WHERE resolved_at IS NULL AND deleted_at IS NULL")
+	boostRequests, err := repo.getBoostRequests("WHERE br.resolved_at IS NULL AND br.deleted_at IS NULL")
 	return boostRequests, err
 }
 
