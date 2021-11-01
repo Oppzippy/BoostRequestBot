@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package api_test
@@ -33,7 +34,7 @@ func TestStealCredits(t *testing.T) {
 		return
 	}
 	repo := database.NewRepository(db)
-	server := api.NewWebAPI(repo, "localhost:8080")
+	server := api.NewWebAPI(repo, nil, "localhost:8080")
 	go server.ListenAndServe()
 	client := &http.Client{}
 	apiKey, err := repo.NewAPIKey("1")
