@@ -216,10 +216,10 @@ components:
         message:
           type: string
         price:
-          type: integer
+          type: string
           format: int64
         advertiserCut:
-          type: integer
+          type: string
           format: int64
         preferredAdvertiserIds:
           type: array
@@ -246,10 +246,10 @@ components:
         message:
           type: string
         price:
-          type: integer
+          type: string
           format: int64
         advertiserCut:
-          type: integer
+          type: string
           format: int64
         preferredAdvertiserIds:
           type: array
