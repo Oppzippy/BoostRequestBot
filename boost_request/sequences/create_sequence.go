@@ -23,9 +23,9 @@ func RunCreateHumanRequesterSequence(args CreateSequenceArgs) error {
 	steps := []steps.RevertableStep{
 		steps.NewSendCreatedDMStep(args.Discord, *args.Messenger, args.BoostRequest),
 		steps.NewSendMessageStep(args.Discord, args.Messenger, args.BoostRequest),
-		steps.NewReactStep(args.Discord, args.BoostRequest),
 		steps.NewInsertBoostRequestStep(args.Repository, args.BoostRequest),
 		steps.NewStoreActiveRequestStep(args.ActiveRequests, args.BoostRequest, args.SetWinnerCallback),
+		steps.NewReactStep(args.Discord, args.BoostRequest),
 		steps.NewPostToLogChannelStep(args.Repository, args.BoostRequest, args.Messenger),
 	}
 
@@ -36,9 +36,9 @@ func RunCreateHumanRequesterSequence(args CreateSequenceArgs) error {
 func RunCreateBotRequesterSequence(args CreateSequenceArgs) error {
 	steps := []steps.RevertableStep{
 		steps.NewSendMessageStep(args.Discord, args.Messenger, args.BoostRequest),
-		steps.NewReactStep(args.Discord, args.BoostRequest),
 		steps.NewInsertBoostRequestStep(args.Repository, args.BoostRequest),
 		steps.NewStoreActiveRequestStep(args.ActiveRequests, args.BoostRequest, args.SetWinnerCallback),
+		steps.NewReactStep(args.Discord, args.BoostRequest),
 		steps.NewPostToLogChannelStep(args.Repository, args.BoostRequest, args.Messenger),
 	}
 

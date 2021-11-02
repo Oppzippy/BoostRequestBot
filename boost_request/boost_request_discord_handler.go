@@ -4,21 +4,32 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/oppzippy/BoostRequestBot/boost_request/active_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
+	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
+	"github.com/oppzippy/BoostRequestBot/boost_request/interactions"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type BoostRequestDiscordHandler struct {
-	discord *discordgo.Session
-	repo    repository.Repository
-	brm     *BoostRequestManager
+type interactionHandler interface {
+	Matches(event *discordgo.InteractionCreate) bool
+	Handle(discord *discordgo.Session, event *discordgo.InteractionCreate) error
 }
 
-func NewBoostRequestDiscordHandler(discord *discordgo.Session, repo repository.Repository, brm *BoostRequestManager) *BoostRequestDiscordHandler {
+type BoostRequestDiscordHandler struct {
+	discord             *discordgo.Session
+	repo                repository.Repository
+	brm                 *boost_request_manager.BoostRequestManager
+	interactionHandlers []interactionHandler
+}
+
+func NewBoostRequestDiscordHandler(discord *discordgo.Session, repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *BoostRequestDiscordHandler {
 	brdh := &BoostRequestDiscordHandler{
 		brm:     brm,
 		repo:    repo,
 		discord: discord,
+		interactionHandlers: []interactionHandler{
+			interactions.NewRemoveAdvertiserPreferenceHandler(repo, brm),
+		},
 	}
 
 	discord.Identify.Intents |= discordgo.IntentsGuilds
@@ -29,6 +40,7 @@ func NewBoostRequestDiscordHandler(discord *discordgo.Session, repo repository.R
 	discord.AddHandler(brdh.onMessageCreate)
 	discord.AddHandler(brdh.onMessageReactionAdd)
 	discord.AddHandler(brdh.onMessageReactionRemove)
+	discord.AddHandler(brdh.onInteractionCreate)
 
 	return brdh
 }
@@ -54,7 +66,7 @@ func (brdh *BoostRequestDiscordHandler) onMessageCreate(discord *discordgo.Sessi
 			if len(event.Embeds) > 0 {
 				embedFields = repository.FromDiscordEmbedFields(event.Embeds[0].Fields)
 			}
-			_, err = brdh.brm.CreateBoostRequest(brc, BoostRequestPartial{
+			_, err = brdh.brm.CreateBoostRequest(brc, boost_request_manager.BoostRequestPartial{
 				RequesterID:      event.Author.ID,
 				Message:          event.Content,
 				EmbedFields:      embedFields,
@@ -77,9 +89,9 @@ func (brdh *BoostRequestDiscordHandler) onMessageReactionAdd(discord *discordgo.
 		}
 		if br != nil {
 			switch event.Emoji.Name {
-			case AcceptEmoji:
+			case boost_emojis.AcceptEmoji:
 				brdh.brm.AddAdvertiserToBoostRequest(br, event.UserID)
-			case StealEmoji:
+			case boost_emojis.StealEmoji:
 				brdh.brm.StealBoostRequest(br, event.UserID)
 			}
 		}
@@ -87,11 +99,16 @@ func (brdh *BoostRequestDiscordHandler) onMessageReactionAdd(discord *discordgo.
 }
 
 func (brdh *BoostRequestDiscordHandler) onMessageReactionRemove(discord *discordgo.Session, event *discordgo.MessageReactionRemove) {
-	req, ok := brdh.brm.activeRequests.Load(event.MessageID)
-	if ok {
-		ar, ok := req.(*active_request.ActiveRequest)
-		if ok {
-			ar.RemoveSignup(event.UserID)
+	brdh.brm.RemoveAdvertiserFromBoostRequest(event.MessageID, event.UserID)
+}
+
+func (brdh *BoostRequestDiscordHandler) onInteractionCreate(discord *discordgo.Session, event *discordgo.InteractionCreate) {
+	for _, handler := range brdh.interactionHandlers {
+		if handler.Matches(event) {
+			err := handler.Handle(discord, event)
+			if err != nil {
+				log.Printf("error handling interaction: %v", err)
+			}
 		}
 	}
 }

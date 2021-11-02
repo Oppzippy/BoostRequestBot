@@ -1,4 +1,4 @@
-package boost_request
+package boost_request_manager
 
 import (
 	"fmt"
@@ -7,17 +7,13 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/active_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/boost_request/sequences"
-)
-
-const (
-	AcceptEmoji   = "👍"
-	StealEmoji    = "⏭"
-	ResolvedEmoji = "✅"
 )
 
 type BoostRequestManager struct {
@@ -76,7 +72,12 @@ type BoostRequestPartial struct {
 func (brm *BoostRequestManager) CreateBoostRequest(
 	brc *repository.BoostRequestChannel, brPartial BoostRequestPartial,
 ) (*repository.BoostRequest, error) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
 	br := &repository.BoostRequest{
+		ExternalID:             &id,
 		Channel:                *brc,
 		RequesterID:            brPartial.RequesterID,
 		Message:                brPartial.Message,
@@ -151,23 +152,35 @@ func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.Boost
 	}
 	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
 	if privileges != nil {
-		var isPreferredAdvertiser bool
-		for _, id := range br.PreferredAdvertiserIDs {
-			if id == userID {
-				isPreferredAdvertiser = true
-				break
+		if len(br.PreferredAdvertiserIDs) == 0 {
+			brm.signUp(br, userID, privileges)
+		} else {
+			var isPreferredAdvertiser bool
+			for _, id := range br.PreferredAdvertiserIDs {
+				if id == userID {
+					isPreferredAdvertiser = true
+					break
+				}
+			}
+			if isPreferredAdvertiser {
+				req, ok := brm.activeRequests.Load(br.BackendMessageID)
+				if !ok {
+					log.Printf("AddAdvertiserToBoostRequest: req is not ok")
+					return
+				}
+				r := req.(*active_request.ActiveRequest)
+				r.SetAdvertiser(userID)
 			}
 		}
-		if isPreferredAdvertiser {
-			req, ok := brm.activeRequests.Load(br.BackendMessageID)
-			if !ok {
-				log.Printf("AddAdvertiserToBoostRequest: req is not ok")
-				return
-			}
-			r := req.(*active_request.ActiveRequest)
-			r.SetAdvertiser(userID)
-		} else {
-			brm.signUp(br, userID, privileges)
+	}
+}
+
+func (brm *BoostRequestManager) RemoveAdvertiserFromBoostRequest(backendMessageID string, userID string) {
+	req, ok := brm.activeRequests.Load(backendMessageID)
+	if ok {
+		ar, ok := req.(*active_request.ActiveRequest)
+		if ok {
+			ar.RemoveSignup(userID)
 		}
 	}
 }
@@ -232,7 +245,7 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 		log.Printf("Error removing all reactions: %v", err)
 	}
 
-	brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, ResolvedEmoji)
+	brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, boost_emojis.ResolvedEmoji)
 	_, err = brm.messenger.SendBackendAdvertiserChosenMessage(&br)
 	if err != nil {
 		log.Printf("Error sending message to boost request backend: %v", err)
@@ -279,4 +292,23 @@ func (brm *BoostRequestManager) signUp(br *repository.BoostRequest, userID strin
 	}
 	r := req.(*active_request.ActiveRequest)
 	r.AddSignup(userID, *privileges)
+}
+
+func (brm *BoostRequestManager) CancelBoostRequest(br *repository.BoostRequest) error {
+	err := brm.discord.ChannelMessageDelete(br.Channel.BackendChannelID, br.BackendMessageID)
+	if err != nil {
+		log.Printf("failed to delete backend message when cancelling boost request: %v", err)
+		// it's not an ideal situation but we can still continue
+	}
+	err = brm.repo.DeleteBoostRequest(br)
+	if err != nil {
+		return err
+	}
+	activeRequestInterface, loaded := brm.activeRequests.LoadAndDelete(br.BackendMessageID)
+	if !loaded {
+		return nil
+	}
+	activeRequest := activeRequestInterface.(*active_request.ActiveRequest)
+	activeRequest.Destroy()
+	return nil
 }

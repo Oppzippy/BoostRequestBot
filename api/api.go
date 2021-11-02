@@ -10,11 +10,11 @@ import (
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
 	"github.com/oppzippy/BoostRequestBot/api/middleware"
 	"github.com/oppzippy/BoostRequestBot/api/routes"
-	"github.com/oppzippy/BoostRequestBot/boost_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-func NewWebAPI(repo repository.Repository, brm *boost_request.BoostRequestManager, listenAddress string) *http.Server {
+func NewWebAPI(repo repository.Repository, brm *boost_request_manager.BoostRequestManager, listenAddress string) *http.Server {
 	server := http.Server{
 		Addr:         listenAddress,
 		ReadTimeout:  10 * time.Second,
@@ -28,7 +28,7 @@ func NewWebAPI(repo repository.Repository, brm *boost_request.BoostRequestManage
 	return &server
 }
 
-func router(repo repository.Repository, brm *boost_request.BoostRequestManager) http.Handler {
+func router(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) http.Handler {
 	r := mux.NewRouter()
 
 	v1 := r.PathPrefix("/v1").Subrouter()

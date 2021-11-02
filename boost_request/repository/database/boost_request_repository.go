@@ -30,7 +30,7 @@ func (repo *dbRepository) GetBoostRequestById(guildID string, boostRequestID uui
 		WHERE
 			brc.guild_id = ?
 			AND br.external_id = ?
-			AND deleted_at IS NULL`,
+			AND br.deleted_at IS NULL`,
 		guildID,
 		boostRequestID,
 	)
@@ -141,10 +141,6 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 
 // Inserts the boost request into the database and updates the ID field to match the newly inserted row's id
 func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error {
-	externalID, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
 	var advertiserID *string
 	if br.AdvertiserID != "" {
 		advertiserID = &br.AdvertiserID
@@ -167,7 +163,7 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		`INSERT INTO boost_request
 			(external_id, boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, price, advertiser_cut, created_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		externalID.String(),
+		br.ExternalID,
 		br.Channel.ID,
 		br.RequesterID,
 		advertiserID,
@@ -204,7 +200,6 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 	}
 
 	br.ID = id
-	br.ExternalID = &externalID
 	err = tx.Commit()
 	return err
 }

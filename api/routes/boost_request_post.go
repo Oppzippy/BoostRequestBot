@@ -9,17 +9,17 @@ import (
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
 	"github.com/oppzippy/BoostRequestBot/api/json_unmarshaler"
 	"github.com/oppzippy/BoostRequestBot/api/models"
-	"github.com/oppzippy/BoostRequestBot/boost_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
 type BoostRequestPost struct {
 	repo        repository.Repository
 	unmarshaler *json_unmarshaler.Unmarshaler
-	brm         *boost_request.BoostRequestManager
+	brm         *boost_request_manager.BoostRequestManager
 }
 
-func NewBoostRequestPostHandler(repo repository.Repository, brm *boost_request.BoostRequestManager) *BoostRequestPost {
+func NewBoostRequestPostHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *BoostRequestPost {
 	return &BoostRequestPost{
 		repo:        repo,
 		brm:         brm,
@@ -53,7 +53,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	br, err := h.brm.CreateBoostRequest(brc, boost_request.BoostRequestPartial{
+	br, err := h.brm.CreateBoostRequest(brc, boost_request_manager.BoostRequestPartial{
 		RequesterID:            body.RequesterID,
 		Message:                body.Message,
 		PreferredAdvertiserIDs: body.PreferredAdvertiserIDs,

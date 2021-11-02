@@ -17,6 +17,7 @@ import (
 	"github.com/lus/dgc"
 	"github.com/oppzippy/BoostRequestBot/api"
 	"github.com/oppzippy/BoostRequestBot/boost_request"
+	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/middleware"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
@@ -47,7 +48,7 @@ func main() {
 	defer discord.Close()
 
 	var repo repository.Repository = db_repository.NewRepository(db)
-	brm := boost_request.NewBoostRequestManager(discord, repo, localeBundle)
+	brm := boost_request_manager.NewBoostRequestManager(discord, repo, localeBundle)
 	defer brm.Destroy()
 	brm.LoadBoostRequests()
 
