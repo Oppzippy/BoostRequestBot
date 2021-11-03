@@ -86,7 +86,7 @@ paths:
     get:
       operationId: getBoostRequest
       tags:
-        - boostRequest
+        - boostRequests
       parameters:
         - in: path
           name: boostRequestId
