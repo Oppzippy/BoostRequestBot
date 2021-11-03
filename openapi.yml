@@ -230,7 +230,7 @@ components:
           type: array
           items:
             type: string
-          description: If this array is not empty, only advertisers listed here will be eligible to accept the boost request.
+          description: If provided, only advertisers listed here will be eligible to accept the boost request.
       required:
         - requesterId
         - backendChannelId
@@ -267,7 +267,7 @@ components:
           type: array
           items:
             type: string
-          description: If this array is not empty, only advertisers listed here will be eligible to accept the boost request.
+          description: If preferredAdvertiserIds is defined, only advertisers listed here will be eligible to accept the boost request.
         createdAt:
           type: string
           format: date-time
@@ -281,7 +281,6 @@ components:
         - backendChannelId
         - backendMessageId
         - message
-        - preferredAdvertiserIds
         - createdAt
 
 security:
