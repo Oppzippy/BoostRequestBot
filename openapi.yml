@@ -211,20 +211,26 @@ components:
       properties:
         requesterId:
           type: string
+          description: Discord user id of the request of the boost request.
         backendChannelId:
           type: string
+          description: Discord channel id to post the boost request signup message in.
         message:
           type: string
+          description: What is being requested
         price:
           type: string
           format: int64
+          description: Price of the boost request in copper. This is a 64 bit integer represented as a string.
         advertiserCut:
           type: string
           format: int64
+          description: Advertiser's cut for the boost request in copper. This is a 64 bit integer represented as a string.
         preferredAdvertiserIds:
           type: array
           items:
             type: string
+          description: If this array is not empty, only advertisers listed here will be eligible to accept the boost request.
       required:
         - requesterId
         - backendChannelId
@@ -237,24 +243,31 @@ components:
           format: uuid
         requesterId:
           type: string
+          description: Discord user id of the request of the boost request.
         isAdvertiserSelected:
           type: boolean
         backendChannelId:
           type: string
+          description: Discord channel id that the boost request signup message was posted in.
         backendMessageId:
           type: string
+          description: Discord message id of the boost request signup message.
         message:
           type: string
+          description: What is being requested
         price:
           type: string
           format: int64
+          description: Price of the boost request in copper. This is a 64 bit integer represented as a string.
         advertiserCut:
           type: string
           format: int64
+          description: Advertiser's cut for the boost request in copper. This is a 64 bit integer represented as a string.
         preferredAdvertiserIds:
           type: array
           items:
             type: string
+          description: If this array is not empty, only advertisers listed here will be eligible to accept the boost request.
         createdAt:
           type: string
           format: date-time
