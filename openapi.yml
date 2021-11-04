@@ -96,6 +96,12 @@ paths:
           required: true
           description: Boost request UUID
       responses:
+        "200":
+          description: The boost request exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoostRequest"
         "400":
           $ref: "#/components/responses/BadRequestError"
         "401":
