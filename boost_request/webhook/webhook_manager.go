@@ -11,21 +11,26 @@ import (
 )
 
 type WebhookManager struct {
-	repo       repository.Repository
-	trigger    chan struct{}
-	quit       chan struct{}
-	httpClient *http.Client
+	repo             repository.Repository
+	trigger          chan struct{}
+	triggerDestroy   chan struct{}
+	retryLoop        chan struct{}
+	retryLoopDestroy chan struct{}
+	httpClient       *http.Client
 }
 
 func NewWebhookManager(repo repository.Repository) *WebhookManager {
 	wm := &WebhookManager{
-		repo:       repo,
-		trigger:    make(chan struct{}, 1),
-		quit:       make(chan struct{}),
-		httpClient: &http.Client{},
+		repo:             repo,
+		trigger:          make(chan struct{}, 1),
+		triggerDestroy:   make(chan struct{}),
+		retryLoop:        make(chan struct{}),
+		retryLoopDestroy: make(chan struct{}),
+		httpClient:       &http.Client{},
 	}
 
 	go func() {
+		defer close(wm.triggerDestroy)
 		for {
 			_, ok := <-wm.trigger
 			if !ok {
@@ -36,6 +41,7 @@ func NewWebhookManager(repo repository.Repository) *WebhookManager {
 	}()
 
 	go func() {
+		defer close(wm.retryLoopDestroy)
 		for {
 			select {
 			case wm.trigger <- struct{}{}:
@@ -44,7 +50,7 @@ func NewWebhookManager(repo repository.Repository) *WebhookManager {
 
 			select {
 			case <-time.After(time.Minute * 15):
-			case <-wm.quit:
+			case <-wm.retryLoop:
 				return
 			}
 		}
@@ -54,8 +60,10 @@ func NewWebhookManager(repo repository.Repository) *WebhookManager {
 }
 
 func (wm *WebhookManager) Destroy() {
-	close(wm.quit)
+	close(wm.retryLoop)
+	<-wm.retryLoopDestroy
 	close(wm.trigger)
+	<-wm.triggerDestroy
 }
 
 func (wm *WebhookManager) QueueToSend(guildID string, event *WebhookEvent) error {

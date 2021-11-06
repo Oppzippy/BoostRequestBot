@@ -52,7 +52,8 @@ func main() {
 	defer brm.Destroy()
 	brm.LoadBoostRequests()
 
-	_ = boost_request.NewBoostRequestDiscordHandler(discord, repo, brm)
+	brdh := boost_request.NewBoostRequestDiscordHandler(discord, repo, brm)
+	defer brdh.Destroy()
 	registerCommandRouter(discord, repo)
 
 	server := api.NewWebAPI(repo, brm, os.Getenv("HTTP_LISTEN_ADDRESS"))

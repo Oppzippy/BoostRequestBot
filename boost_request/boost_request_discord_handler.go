@@ -19,14 +19,16 @@ type BoostRequestDiscordHandler struct {
 	discord             *discordgo.Session
 	repo                repository.Repository
 	brm                 *boost_request_manager.BoostRequestManager
+	handlerRemoves      []func()
 	interactionHandlers []interactionHandler
 }
 
 func NewBoostRequestDiscordHandler(discord *discordgo.Session, repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *BoostRequestDiscordHandler {
 	brdh := &BoostRequestDiscordHandler{
-		brm:     brm,
-		repo:    repo,
-		discord: discord,
+		brm:            brm,
+		repo:           repo,
+		discord:        discord,
+		handlerRemoves: make([]func(), 0),
 		interactionHandlers: []interactionHandler{
 			interactions.NewRemoveAdvertiserPreferenceHandler(repo, brm),
 		},
@@ -37,12 +39,18 @@ func NewBoostRequestDiscordHandler(discord *discordgo.Session, repo repository.R
 	discord.Identify.Intents |= discordgo.IntentsGuildMessageReactions
 	discord.Identify.Intents |= discordgo.IntentsDirectMessages
 
-	discord.AddHandler(brdh.onMessageCreate)
-	discord.AddHandler(brdh.onMessageReactionAdd)
-	discord.AddHandler(brdh.onMessageReactionRemove)
-	discord.AddHandler(brdh.onInteractionCreate)
+	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageCreate))
+	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageReactionAdd))
+	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageReactionRemove))
+	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onInteractionCreate))
 
 	return brdh
+}
+
+func (brdh *BoostRequestDiscordHandler) Destroy() {
+	for _, remove := range brdh.handlerRemoves {
+		remove()
+	}
 }
 
 func (brdh *BoostRequestDiscordHandler) onMessageCreate(discord *discordgo.Session, event *discordgo.MessageCreate) {

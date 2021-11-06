@@ -44,8 +44,8 @@ func NewBoostRequestManager(discord *discordgo.Session, repo repository.Reposito
 }
 
 func (brm *BoostRequestManager) Destroy() {
-	brm.messenger.Destroy()
 	brm.webhookManager.Destroy()
+	brm.messenger.Destroy()
 }
 
 func (brm *BoostRequestManager) LoadBoostRequests() {
