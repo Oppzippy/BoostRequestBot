@@ -39,6 +39,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO check to make sure the channel is actually in the specified guild
 	brc := &repository.BoostRequestChannel{
 		FrontendChannelID: "",
 		GuildID:           guildID,
