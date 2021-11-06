@@ -14,7 +14,8 @@ func (repo *dbRepository) GetWebhook(guildId string) (repository.Webhook, error)
 		FROM
 			webhook
 		WHERE
-			guild_id = ?`,
+			guild_id = ? AND
+			deleted_at IS NULL`,
 		guildId,
 	)
 	webhook := repository.Webhook{}
@@ -35,7 +36,8 @@ func (repo *dbRepository) InsertWebhook(webhook repository.Webhook) error {
 		) VALUES (?, ?, ?)
 		ON DUPLICATE KEY UPDATE
 			webhook_url = VALUES(webhook_url),
-			created_at = VALUES(created_at)`,
+			created_at = VALUES(created_at),
+			deleted_at = NULL`,
 		webhook.GuildID,
 		webhook.URL,
 		time.Now().UTC(),
@@ -45,10 +47,13 @@ func (repo *dbRepository) InsertWebhook(webhook repository.Webhook) error {
 
 func (repo *dbRepository) DeleteWebhook(webhook repository.Webhook) error {
 	_, err := repo.db.Exec(`
-		DELETE FROM
+		UPDATE
 			webhook
+		SET
+			deleted_at = ?
 		WHERE
 			id = ?`,
+		time.Now(),
 		webhook.ID,
 	)
 	return err
@@ -83,11 +88,16 @@ func (repo *dbRepository) GetQueuedWebhooks() ([]*repository.QueuedWebhookReques
 		LEFT JOIN webhook_attempt ON
 			webhook_attempt.webhook_queue_id = webhook_queue.id
 		WHERE
-			webhook_attempt.id IS NULL OR
-			webhook_attempt.status_code NOT BETWEEN 200 AND 299
+			webhook.deleted_at IS NULL AND
+			webhook_queue.created_at < ? AND
+			(
+				webhook_attempt.id IS NULL OR
+				webhook_attempt.status_code NOT BETWEEN 200 AND 299
+			)
 		GROUP BY
 			webhook.id,
 			webhook_queue.id`,
+		time.Now().UTC().Add(time.Hour*24*7), // Give up after a week
 	)
 	if err != nil {
 		return nil, err

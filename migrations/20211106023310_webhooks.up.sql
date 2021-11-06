@@ -2,7 +2,9 @@ CREATE TABLE webhook (
 	id INTEGER PRIMARY KEY AUTO_INCREMENT,
 	guild_id VARCHAR(50) NOT NULL UNIQUE,
 	webhook_url TEXT NOT NULL,
-	created_at DATETIME NOT NULL
+	created_at DATETIME NOT NULL,
+	deleted_at DATETIME NULL,
+	INDEX(deleted_at)
 );
 
 CREATE TABLE webhook_queue (
@@ -10,7 +12,7 @@ CREATE TABLE webhook_queue (
 	webhook_id INTEGER NOT NULL REFERENCES webhook(id),
 	body JSON NOT NULL,
 	created_at DATETIME NOT NULL,
-	INDEX(webhook_id)
+	INDEX(webhook_id, created_at)
 );
 
 CREATE TABLE webhook_attempt (
