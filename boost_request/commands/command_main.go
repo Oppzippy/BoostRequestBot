@@ -33,6 +33,10 @@ var MainCommand = dgc.Command{
 		// Boost request RNG Rolls
 		&setRollChannelCommand,
 		&removeRollChannelCommand,
+		// Webhooks
+		&setWebhookCommand,
+		&removeWebhookCommand,
+		&listWebhookCommand,
 	},
 
 	Handler: mainCommandHandler,

@@ -9,11 +9,13 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/api/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/active_request"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/boost_request/sequences"
+	"github.com/oppzippy/BoostRequestBot/boost_request/webhook"
 )
 
 type BoostRequestManager struct {
@@ -21,6 +23,7 @@ type BoostRequestManager struct {
 	repo           repository.Repository
 	bundle         *i18n.Bundle
 	messenger      *messenger.BoostRequestMessenger
+	webhookManager *webhook.WebhookManager
 	activeRequests *sync.Map
 	isLoaded       bool
 	isLoadedLock   *sync.Mutex
@@ -32,6 +35,7 @@ func NewBoostRequestManager(discord *discordgo.Session, repo repository.Reposito
 		repo:           repo,
 		bundle:         bundle,
 		messenger:      messenger.NewBoostRequestMessenger(discord, bundle),
+		webhookManager: webhook.NewWebhookManager(repo),
 		activeRequests: new(sync.Map),
 		isLoadedLock:   new(sync.Mutex),
 	}
@@ -41,6 +45,7 @@ func NewBoostRequestManager(discord *discordgo.Session, repo repository.Reposito
 
 func (brm *BoostRequestManager) Destroy() {
 	brm.messenger.Destroy()
+	brm.webhookManager.Destroy()
 }
 
 func (brm *BoostRequestManager) LoadBoostRequests() {
@@ -273,6 +278,27 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 		if err != nil {
 			log.Printf("Error sending roll message: %v", err)
 		}
+	}
+
+	err = brm.webhookManager.QueueToSend(br.Channel.GuildID, &webhook.WebhookEvent{
+		Event: webhook.AdvertiserChosenEvent,
+		Data: models.BoostRequest{
+			ID:                     br.ExternalID.String(),
+			RequesterID:            br.RequesterID,
+			IsAdvertiserSelected:   br.IsResolved,
+			AdvertiserID:           br.AdvertiserID,
+			BackendChannelID:       br.Channel.BackendChannelID,
+			BackendMessageID:       br.BackendMessageID,
+			Message:                br.Message,
+			Price:                  br.Price,
+			AdvertiserCut:          br.AdvertiserCut,
+			PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
+			CreatedAt:              br.CreatedAt.Format(time.RFC3339),
+			AdvertiserSelectedAt:   br.ResolvedAt.Format(time.RFC3339),
+		},
+	})
+	if err != nil {
+		log.Printf("error queueing webhook: %v", err)
 	}
 }
 

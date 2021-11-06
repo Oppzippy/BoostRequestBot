@@ -21,6 +21,7 @@ type Repository interface {
 	RoleDiscountRepository
 	StealCreditRepository
 	RollChannelRepository
+	WebhookRepository
 }
 
 type ApiKeyRepository interface {
@@ -116,4 +117,13 @@ type RollChannelRepository interface {
 	InsertRollChannel(guildID, channelID string) error
 	// DeleteRollChannel Stops posting boost request RNG rolls
 	DeleteRollChannel(guildID string) error
+}
+
+type WebhookRepository interface {
+	GetWebhook(guildId string) (Webhook, error)
+	InsertWebhook(webhook Webhook) error
+	DeleteWebhook(Webhook Webhook) error
+	InsertQueuedWebhook(webhook Webhook, body string) error
+	GetQueuedWebhooks() ([]*QueuedWebhookRequest, error)
+	InsertWebhookAttempt(attempt WebhookAttempt) error
 }
