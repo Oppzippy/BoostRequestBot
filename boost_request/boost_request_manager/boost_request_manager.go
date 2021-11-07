@@ -282,7 +282,7 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 
 	err = brm.webhookManager.QueueToSend(br.Channel.GuildID, &webhook.WebhookEvent{
 		Event: webhook.AdvertiserChosenEvent,
-		Data: models.BoostRequest{
+		Payload: models.BoostRequest{
 			ID:                     br.ExternalID.String(),
 			RequesterID:            br.RequesterID,
 			IsAdvertiserSelected:   br.IsResolved,

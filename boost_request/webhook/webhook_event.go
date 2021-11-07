@@ -5,6 +5,6 @@ const (
 )
 
 type WebhookEvent struct {
-	Event string      `json:"event"`
-	Data  interface{} `json:"data"`
+	Event   string      `json:"event"`
+	Payload interface{} `json:"payload"`
 }
