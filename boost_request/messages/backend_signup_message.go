@@ -80,7 +80,7 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 }
 
 func (m *BackendSignupMessage) roleDiscountFields() []*discordgo.MessageEmbedField {
-	if m.boostRequest.Discount != 0 {
+	if m.boostRequest.Discount != 0 && m.boostRequest.Price != 0 {
 		return []*discordgo.MessageEmbedField{
 			{
 				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
