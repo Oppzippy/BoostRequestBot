@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -12,6 +13,14 @@ const (
 )
 
 func formatCopper(localizer *i18n.Localizer, totalCopper int64) string {
+	if totalCopper < copperPerGold*1000 {
+		return formatCopperToGoldSilverCopper(localizer, totalCopper)
+	} else {
+		return formatCopperToThousandsOfGold(totalCopper)
+	}
+}
+
+func formatCopperToGoldSilverCopper(localizer *i18n.Localizer, totalCopper int64) string {
 	copper := totalCopper % 100
 	silver := (totalCopper / copperPerSilver) % 100
 	gold := totalCopper / copperPerGold
@@ -53,4 +62,11 @@ func formatCopper(localizer *i18n.Localizer, totalCopper int64) string {
 	}
 
 	return strings.Join(parts, " ")
+}
+
+func formatCopperToThousandsOfGold(copper int64) string {
+	copperDecimal := decimal.NewFromInt(copper)
+	thousandsOfGold := copperDecimal.Div(decimal.NewFromInt(copperPerGold * 1000))
+	// TODO make configurable
+	return thousandsOfGold.Round(2).String() + "k <:gold:909618212717592607>"
 }
