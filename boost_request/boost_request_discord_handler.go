@@ -4,34 +4,36 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/interactions"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
-
-type interactionHandler interface {
-	Matches(event *discordgo.InteractionCreate) bool
-	Handle(discord *discordgo.Session, event *discordgo.InteractionCreate) error
-}
 
 type BoostRequestDiscordHandler struct {
 	discord             *discordgo.Session
 	repo                repository.Repository
 	brm                 *boost_request_manager.BoostRequestManager
 	handlerRemoves      []func()
-	interactionHandlers []interactionHandler
+	interactionRegistry *InteractionRegistry
+	messenger           *messenger.BoostRequestMessenger
 }
 
-func NewBoostRequestDiscordHandler(discord *discordgo.Session, repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *BoostRequestDiscordHandler {
+func NewBoostRequestDiscordHandler(
+	discord *discordgo.Session,
+	repo repository.Repository,
+	brm *boost_request_manager.BoostRequestManager,
+	bundle *i18n.Bundle,
+) *BoostRequestDiscordHandler {
 	brdh := &BoostRequestDiscordHandler{
-		brm:            brm,
-		repo:           repo,
-		discord:        discord,
-		handlerRemoves: make([]func(), 0),
-		interactionHandlers: []interactionHandler{
-			interactions.NewRemoveAdvertiserPreferenceHandler(repo, brm),
-		},
+		brm:                 brm,
+		repo:                repo,
+		discord:             discord,
+		handlerRemoves:      make([]func(), 0),
+		interactionRegistry: NewInteractionRegistry(discord),
+		messenger:           messenger.NewBoostRequestMessenger(discord, bundle),
 	}
 
 	discord.Identify.Intents |= discordgo.IntentsGuilds
@@ -42,12 +44,16 @@ func NewBoostRequestDiscordHandler(discord *discordgo.Session, repo repository.R
 	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageCreate))
 	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageReactionAdd))
 	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageReactionRemove))
-	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onInteractionCreate))
+
+	brdh.interactionRegistry.AddHandler(interactions.NewRemoveAdvertiserPreferenceHandler(repo, brm))
+	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestStealHandler(repo, brm))
+	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestSignUpHandler(repo, brm))
 
 	return brdh
 }
 
 func (brdh *BoostRequestDiscordHandler) Destroy() {
+	brdh.interactionRegistry.Destroy()
 	for _, remove := range brdh.handlerRemoves {
 		remove()
 	}
@@ -98,9 +104,19 @@ func (brdh *BoostRequestDiscordHandler) onMessageReactionAdd(discord *discordgo.
 		if br != nil {
 			switch event.Emoji.Name {
 			case boost_emojis.AcceptEmoji:
-				brdh.brm.AddAdvertiserToBoostRequest(br, event.UserID)
+				_, err := brdh.brm.AddAdvertiserToBoostRequest(br, event.UserID)
+				if err != nil {
+					log.Printf("Error adding advertiser to boost request: %v", err)
+				}
 			case boost_emojis.StealEmoji:
-				brdh.brm.StealBoostRequest(br, event.UserID)
+				_, usedCredits := brdh.brm.StealBoostRequest(br, event.UserID)
+				newCredits, err := brdh.repo.GetStealCreditsForUser(event.GuildID, event.UserID)
+				if err != nil {
+					log.Printf("Error fetching steal credits for user: %v", err)
+				}
+				if usedCredits {
+					brdh.messenger.SendCreditsUpdateDM(event.UserID, newCredits)
+				}
 			}
 		}
 	}
@@ -108,15 +124,4 @@ func (brdh *BoostRequestDiscordHandler) onMessageReactionAdd(discord *discordgo.
 
 func (brdh *BoostRequestDiscordHandler) onMessageReactionRemove(discord *discordgo.Session, event *discordgo.MessageReactionRemove) {
 	brdh.brm.RemoveAdvertiserFromBoostRequest(event.MessageID, event.UserID)
-}
-
-func (brdh *BoostRequestDiscordHandler) onInteractionCreate(discord *discordgo.Session, event *discordgo.InteractionCreate) {
-	for _, handler := range brdh.interactionHandlers {
-		if handler.Matches(event) {
-			err := handler.Handle(discord, event)
-			if err != nil {
-				log.Printf("error handling interaction: %v", err)
-			}
-		}
-	}
 }

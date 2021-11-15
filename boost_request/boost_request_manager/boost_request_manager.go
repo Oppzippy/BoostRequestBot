@@ -150,12 +150,11 @@ func (brm *BoostRequestManager) GetBestRolePrivileges(guildID string, roles []st
 	return bestPrivileges
 }
 
-func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.BoostRequest, userID string) {
+func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.BoostRequest, userID string) (hasPriveleges bool, err error) {
 	// TODO cache roles
 	guildMember, err := brm.discord.GuildMember(br.Channel.GuildID, userID)
 	if err != nil {
-		log.Printf("Error fetching guild member: %v", err)
-		return
+		return false, fmt.Errorf("fetching guild member: %v", err)
 	}
 	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
 	if privileges != nil {
@@ -179,7 +178,9 @@ func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.Boost
 				r.SetAdvertiser(userID)
 			}
 		}
+		return true, nil
 	}
+	return false, nil
 }
 
 func (brm *BoostRequestManager) RemoveAdvertiserFromBoostRequest(backendMessageID string, userID string) {
@@ -192,29 +193,29 @@ func (brm *BoostRequestManager) RemoveAdvertiserFromBoostRequest(backendMessageI
 	}
 }
 
-func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, userID string) (ok bool) {
+func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, userID string) (ok, usedCredits bool) {
 	credits, err := brm.repo.GetStealCreditsForUser(br.Channel.GuildID, userID)
 	if err != nil {
 		log.Printf("Error fetching steal credits: %v", err)
-		return false
+		return false, false
 	}
 	if credits <= 0 {
-		return false
+		return false, false
 	}
 
 	guildMember, err := brm.discord.GuildMember(br.Channel.GuildID, userID)
 	if err != nil {
 		log.Printf("Error fetching guild member: %v", err)
-		return false
+		return false, false
 	}
 	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
 	if privileges == nil {
-		return
+		return false, false
 	}
 
 	req, ok := brm.activeRequests.Load(br.BackendMessageID)
 	if !ok {
-		return false
+		return false, false
 	}
 	r := req.(*active_request.ActiveRequest)
 	endTime := br.CreatedAt.Add(time.Duration(privileges.Delay) * time.Second)
@@ -225,11 +226,11 @@ func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, u
 		err := brm.repo.AdjustStealCreditsForUser(br.Channel.GuildID, userID, repository.OperationSubtract, 1)
 		if err != nil {
 			log.Printf("Error subtracting boost request credits after use: %v", err)
-			return false
+			return false, false
 		}
-		go brm.messenger.SendCreditsUpdateDM(userID, credits-1)
+		usedCredits = true
 	}
-	return ok
+	return ok, usedCredits
 }
 
 func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosenEvent) {

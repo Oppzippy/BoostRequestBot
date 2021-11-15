@@ -67,6 +67,32 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 			Description: br.Message,
 			Fields:      fields,
 		},
+		Components: []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+							DefaultMessage: &i18n.Message{
+								ID:    "SignUp",
+								Other: "Sign Up",
+							},
+						}),
+						Style:    discordgo.PrimaryButton,
+						CustomID: "boostRequest:signUp",
+					},
+					discordgo.Button{
+						Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+							DefaultMessage: &i18n.Message{
+								ID:    "Steal",
+								Other: "Steal",
+							},
+						}),
+						CustomID: "boostRequest:steal",
+						Style:    discordgo.PrimaryButton,
+					},
+				},
+			},
+		},
 	}, nil
 }
 

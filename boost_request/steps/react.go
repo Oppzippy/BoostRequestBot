@@ -25,7 +25,12 @@ func NewReactStep(discord *discordgo.Session, br *repository.BoostRequest) *reac
 }
 
 func (step *reactStep) Apply() (RevertFunction, error) {
-	revert, err := step.applyReactions(step.br.Channel.BackendChannelID, step.br.BackendMessageID, []string{AcceptEmoji, StealEmoji})
+	emojis := []string{}
+	if step.br.Channel.UsesBuyerMessage {
+		// We can't add buttons to someone else's message, so we fall back to using reactions for those boost requests
+		emojis = []string{AcceptEmoji, StealEmoji}
+	}
+	revert, err := step.applyReactions(step.br.Channel.BackendChannelID, step.br.BackendMessageID, emojis)
 	if err != nil {
 		return revert, fmt.Errorf("reacting to boost request: %v", err)
 	}

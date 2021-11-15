@@ -26,7 +26,7 @@ func NewRemoveAdvertiserPreferenceHandler(repo repository.Repository, brm *boost
 	}
 }
 
-func (h *RemoveAdvertiserPreferenceHandler) Matches(event *discordgo.InteractionCreate) bool {
+func (h *RemoveAdvertiserPreferenceHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	_, _, err := h.parseBoostRequestId(event)
 	return err == nil
 }
@@ -80,6 +80,9 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 }
 
 func (h *RemoveAdvertiserPreferenceHandler) parseBoostRequestId(event *discordgo.InteractionCreate) (guildID string, boostRequestID uuid.UUID, err error) {
+	if event.Type != discordgo.InteractionMessageComponent {
+		return "", uuid.UUID{}, errors.New("not a message component interaction")
+	}
 	customID := event.MessageComponentData().CustomID
 	matches := removeAdvertiserPreferenceRegex.FindStringSubmatch(customID)
 	if matches == nil {

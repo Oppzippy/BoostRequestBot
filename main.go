@@ -53,7 +53,7 @@ func main() {
 	defer brm.Destroy()
 	brm.LoadBoostRequests()
 
-	brdh := boost_request.NewBoostRequestDiscordHandler(discord, repo, brm)
+	brdh := boost_request.NewBoostRequestDiscordHandler(discord, repo, brm, localeBundle)
 	defer brdh.Destroy()
 	registerCommandRouter(discord, repo)
 
