@@ -72,7 +72,7 @@ jobs:
           distribution: adopt
           java-version: 11
       - name: Download openapi-generator-cli
-        run: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/5.1.0/openapi-generator-cli-5.1.0.jar -O openapi-generator-cli.jar
+        run: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/5.3.0/openapi-generator-cli-5.3.0.jar -O openapi-generator-cli.jar
       - name: Make sdk dir
         run: mkdir sdk_zip
       - name: Build Python sdk
