@@ -21,9 +21,11 @@ type BoostRequest struct {
 	RequesterID            string
 	AdvertiserID           string
 	BackendMessageID       string
+	Type                   string
 	Message                string
 	EmbedFields            []*MessageEmbedField
 	Price                  int64
+	Discount               int64
 	AdvertiserCut          int64
 	PreferredAdvertiserIDs []string
 	RoleDiscounts          []*RoleDiscount

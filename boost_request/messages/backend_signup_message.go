@@ -27,15 +27,25 @@ func NewBackendSignupMessage(
 
 func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 	br := m.boostRequest
-	fields := make([]*discordgo.MessageEmbedField, 0, 3)
+	fields := []*discordgo.MessageEmbedField{
+		{
+			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "Type",
+					Other: "Type",
+				},
+			}),
+			Value: br.Type,
+		},
+	}
 	if price := m.priceField(); price != nil {
 		fields = append(fields, price)
 	}
 	if advertiserCut := m.advertiserCutField(); advertiserCut != nil {
 		fields = append(fields, advertiserCut)
 	}
-	if rd := m.roleDiscountField(); rd != nil {
-		fields = append(fields, rd)
+	if rd := m.roleDiscountFields(); rd != nil {
+		fields = append(fields, rd...)
 	}
 
 	if len(fields) == 0 {
@@ -69,16 +79,51 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 	}, nil
 }
 
-func (m *BackendSignupMessage) roleDiscountField() *discordgo.MessageEmbedField {
-	if len(m.boostRequest.RoleDiscounts) != 0 {
-		return &discordgo.MessageEmbedField{
-			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "RequesterEligibleForDiscounts",
-					Other: "The requester is eligible for discounts",
-				},
-			}),
-			Value: m.discountFormatter.FormatDiscounts(m.boostRequest.RoleDiscounts),
+func (m *BackendSignupMessage) roleDiscountFields() []*discordgo.MessageEmbedField {
+	if m.boostRequest.Discount != 0 {
+		return []*discordgo.MessageEmbedField{
+			{
+				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "Discount",
+						Other: "Discount",
+					},
+				}),
+				Value:  formatCopper(m.localizer, m.boostRequest.Discount),
+				Inline: true,
+			},
+			{
+				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "DiscountedPrice",
+						Other: "Discounted Price",
+					},
+				}),
+				Inline: true,
+				Value:  formatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
+			},
+			{
+				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "DiscountedAdvertiserCut",
+						Other: "Discounted Advertiser Cut",
+					},
+				}),
+				Value:  formatCopper(m.localizer, m.boostRequest.AdvertiserCut-m.boostRequest.Discount),
+				Inline: true,
+			},
+		}
+	} else if len(m.boostRequest.RoleDiscounts) != 0 {
+		return []*discordgo.MessageEmbedField{
+			{
+				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "RequesterEligibleForDiscounts",
+						Other: "The requester is eligible for discounts",
+					},
+				}),
+				Value: m.discountFormatter.FormatDiscounts(m.boostRequest.RoleDiscounts),
+			},
 		}
 	}
 	return nil
@@ -87,8 +132,9 @@ func (m *BackendSignupMessage) roleDiscountField() *discordgo.MessageEmbedField 
 func (m *BackendSignupMessage) priceField() *discordgo.MessageEmbedField {
 	if m.boostRequest.Price != 0 {
 		return &discordgo.MessageEmbedField{
-			Name:  "Price",
-			Value: formatCopper(m.localizer, m.boostRequest.Price),
+			Name:   "Price",
+			Value:  formatCopper(m.localizer, m.boostRequest.Price),
+			Inline: true,
 		}
 	}
 	return nil
@@ -97,8 +143,9 @@ func (m *BackendSignupMessage) priceField() *discordgo.MessageEmbedField {
 func (m *BackendSignupMessage) advertiserCutField() *discordgo.MessageEmbedField {
 	if m.boostRequest.AdvertiserCut != 0 {
 		return &discordgo.MessageEmbedField{
-			Name:  "Advertiser Cut",
-			Value: formatCopper(m.localizer, m.boostRequest.AdvertiserCut),
+			Name:   "Advertiser Cut",
+			Value:  formatCopper(m.localizer, m.boostRequest.AdvertiserCut),
+			Inline: true,
 		}
 	}
 	return nil

@@ -56,6 +56,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	br, err := h.brm.CreateBoostRequest(brc, boost_request_manager.BoostRequestPartial{
 		RequesterID:            body.RequesterID,
+		Type:                   body.Type,
 		Message:                body.Message,
 		PreferredAdvertiserIDs: body.PreferredAdvertiserIDs,
 		Price:                  body.Price,
@@ -79,8 +80,10 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		AdvertiserID:           br.AdvertiserID,
 		BackendChannelID:       br.Channel.BackendChannelID,
 		BackendMessageID:       br.BackendMessageID,
+		Type:                   br.Type,
 		Message:                br.Message,
 		Price:                  br.Price,
+		Discount:               br.Discount,
 		AdvertiserCut:          br.AdvertiserCut,
 		PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
 		CreatedAt:              br.CreatedAt.Format(time.RFC3339),

@@ -16,6 +16,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/boost_request/sequences"
 	"github.com/oppzippy/BoostRequestBot/boost_request/webhook"
+	"github.com/shopspring/decimal"
 )
 
 type BoostRequestManager struct {
@@ -66,6 +67,7 @@ func (brm *BoostRequestManager) LoadBoostRequests() {
 
 type BoostRequestPartial struct {
 	RequesterID            string
+	Type                   string
 	Message                string
 	EmbedFields            []*repository.MessageEmbedField
 	PreferredAdvertiserIDs []string
@@ -85,6 +87,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		ExternalID:             &id,
 		Channel:                *brc,
 		RequesterID:            brPartial.RequesterID,
+		Type:                   brPartial.Type,
 		Message:                brPartial.Message,
 		Price:                  brPartial.Price,
 		AdvertiserCut:          brPartial.AdvertiserCut,
@@ -100,12 +103,27 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 	// Essentially checking if the user is a bot
 	// TODO add IsBot to BoostRequest
 	if br.EmbedFields == nil {
-		rd, err := brm.getRoleDiscountsForUser(br.Channel.GuildID, br.RequesterID)
-		if err != nil {
-			// They won't get their discounts, but we don't have to abort
-			log.Printf("Error searching roles for discounts: %v", err)
+		if br.Type != "" && br.Price != 0 {
+			roleDiscounts, err := brm.getRoleDiscountsForUser(br.Channel.GuildID, br.RequesterID)
+			if err != nil {
+				// They won't get their discounts, but we don't have to abort
+				log.Printf("Error searching roles for discounts: %v", err)
+				roleDiscounts = make([]*repository.RoleDiscount, 0)
+			}
+			for _, rd := range roleDiscounts {
+				if rd.BoostType == br.Type {
+					br.Discount = rd.Discount.Mul(decimal.NewFromInt(br.Price)).IntPart()
+					break
+				}
+			}
+		} else {
+			roleDiscounts, err := brm.getRoleDiscountsForUser(br.Channel.GuildID, br.RequesterID)
+			if err != nil {
+				// They won't get their discounts, but we don't have to abort
+				log.Printf("Error searching roles for discounts: %v", err)
+			}
+			br.RoleDiscounts = roleDiscounts
 		}
-		br.RoleDiscounts = rd
 	}
 
 	sequenceArgs := sequences.CreateSequenceArgs{

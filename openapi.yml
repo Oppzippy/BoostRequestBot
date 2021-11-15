@@ -1,4 +1,4 @@
-openapi: "3.0.2"
+openapi: "3.1.0"
 info:
   title: Boost Request Bot
   version: "1.0"
@@ -224,6 +224,9 @@ components:
         message:
           type: string
           description: What is being requested
+        type:
+          type: string
+          description: Type of boost request. This is used for calculating role discounts, so it should match the names of the role discount boost types.
         price:
           type: string
           format: int64
@@ -261,10 +264,17 @@ components:
         message:
           type: string
           description: What is being requested
+        type:
+          type: string
+          description: Type of boost request. This is used for calculating role discounts, so it should match the names of the role discount boost types.
         price:
           type: string
           format: int64
           description: Price of the boost request in copper. This is a 64 bit integer represented as a string.
+        discount:
+          type: string
+          format: int64
+          description: Discount in copper on the boost.
         advertiserCut:
           type: string
           format: int64

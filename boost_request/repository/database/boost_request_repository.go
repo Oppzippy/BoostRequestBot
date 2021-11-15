@@ -52,7 +52,8 @@ func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*r
 func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([]*repository.BoostRequest, error) {
 	row, err := repo.db.Query(`
 		SELECT
-			br.id, br.external_id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message, br.embed_fields, br.price, br.advertiser_cut, br.created_at, br.resolved_at,
+			br.id, br.external_id, br.requester_id, br.advertiser_id, br.backend_message_id, br.request_type, br.message,
+			br.embed_fields, br.price, br.discount, br.advertiser_cut, br.created_at, br.resolved_at,
 			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM
 			boost_request br
@@ -103,13 +104,16 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 		brc               repository.BoostRequestChannel
 		advertiserID      sql.NullString
 		resolvedAt        sql.NullTime
+		requestType       sql.NullString
 		embedFieldsJSON   sql.NullString
 		price             sql.NullInt64
+		discount          sql.NullInt64
 		advertiserCut     sql.NullInt64
 		frontendChannelID sql.NullString
 	)
 	err := row.Scan(
-		&br.ID, &br.ExternalID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message, &embedFieldsJSON, &price, &advertiserCut, &br.CreatedAt, &resolvedAt,
+		&br.ID, &br.ExternalID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &requestType, &br.Message,
+		&embedFieldsJSON, &price, &discount, &advertiserCut, &br.CreatedAt, &resolvedAt,
 		&brc.ID, &brc.GuildID, &frontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
 	)
 	if err != nil {
@@ -129,11 +133,17 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	if frontendChannelID.Valid {
 		brc.FrontendChannelID = frontendChannelID.String
 	}
+	if requestType.Valid {
+		br.Type = requestType.String
+	}
 	if price.Valid {
 		br.Price = price.Int64
 	}
 	if advertiserCut.Valid {
 		br.AdvertiserCut = advertiserCut.Int64
+	}
+	if discount.Valid {
+		br.Discount = discount.Int64
 	}
 	br.Channel = brc
 	return &br, nil
@@ -161,18 +171,29 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 	}
 	res, err := tx.Exec(
 		`INSERT INTO boost_request
-			(external_id, boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields, price, advertiser_cut, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			(
+				external_id, boost_request_channel_id, requester_id, advertiser_id, backend_message_id, request_type, message, embed_fields,
+				price, discount, advertiser_cut, created_at
+			)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		br.ExternalID,
 		br.Channel.ID,
 		br.RequesterID,
 		advertiserID,
 		br.BackendMessageID,
+		sql.NullString{
+			String: br.Type,
+			Valid:  br.Type != "",
+		},
 		br.Message,
 		embedFieldsJSON,
 		sql.NullInt64{
 			Int64: br.Price,
 			Valid: br.Price != 0,
+		},
+		sql.NullInt64{
+			Int64: br.Discount,
+			Valid: br.Discount != 0,
 		},
 		sql.NullInt64{
 			Int64: br.AdvertiserCut,

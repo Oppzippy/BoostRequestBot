@@ -45,7 +45,16 @@ func (m *AdvertiserChosenDMToAdvertiser) humanMessage() (*discordgo.MessageSend,
 	if advertiserCut := m.advertiserCutField(); advertiserCut != nil {
 		fields = append(fields, advertiserCut)
 	}
-	if len(m.boostRequest.RoleDiscounts) != 0 {
+	if m.boostRequest.Discount != 0 {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "Discount",
+					Other: formatCopper(m.localizer, m.boostRequest.Discount),
+				},
+			}),
+		})
+	} else if len(m.boostRequest.RoleDiscounts) != 0 {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{

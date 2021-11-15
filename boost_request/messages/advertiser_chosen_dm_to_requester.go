@@ -42,7 +42,16 @@ func (m *AdvertiserChosenDMToRequester) Message() (*discordgo.MessageSend, error
 	})
 
 	var fields []*discordgo.MessageEmbedField
-	if len(m.boostRequest.RoleDiscounts) != 0 {
+	if m.boostRequest.Discount != 0 {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "Discount",
+					Other: formatCopper(m.localizer, m.boostRequest.Discount),
+				},
+			}),
+		})
+	} else if len(m.boostRequest.RoleDiscounts) != 0 {
 		fields = make([]*discordgo.MessageEmbedField, 1)
 		fields[0] = &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
