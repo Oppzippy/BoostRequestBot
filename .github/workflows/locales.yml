@@ -21,7 +21,7 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           commit-message: Update locales
-          comitter: GitHub Actions <github-actions[bot]@users.noreply.github.com>
+          committer: GitHub Actions <github-actions[bot]@users.noreply.github.com>
           author: GitHub Actions <github-actions[bot]@users.noreply.github.com>
           branch: actions/locales
           title: Update locales
