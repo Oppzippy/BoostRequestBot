@@ -36,7 +36,7 @@ func TestBoostRequestCreatedDM(t *testing.T) {
 	if m.Embed.Author.Name != "test#1234" {
 		t.Errorf("expected tag test#1234, got %s", m.Embed.Author.Name)
 	}
-	if m.Embed.Description != "Boost please" {
+	if m.Embed.Fields[0].Value != "Boost please" {
 		t.Errorf("expected description %s, got %s", br.Message, m.Embed.Description)
 	}
 }
