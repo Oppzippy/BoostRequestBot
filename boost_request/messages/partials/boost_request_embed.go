@@ -132,7 +132,7 @@ func (m *BoostRequestEmbedPartial) roleDiscountFields() *discordgo.MessageEmbedF
 		return &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
-					ID:    "RequesterEligibleForDiscounts",
+					ID:    "Discount",
 					One:   "Discount",
 					Other: "Discounts",
 				},
