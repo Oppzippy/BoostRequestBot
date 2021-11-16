@@ -6,6 +6,7 @@ import (
 
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/shopspring/decimal"
 )
@@ -21,7 +22,7 @@ func TestBackendSignupMessage(t *testing.T) {
 
 	bsm := messages.NewBackendSignupMessage(
 		emptyLocalizer(),
-		&messages.DiscountFormatter{},
+		&partials.DiscountFormatter{},
 		br,
 	)
 
@@ -59,7 +60,7 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 	}
 	bsm := messages.NewBackendSignupMessage(
 		emptyLocalizer(),
-		messages.NewDiscountFormatter(
+		partials.NewDiscountFormatter(
 			emptyLocalizer(),
 			&mocks.MockRoleNameProvider{
 				Value: "booster",

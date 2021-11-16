@@ -6,42 +6,47 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
 type BackendSignupMessage struct {
 	boostRequest      *repository.BoostRequest
 	localizer         *i18n.Localizer
-	discountFormatter *DiscountFormatter
+	discountFormatter *partials.DiscountFormatter
+	embedPartial      *partials.BoostRequestEmbedPartial
 }
 
 func NewBackendSignupMessage(
-	localizer *i18n.Localizer, df *DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer, df *partials.DiscountFormatter, br *repository.BoostRequest,
 ) *BackendSignupMessage {
 	return &BackendSignupMessage{
 		boostRequest:      br,
 		localizer:         localizer,
 		discountFormatter: df,
+		embedPartial:      partials.NewBoostRequestEmbedPartial(localizer, df, br),
 	}
 }
 
 func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 	br := m.boostRequest
-	fields := make([]*discordgo.MessageEmbedField, 0, 6)
-
-	if price := m.priceField(); price != nil {
-		fields = append(fields, price)
+	embed, err := m.embedPartial.Embed(partials.BoostRequestEmbedConfiguration{
+		Price:          true,
+		AdvertiserCut:  true,
+		Discount:       true,
+		DiscountTotals: true,
+	})
+	if err != nil {
+		return nil, err
 	}
-	if advertiserCut := m.advertiserCutField(); advertiserCut != nil {
-		fields = append(fields, advertiserCut)
-	}
-	if rd := m.roleDiscountFields(); rd != nil {
-		fields = append(fields, rd...)
-	}
-
-	if len(fields) == 0 {
-		fields = nil
-	}
+	embed.Title = m.localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "NewBoostRequest",
+			One:   "New Boost Request",
+			Other: "New Boost Requests",
+		},
+		PluralCount: 1,
+	})
 
 	var preferredAdvertiserMentions string
 	if len(br.PreferredAdvertiserIDs) > 0 {
@@ -54,19 +59,7 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 
 	return &discordgo.MessageSend{
 		Content: preferredAdvertiserMentions,
-		Embed: &discordgo.MessageEmbed{
-			Color: 0x0000FF,
-			Title: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "NewBoostRequest",
-					One:   "New Boost Request",
-					Other: "New Boost Requests",
-				},
-				PluralCount: 1,
-			}),
-			Description: br.Message,
-			Fields:      fields,
-		},
+		Embed:   embed,
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
@@ -94,76 +87,4 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 			},
 		},
 	}, nil
-}
-
-func (m *BackendSignupMessage) roleDiscountFields() []*discordgo.MessageEmbedField {
-	if m.boostRequest.Discount != 0 && m.boostRequest.Price != 0 {
-		return []*discordgo.MessageEmbedField{
-			{
-				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:    "Discount",
-						Other: "Discount",
-					},
-				}),
-				Value:  formatCopper(m.localizer, m.boostRequest.Discount),
-				Inline: true,
-			},
-			{
-				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:    "DiscountedPrice",
-						Other: "Discounted Price",
-					},
-				}),
-				Inline: true,
-				Value:  formatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
-			},
-			{
-				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:    "DiscountedAdvertiserCut",
-						Other: "Discounted Advertiser Cut",
-					},
-				}),
-				Value:  formatCopper(m.localizer, m.boostRequest.AdvertiserCut-m.boostRequest.Discount),
-				Inline: true,
-			},
-		}
-	} else if len(m.boostRequest.RoleDiscounts) != 0 {
-		return []*discordgo.MessageEmbedField{
-			{
-				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:    "RequesterEligibleForDiscounts",
-						Other: "The requester is eligible for discounts",
-					},
-				}),
-				Value: m.discountFormatter.FormatDiscounts(m.boostRequest.RoleDiscounts),
-			},
-		}
-	}
-	return nil
-}
-
-func (m *BackendSignupMessage) priceField() *discordgo.MessageEmbedField {
-	if m.boostRequest.Price != 0 {
-		return &discordgo.MessageEmbedField{
-			Name:   "Price",
-			Value:  formatCopper(m.localizer, m.boostRequest.Price),
-			Inline: true,
-		}
-	}
-	return nil
-}
-
-func (m *BackendSignupMessage) advertiserCutField() *discordgo.MessageEmbedField {
-	if m.boostRequest.AdvertiserCut != 0 {
-		return &discordgo.MessageEmbedField{
-			Name:   "Advertiser Cut",
-			Value:  formatCopper(m.localizer, m.boostRequest.AdvertiserCut),
-			Inline: true,
-		}
-	}
-	return nil
 }

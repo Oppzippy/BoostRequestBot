@@ -3,24 +3,27 @@ package messages
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
 type AdvertiserChosenDMToRequester struct {
 	localizer         *i18n.Localizer
 	userProvider      userProvider
-	discountFormatter *DiscountFormatter
+	discountFormatter *partials.DiscountFormatter
 	boostRequest      *repository.BoostRequest
+	embedPartial      *partials.BoostRequestEmbedPartial
 }
 
 func NewAdvertiserChosenDMToRequester(
-	localizer *i18n.Localizer, up userProvider, df *DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer, up userProvider, df *partials.DiscountFormatter, br *repository.BoostRequest,
 ) *AdvertiserChosenDMToRequester {
 	return &AdvertiserChosenDMToRequester{
 		localizer:         localizer,
 		userProvider:      up,
 		discountFormatter: df,
 		boostRequest:      br,
+		embedPartial:      partials.NewBoostRequestEmbedPartial(localizer, df, br),
 	}
 }
 
@@ -41,44 +44,20 @@ func (m *AdvertiserChosenDMToRequester) Message() (*discordgo.MessageSend, error
 		},
 	})
 
-	var fields []*discordgo.MessageEmbedField
-	if m.boostRequest.Discount != 0 {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "Discount",
-					Other: formatCopper(m.localizer, m.boostRequest.Discount),
-				},
-			}),
-		})
-	} else if len(m.boostRequest.RoleDiscounts) != 0 {
-		fields = make([]*discordgo.MessageEmbedField, 1)
-		fields[0] = &discordgo.MessageEmbedField{
-			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "YouEligibleForDiscounts",
-					Other: "You are eligible for discounts",
-				},
-			}),
-			Value: m.discountFormatter.FormatDiscounts(m.boostRequest.RoleDiscounts),
-		}
+	embed, err := m.embedPartial.Embed(partials.BoostRequestEmbedConfiguration{
+		Description: content,
+		Price:       true,
+		Discount:    true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	embed.Color = 0x00FF00
+	embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+		URL: advertiser.AvatarURL(""),
 	}
 
 	return &discordgo.MessageSend{
-		Embed: &discordgo.MessageEmbed{
-			Color: 0x00FF00,
-			Title: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:  "BoostRequest",
-					One: "Boost Request",
-				},
-				PluralCount: 1,
-			}),
-			Description: content,
-			Fields:      fields,
-			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: advertiser.AvatarURL(""),
-			},
-		},
+		Embed: embed,
 	}, nil
 }

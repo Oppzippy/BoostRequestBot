@@ -7,6 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -22,7 +23,7 @@ func TestAdvertisreChosenDMToRequester(t *testing.T) {
 				Discriminator: "1234",
 			},
 		},
-		messages.NewDiscountFormatter(
+		partials.NewDiscountFormatter(
 			emptyLocalizer(),
 			&mocks.MockRoleNameProvider{},
 		),

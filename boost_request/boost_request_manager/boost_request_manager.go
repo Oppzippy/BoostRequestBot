@@ -11,7 +11,6 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/api/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/active_request"
-	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/boost_request/sequences"
@@ -248,12 +247,6 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 		log.Printf("Error resolving boost request: %v", err)
 	}
 
-	err = brm.discord.MessageReactionsRemoveAll(br.Channel.BackendChannelID, br.BackendMessageID)
-	if err != nil {
-		log.Printf("Error removing all reactions: %v", err)
-	}
-
-	brm.discord.MessageReactionAdd(br.Channel.BackendChannelID, br.BackendMessageID, boost_emojis.ResolvedEmoji)
 	_, err = brm.messenger.SendBackendAdvertiserChosenMessage(&br)
 	if err != nil {
 		log.Printf("Error sending message to boost request backend: %v", err)

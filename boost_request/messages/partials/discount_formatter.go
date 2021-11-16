@@ -1,4 +1,4 @@
-package messages
+package partials
 
 import (
 	"strings"
@@ -9,11 +9,11 @@ import (
 )
 
 type DiscountFormatter struct {
-	roleNameProvider RoleNameProvider
+	roleNameProvider roleNameProvider
 	localizer        *i18n.Localizer
 }
 
-func NewDiscountFormatter(localizer *i18n.Localizer, roleNameProvider RoleNameProvider) *DiscountFormatter {
+func NewDiscountFormatter(localizer *i18n.Localizer, roleNameProvider roleNameProvider) *DiscountFormatter {
 	return &DiscountFormatter{
 		localizer:        localizer,
 		roleNameProvider: roleNameProvider,

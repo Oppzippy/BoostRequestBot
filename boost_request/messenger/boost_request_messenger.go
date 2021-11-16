@@ -9,6 +9,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/roll"
 )
@@ -35,7 +36,7 @@ func NewBoostRequestMessenger(discord *discordgo.Session, bundle *i18n.Bundle) *
 func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.BoostRequest) (*discordgo.Message, error) {
 	m := messages.NewBackendSignupMessage(
 		messenger.localizer("en"),
-		messages.NewDiscountFormatter(
+		partials.NewDiscountFormatter(
 			messenger.localizer("en"),
 			messages.NewDiscordRoleNameProvider(messenger.discord),
 		),
@@ -53,7 +54,11 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.
 func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository.BoostRequest) (*discordgo.Message, error) {
 	localizer := messenger.localizer("en")
 
-	m := messages.NewBoostRequestCreatedDM(localizer, messenger.discord, br)
+	m := messages.NewBoostRequestCreatedDM(localizer,
+		messenger.discord,
+		partials.NewDiscountFormatter(messenger.localizer(), messages.NewDiscordRoleNameProvider(messenger.discord)),
+		br,
+	)
 
 	message, err := messenger.send(&MessageDestination{
 		DestinationID:     br.RequesterID,
@@ -67,13 +72,24 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository
 func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 	br *repository.BoostRequest,
 ) (*discordgo.Message, error) {
-	m := messages.NewBackendAdvertiserChosenMessage(messenger.localizer("en"), messenger.discord, br)
+	localizer := messenger.localizer("en")
+	m := messages.NewBackendAdvertiserChosenMessage(
+		localizer,
+		messenger.discord,
+		partials.NewDiscountFormatter(localizer, messages.NewDiscordRoleNameProvider(messenger.discord)),
+		br,
+	)
+	content, err := m.Message()
+	if err != nil {
+		return nil, err
+	}
 
-	message, err := messenger.send(&MessageDestination{
-		DestinationID:   br.Channel.BackendChannelID,
-		DestinationType: DestinationChannel,
-	}, m)
-
+	message, err := messenger.discord.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		ID:         br.BackendMessageID,
+		Channel:    br.Channel.BackendChannelID,
+		Embed:      content.Embed,
+		Components: []discordgo.MessageComponent{},
+	})
 	return message, err
 }
 
@@ -84,7 +100,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
 	m := messages.NewAdvertiserChosenDMToRequester(
 		localizer,
 		messenger.discord,
-		messages.NewDiscountFormatter(
+		partials.NewDiscountFormatter(
 			localizer,
 			messages.NewDiscordRoleNameProvider(messenger.discord),
 		),
@@ -106,7 +122,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
 	m := messages.NewAdvertiserChosenDMToAdvertiser(
 		localizer,
 		messenger.discord,
-		messages.NewDiscountFormatter(
+		partials.NewDiscountFormatter(
 			localizer,
 			messages.NewDiscordRoleNameProvider(messenger.discord),
 		),

@@ -1,4 +1,4 @@
-package messages
+package message_utils
 
 import (
 	"strings"
@@ -12,7 +12,7 @@ const (
 	copperPerGold   int64 = 1_00_00
 )
 
-func formatCopper(localizer *i18n.Localizer, totalCopper int64) string {
+func FormatCopper(localizer *i18n.Localizer, totalCopper int64) string {
 	if totalCopper < copperPerGold*1000 {
 		return formatCopperToGoldSilverCopper(localizer, totalCopper)
 	} else {
