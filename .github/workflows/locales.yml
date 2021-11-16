@@ -1,0 +1,29 @@
+name: Update Locales
+
+on: [push]
+
+jobs:
+  update_locales:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.17
+      - name: Install goi18n CLI
+        run: go get -u github.com/nicksnyder/go-i18n/v2/goi18n
+      - name: Extract Locales
+        run: goi18n extract
+      - name: Overwrite old locales
+        run: mv active.en.toml locales/
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: Update locales
+          comitter: GitHub Actions <github-actions[bot]@users.noreply.github.com>
+          author: GitHub Actions <github-actions[bot]@users.noreply.github.com>
+          branch: actions/locales
+          title: Update locales
+          labels: chore
+          delete-branch: true
