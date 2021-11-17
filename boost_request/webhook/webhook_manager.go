@@ -36,7 +36,10 @@ func NewWebhookManager(repo repository.Repository) *WebhookManager {
 			if !ok {
 				return
 			}
-			wm.sendQueuedWebhooks()
+			err := wm.sendQueuedWebhooks()
+			if err != nil {
+				log.Printf("Error sending queued webhooks: %v", err)
+			}
 		}
 	}()
 
@@ -117,7 +120,7 @@ func (wm *WebhookManager) sendQueuedWebhook(queuedWebhook *repository.QueuedWebh
 		statusCode = resp.StatusCode
 		err = resp.Body.Close()
 		if err != nil {
-			log.Printf("webhook: failed to close body")
+			log.Printf("webhook: failed to close body: %v", err)
 		}
 	}
 
