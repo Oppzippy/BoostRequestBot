@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
@@ -44,6 +45,7 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		log.Printf("Error fetching boost request via api: %v", err)
 		internalServerError(rw, r, "")
 		return
 	}
