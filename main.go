@@ -27,6 +27,7 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	fmt.Println("Starting bot")
 	rand.Seed(time.Now().UnixNano())
 	localeBundle := locales.Bundle()
