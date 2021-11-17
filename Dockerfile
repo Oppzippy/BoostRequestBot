@@ -10,7 +10,7 @@ FROM gcr.io/distroless/static-debian11
 WORKDIR /boostrequestbot
 COPY --from=build /boostrequestbot/BoostRequestBot .
 
-EXPOSE 80
+EXPOSE 80/tcp
 
 USER boostrequestbot:boostrequestbot
 
