@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/BurntSushi/toml v0.4.1
-	github.com/bwmarrin/discordgo v0.23.3-0.20211027235626-007bf7679048
+	github.com/bwmarrin/discordgo v0.23.3-0.20211117035633-fd6228c0d536
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
@@ -21,7 +21,8 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/zekroTJA/timedmap v1.4.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/sys v0.0.0-20211031064116-611d5d643895 // indirect
+	golang.org/x/crypto v0.0.0-20211115234514-b4de73f9ece8 // indirect
+	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c // indirect
 	golang.org/x/text v0.3.7
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
