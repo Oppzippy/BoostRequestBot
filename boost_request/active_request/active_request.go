@@ -71,6 +71,13 @@ func (r *ActiveRequest) AddSignup(userID string, privileges repository.Advertise
 	}
 }
 
+func (r *ActiveRequest) HasSignup(userID string) bool {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	_, isSignedUp := r.userDelays[userID]
+	return isSignedUp
+}
+
 func (r *ActiveRequest) RemoveSignup(userID string) {
 	r.mutex.Lock()
 	r.removeSignupWithoutLocking(userID)

@@ -33,29 +33,28 @@ func (h *BoostRequestSignUpHandler) Handle(discord *discordgo.Session, event *di
 		return fmt.Errorf("error fetching boost request: %v", err)
 	}
 	if br != nil && !br.IsResolved {
-		hasPrivileges, err := h.brm.AddAdvertiserToBoostRequest(br, event.Member.User.ID)
-		if err != nil {
-			return err
-		}
-		if hasPrivileges {
-			err = discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "You are signed up.",
-					Flags:   1 << 6, // Ephemeral
-				},
-			})
-			return err
+		var content string
+		if h.brm.IsAdvertiserSignedUpForBoostRequest(br.BackendMessageID, event.Member.User.ID) {
+			content = "You are already signed up for this boost request."
 		} else {
-			err = discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "You do not have permission to sign up for boost requests.",
-					Flags:   1 << 6, // Ephemeral
-				},
-			})
-			return err
+			hasPrivileges, err := h.brm.AddAdvertiserToBoostRequest(br, event.Member.User.ID)
+			if err != nil {
+				return err
+			}
+			if hasPrivileges {
+				content = "You have been signed up."
+			} else {
+				content = "You do not have permission to sign up for boost requests."
+			}
 		}
+		err = discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: content,
+				Flags:   1 << 6, // Ephemeral
+			},
+		})
+		return err
 	}
 	return nil
 }

@@ -192,6 +192,17 @@ func (brm *BoostRequestManager) RemoveAdvertiserFromBoostRequest(backendMessageI
 	}
 }
 
+func (brm *BoostRequestManager) IsAdvertiserSignedUpForBoostRequest(backendMessageID, userID string) bool {
+	req, ok := brm.activeRequests.Load(backendMessageID)
+	if ok {
+		ar, ok := req.(*active_request.ActiveRequest)
+		if ok {
+			return ar.HasSignup(userID)
+		}
+	}
+	return false
+}
+
 func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, userID string) (ok, usedCredits bool) {
 	credits, err := brm.repo.GetStealCreditsForUser(br.Channel.GuildID, userID)
 	if err != nil {
