@@ -36,8 +36,8 @@ jobs:
       - name: Zip
         run: |
           mkdir release-uploads
-          zip -r release-uploads/BoostRequestBot_Python_SDK.zip python_sdk
-          zip -r release-uploads/Markdown_Docs.zip docs
+          zip -r release-uploads/BoostRequestBot_Python_SDK.zip python_sdk/
+          zip -r release-uploads/Markdown_Docs.zip docs/
       - name: Upload
         uses: softprops/action-gh-release@v1
         with:
