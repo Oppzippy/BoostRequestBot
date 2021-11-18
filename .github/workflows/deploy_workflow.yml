@@ -67,22 +67,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
-        with:
-          distribution: adopt
-          java-version: 11
-      - name: Download openapi-generator-cli
-        run: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/5.3.0/openapi-generator-cli-5.3.0.jar -O openapi-generator-cli.jar
-      - name: Make sdk dir
-        run: mkdir sdk_zip
-      - name: Build Python sdk
+      - name: Set up Python SDK generator configuration
         run: |
           VERSION=$(echo $GITHUB_REF | sed -E "s/\/?refs\/tags\/v?//g")
           echo packageVersion: $VERSION >> openapi-config-python.yml
-          java -jar openapi-generator-cli.jar generate -i openapi.yml -g python -o python_sdk --package-name boostrequestbotapi --config openapi-config-python.yml
-          zip -r sdk_zip/BoostRequestBot_Python_SDK.zip python_sdk
         env:
           GITHUB_REF: github.ref
+
+      - name: Generate Python SDK
+        run: |
+          docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
+            -i /local/openapi.yml \
+            -g python \
+            -c /local/openapi-config-python.yml \
+            -o /local/python_sdk \
+            --package-name boostrequestbotapi
+          sudo chown -R $USER:$USER python_sdk
+
+      - name: Generate Docs
+        run: |
+          docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
+            -i /local/openapi.yml \
+            -g markdown \
+            -o /local/docs
+          sudo chown -R $USER:$USER python_sdk
+
+      - name: Zip
+        run: |
+          mkdir sdk_zip
+          zip -r sdk_zip/BoostRequestBot_Python_SDK.zip python_sdk
+          zip -r sdk_zip/Markdown_Docs.zip docs
       - name: Upload
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
