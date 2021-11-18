@@ -34,7 +34,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Printf("Error loading .env file: %v", err)
+		fmt.Printf("Error loading .env file: %v\n", err)
 	}
 
 	db, err := initialization.GetDBC()
