@@ -1,0 +1,46 @@
+name: OpenAPI Generator
+
+on: [push]
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python SDK generator configuration
+        run: |
+          VERSION=$(echo $GITHUB_REF | sed -E "s/\/?refs\/tags\/v?//g")
+          echo packageVersion: $VERSION >> openapi-config-python.yml
+        env:
+          GITHUB_REF: github.ref
+
+      - name: Generate Python SDK
+        run: |
+          docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
+            -i /local/openapi.yml \
+            -g python \
+            -c /local/openapi-config-python.yml \
+            -o /local/python_sdk \
+            --package-name boostrequestbotapi
+          sudo chown -R $USER:$USER python_sdk
+
+      - name: Generate Docs
+        run: |
+          docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
+            -i /local/openapi.yml \
+            -g markdown \
+            -o /local/docs
+          sudo chown -R $USER:$USER python_sdk
+
+      - name: Zip
+        run: |
+          mkdir release-uploads
+          zip -r release-uploads/BoostRequestBot_Python_SDK.zip python_sdk
+          zip -r release-uploads/Markdown_Docs.zip docs
+      - name: Upload
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-uploads/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
