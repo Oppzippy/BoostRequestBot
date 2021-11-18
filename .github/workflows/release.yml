@@ -1,0 +1,35 @@
+name: Release
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.17.2
+      - name: Test
+        run: go test ./...
+      - name: Build
+        run: go build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: docker build --tag ghcr.io/oppzippy/boost-request-bot:latest .
+      - name: Log in to Github Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push docker image
+        run: docker push ghcr.io/oppzippy/boost-request-bot:latest
