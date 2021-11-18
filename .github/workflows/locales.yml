@@ -1,6 +1,9 @@
 name: Update Locales
 
-on: [push]
+on:
+  push:
+    tags-ignore:
+      - **
 
 jobs:
   update_locales:
