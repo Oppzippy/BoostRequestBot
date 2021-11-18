@@ -15,6 +15,10 @@ func GetDBC() (*sql.DB, error) {
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_DATABASE"),
 	)
+	if dsn := os.Getenv("DB_DSN"); dsn != "" {
+		dataSourceName = dsn
+	}
+
 	db, err := sql.Open("mysql", dataSourceName+"?parseTime=true")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to db: %v", err)
