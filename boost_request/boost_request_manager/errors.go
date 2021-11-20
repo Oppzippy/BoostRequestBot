@@ -4,15 +4,15 @@ type BoostRequestSignupError struct {
 	message string
 }
 
-func (e BoostRequestSignupError) Error() string {
+func (e *BoostRequestSignupError) Error() string {
 	return e.message
 }
 
 var (
-	ErrNoPrivileges error = BoostRequestSignupError{
+	ErrNoPrivileges error = &BoostRequestSignupError{
 		message: "the user has no privileges",
 	}
-	ErrNotPreferredAdvertiser error = BoostRequestSignupError{
+	ErrNotPreferredAdvertiser error = &BoostRequestSignupError{
 		message: "the user is not a preferred advertiser",
 	}
 )

@@ -105,7 +105,7 @@ func (brdh *BoostRequestDiscordHandler) onMessageReactionAdd(discord *discordgo.
 			switch event.Emoji.Name {
 			case boost_emojis.AcceptEmoji:
 				err := brdh.brm.AddAdvertiserToBoostRequest(br, event.UserID)
-				if _, isSignupError := err.(boost_request_manager.BoostRequestSignupError); err != nil && !isSignupError {
+				if _, isSignupError := err.(*boost_request_manager.BoostRequestSignupError); err != nil && !isSignupError {
 					log.Printf("Error adding advertiser to boost request: %v", err)
 				}
 			case boost_emojis.StealEmoji:
