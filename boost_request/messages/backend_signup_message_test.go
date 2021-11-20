@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
@@ -13,11 +14,17 @@ import (
 
 func TestBackendSignupMessage(t *testing.T) {
 	t.Parallel()
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Errorf("generate uuid: %v", err)
+		return
+	}
 	br := &repository.BoostRequest{
 		Message: "Boost please",
 		Channel: repository.BoostRequestChannel{
 			BackendChannelID: "1",
 		},
+		ExternalID: &id,
 	}
 
 	bsm := messages.NewBackendSignupMessage(
@@ -38,6 +45,11 @@ func TestBackendSignupMessage(t *testing.T) {
 
 func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 	t.Parallel()
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Errorf("generate uuid: %v", err)
+		return
+	}
 	discount, err := decimal.NewFromString("0.2")
 	if err != nil {
 		t.Errorf("parsing discount: %v", err)
@@ -57,6 +69,7 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 				Discount:  discount,
 			},
 		},
+		ExternalID: &id,
 	}
 	bsm := messages.NewBackendSignupMessage(
 		emptyLocalizer(),

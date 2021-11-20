@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
@@ -12,8 +13,14 @@ import (
 )
 
 func TestBoostRequestRollMessage(t *testing.T) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Errorf("generate uuid: %v", err)
+		return
+	}
 	br := &repository.BoostRequest{
-		Channel: repository.BoostRequestChannel{},
+		Channel:    repository.BoostRequestChannel{},
+		ExternalID: &id,
 	}
 	roll := roll.NewWeightedRoll(3)
 	roll.AddItem("advertiser1", 1)

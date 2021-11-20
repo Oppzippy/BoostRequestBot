@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
@@ -12,6 +13,11 @@ import (
 )
 
 func TestAdvertiserChosenDMToAdvertiserHuman(t *testing.T) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Errorf("generate uuid: %v", err)
+		return
+	}
 	m := messages.NewAdvertiserChosenDMToAdvertiser(
 		emptyLocalizer(),
 		&mocks.MockUserProvider{
@@ -28,6 +34,7 @@ func TestAdvertiserChosenDMToAdvertiserHuman(t *testing.T) {
 		&repository.BoostRequest{
 			RequesterID: "1",
 			Channel:     repository.BoostRequestChannel{},
+			ExternalID:  &id,
 		},
 	)
 	message, err := m.Message()
@@ -44,6 +51,11 @@ func TestAdvertiserChosenDMToAdvertiserHuman(t *testing.T) {
 }
 
 func TestAdvertiserChosenDMToAdvertiserBot(t *testing.T) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Errorf("generate uuid: %v", err)
+		return
+	}
 	m := messages.NewAdvertiserChosenDMToAdvertiser(
 		emptyLocalizer(),
 		&mocks.MockUserProvider{
@@ -65,7 +77,8 @@ func TestAdvertiserChosenDMToAdvertiserBot(t *testing.T) {
 					Value: "Test",
 				},
 			},
-			Channel: repository.BoostRequestChannel{},
+			Channel:    repository.BoostRequestChannel{},
+			ExternalID: &id,
 		},
 	)
 	message, err := m.Message()

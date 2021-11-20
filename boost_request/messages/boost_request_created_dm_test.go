@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
@@ -12,11 +13,17 @@ import (
 
 func TestBoostRequestCreatedDM(t *testing.T) {
 	t.Parallel()
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Errorf("generate uuid: %v", err)
+		return
+	}
 	br := &repository.BoostRequest{
 		Message: "Boost please",
 		Channel: repository.BoostRequestChannel{
 			SkipsBuyerDM: false,
 		},
+		ExternalID: &id,
 	}
 	createdDM := messages.NewBoostRequestCreatedDM(
 		emptyLocalizer(),

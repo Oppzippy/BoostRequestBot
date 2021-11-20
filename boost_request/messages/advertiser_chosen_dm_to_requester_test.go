@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
@@ -13,7 +14,14 @@ import (
 
 func TestAdvertisreChosenDMToRequester(t *testing.T) {
 	t.Parallel()
-	br := &repository.BoostRequest{}
+	id, err := uuid.NewRandom()
+	if err != nil {
+		t.Errorf("generate uuid: %v", err)
+		return
+	}
+	br := &repository.BoostRequest{
+		ExternalID: &id,
+	}
 	m := messages.NewAdvertiserChosenDMToRequester(
 		emptyLocalizer(),
 		&mocks.MockUserProvider{
