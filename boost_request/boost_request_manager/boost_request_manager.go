@@ -206,6 +206,19 @@ func (brm *BoostRequestManager) IsAdvertiserSignedUpForBoostRequest(backendMessa
 }
 
 func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, userID string) (ok, usedCredits bool) {
+	if len(br.PreferredAdvertiserIDs) > 0 {
+		var isPreferredAdvertiser bool
+		for _, id := range br.PreferredAdvertiserIDs {
+			if id == userID {
+				isPreferredAdvertiser = true
+				break
+			}
+		}
+		if !isPreferredAdvertiser {
+			return false, false
+		}
+	}
+
 	credits, err := brm.repo.GetStealCreditsForUser(br.Channel.GuildID, userID)
 	if err != nil {
 		log.Printf("Error fetching steal credits: %v", err)
