@@ -149,37 +149,39 @@ func (brm *BoostRequestManager) GetBestRolePrivileges(guildID string, roles []st
 	return bestPrivileges
 }
 
-func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.BoostRequest, userID string) (hasPriveleges bool, err error) {
+func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.BoostRequest, userID string) (err error) {
 	// TODO cache roles
 	guildMember, err := brm.discord.GuildMember(br.Channel.GuildID, userID)
 	if err != nil {
-		return false, fmt.Errorf("fetching guild member: %v", err)
+		return fmt.Errorf("fetching guild member: %v", err)
 	}
 	privileges := brm.GetBestRolePrivileges(br.Channel.GuildID, guildMember.Roles)
-	if privileges != nil {
-		if len(br.PreferredAdvertiserIDs) == 0 {
-			brm.signUp(br, userID, privileges)
-		} else {
-			var isPreferredAdvertiser bool
-			for _, id := range br.PreferredAdvertiserIDs {
-				if id == userID {
-					isPreferredAdvertiser = true
-					break
-				}
-			}
-			if isPreferredAdvertiser {
-				req, ok := brm.activeRequests.Load(br.BackendMessageID)
-				if !ok {
-					log.Printf("AddAdvertiserToBoostRequest: req is not ok")
-					return
-				}
-				r := req.(*active_request.ActiveRequest)
-				r.SetAdvertiser(userID)
+	if privileges == nil {
+		return ErrNoPrivileges
+	}
+	if len(br.PreferredAdvertiserIDs) == 0 {
+		brm.signUp(br, userID, privileges)
+	} else {
+		var isPreferredAdvertiser bool
+		for _, id := range br.PreferredAdvertiserIDs {
+			if id == userID {
+				isPreferredAdvertiser = true
+				break
 			}
 		}
-		return true, nil
+		if !isPreferredAdvertiser {
+			return ErrNotPreferredAdvertiser
+		}
+
+		req, ok := brm.activeRequests.Load(br.BackendMessageID)
+		if !ok {
+			log.Printf("AddAdvertiserToBoostRequest: activeRequest not found")
+			return
+		}
+		r := req.(*active_request.ActiveRequest)
+		r.SetAdvertiser(userID)
 	}
-	return false, nil
+	return nil
 }
 
 func (brm *BoostRequestManager) RemoveAdvertiserFromBoostRequest(backendMessageID string, userID string) {

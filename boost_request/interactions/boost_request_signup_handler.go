@@ -37,14 +37,20 @@ func (h *BoostRequestSignUpHandler) Handle(discord *discordgo.Session, event *di
 		if h.brm.IsAdvertiserSignedUpForBoostRequest(br.BackendMessageID, event.Member.User.ID) {
 			content = "You are already signed up for this boost request."
 		} else {
-			hasPrivileges, err := h.brm.AddAdvertiserToBoostRequest(br, event.Member.User.ID)
-			if err != nil {
-				return err
-			}
-			if hasPrivileges {
+			err := h.brm.AddAdvertiserToBoostRequest(br, event.Member.User.ID)
+
+			// We could check if it's a BoostRequestSignupError in addition to the switch to ensure
+			// if a case is missed, it doesn't error. An error is what we want though, so it is noticed
+			// and a new message can be added here.
+			switch err {
+			case nil:
 				content = "You have been signed up."
-			} else {
+			case boost_request_manager.ErrNoPrivileges:
 				content = "You do not have permission to sign up for boost requests."
+			case boost_request_manager.ErrNotPreferredAdvertiser:
+				content = "You are not a preferred advertiser for this boost request."
+			default:
+				return err
 			}
 		}
 		err = discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
