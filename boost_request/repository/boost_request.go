@@ -21,7 +21,6 @@ type BoostRequest struct {
 	RequesterID            string
 	AdvertiserID           string
 	BackendMessageID       string
-	Type                   string
 	Message                string
 	EmbedFields            []*MessageEmbedField
 	Price                  int64

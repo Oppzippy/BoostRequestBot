@@ -224,9 +224,6 @@ components:
         message:
           type: string
           description: What is being requested
-        type:
-          type: string
-          description: Type of boost request. This is used for calculating role discounts, so it should match the names of the role discount boost types.
         price:
           type: string
           format: int64
@@ -235,6 +232,10 @@ components:
           type: string
           format: int64
           description: Advertiser's cut for the boost request in copper. This is a 64 bit integer represented as a string.
+        discount:
+          type: string
+          format: int64
+          description: Discount coming out of the advertiser's cut on the boost request in copper. This is a 64 bit integer represented as a string.
         preferredAdvertiserIds:
           type: array
           items:
@@ -264,9 +265,6 @@ components:
         message:
           type: string
           description: What is being requested
-        type:
-          type: string
-          description: Type of boost request. This is used for calculating role discounts, so it should match the names of the role discount boost types.
         price:
           type: string
           format: int64

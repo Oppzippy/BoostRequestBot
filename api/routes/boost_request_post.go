@@ -57,11 +57,11 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	br, err := h.brm.CreateBoostRequest(brc, boost_request_manager.BoostRequestPartial{
 		RequesterID:            body.RequesterID,
-		Type:                   body.Type,
 		Message:                body.Message,
 		PreferredAdvertiserIDs: body.PreferredAdvertiserIDs,
 		Price:                  body.Price,
 		AdvertiserCut:          body.AdvertiserCut,
+		Discount:               body.Discount,
 	})
 	if err != nil {
 		log.Printf("Error creating boost request via api: %v", err)
@@ -81,7 +81,6 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		AdvertiserID:           br.AdvertiserID,
 		BackendChannelID:       br.Channel.BackendChannelID,
 		BackendMessageID:       br.BackendMessageID,
-		Type:                   br.Type,
 		Message:                br.Message,
 		Price:                  br.Price,
 		Discount:               br.Discount,

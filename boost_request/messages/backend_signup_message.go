@@ -29,17 +29,6 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 	br := m.boostRequest
 	fields := make([]*discordgo.MessageEmbedField, 0, 6)
 
-	if br.Type != "" {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "Type",
-					Other: "Type",
-				},
-			}),
-			Value: br.Type,
-		})
-	}
 	if price := m.priceField(); price != nil {
 		fields = append(fields, price)
 	}

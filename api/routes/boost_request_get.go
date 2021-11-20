@@ -62,7 +62,6 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		AdvertiserID:           br.AdvertiserID,
 		BackendChannelID:       br.Channel.BackendChannelID,
 		BackendMessageID:       br.BackendMessageID,
-		Type:                   br.Type,
 		Message:                br.Message,
 		Price:                  br.Price,
 		Discount:               br.Discount,
