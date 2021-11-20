@@ -50,10 +50,6 @@ other = "Please message the users listed below."
 one = "New Boost Request"
 other = "New Boost Requests"
 
-[Type]
-one = "Type"
-other = "Types"
-
 [YouHandleBoostRequest]
 one = "You have been selected to handle a boost request."
 other = "You have been selected to handle boost requests."
