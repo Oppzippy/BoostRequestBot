@@ -1,6 +1,9 @@
 name: Update Locales
 
-on: push
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   update_locales:
