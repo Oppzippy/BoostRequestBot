@@ -19,6 +19,7 @@ type BoostRequestEmbedConfiguration struct {
 	AdvertiserCut  bool
 	Discount       bool
 	DiscountTotals bool
+	ID             bool
 }
 
 func NewBoostRequestEmbedPartial(
@@ -61,11 +62,14 @@ func (m *BoostRequestEmbedPartial) Embed(config BoostRequestEmbedConfiguration) 
 	if rd := m.roleDiscountFields(); config.Discount && rd != nil {
 		embed.Fields = append(embed.Fields, rd)
 	}
-	if totals := m.DiscountTotalsFields(); config.DiscountTotals && totals != nil {
+	if totals := m.discountTotalsFields(); config.DiscountTotals && totals != nil {
 		embed.Fields = append(embed.Fields, totals...)
 	}
 	if len(m.boostRequest.EmbedFields) != 0 {
 		embed.Fields = append(embed.Fields, repository.ToDiscordEmbedFields(m.boostRequest.EmbedFields)...)
+	}
+	if config.ID {
+		embed.Footer = m.idFooter()
 	}
 
 	if len(embed.Fields) == 0 {
@@ -144,7 +148,7 @@ func (m *BoostRequestEmbedPartial) roleDiscountFields() *discordgo.MessageEmbedF
 	return nil
 }
 
-func (m *BoostRequestEmbedPartial) DiscountTotalsFields() []*discordgo.MessageEmbedField {
+func (m *BoostRequestEmbedPartial) discountTotalsFields() []*discordgo.MessageEmbedField {
 	if m.boostRequest.Discount != 0 && m.boostRequest.Price != 0 {
 		return []*discordgo.MessageEmbedField{
 			{
@@ -174,4 +178,10 @@ func (m *BoostRequestEmbedPartial) DiscountTotalsFields() []*discordgo.MessageEm
 		}
 	}
 	return nil
+}
+
+func (m *BoostRequestEmbedPartial) idFooter() *discordgo.MessageEmbedFooter {
+	return &discordgo.MessageEmbedFooter{
+		Text: m.boostRequest.ExternalID.String(),
+	}
 }

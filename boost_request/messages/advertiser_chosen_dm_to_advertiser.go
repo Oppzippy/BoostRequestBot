@@ -30,11 +30,14 @@ func NewAdvertiserChosenDMToAdvertiser(
 func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, error) {
 	requester, err := m.userProvider.User(m.boostRequest.RequesterID)
 	if err != nil {
-		return nil, err
+		restError, ok := err.(*discordgo.RESTError)
+		if !(ok && restError.Message != nil && restError.Message.Code == discordgo.ErrCodeUnknownUser) {
+			return nil, err
+		}
 	}
 
 	var description string
-	if len(m.boostRequest.EmbedFields) == 0 {
+	if requester != nil {
 		description = m.localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "PleaseMessage",
@@ -62,6 +65,7 @@ func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, erro
 		AdvertiserCut:  true,
 		Discount:       true,
 		DiscountTotals: true,
+		ID:             true,
 	})
 	if err != nil {
 		return nil, err
@@ -74,8 +78,10 @@ func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, erro
 		},
 		PluralCount: 1,
 	})
-	embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-		URL: requester.AvatarURL(""),
+	if requester != nil {
+		embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+			URL: requester.AvatarURL(""),
+		}
 	}
 
 	return &discordgo.MessageSend{

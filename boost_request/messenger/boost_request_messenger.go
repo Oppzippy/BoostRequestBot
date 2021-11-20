@@ -79,6 +79,15 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 		partials.NewDiscountFormatter(localizer, messages.NewDiscordRoleNameProvider(messenger.discord)),
 		br,
 	)
+
+	if br.Channel.UsesBuyerMessage {
+		message, err := messenger.send(&MessageDestination{
+			DestinationID:   br.Channel.BackendChannelID,
+			DestinationType: DestinationChannel,
+		}, m)
+
+		return message, err
+	}
 	content, err := m.Message()
 	if err != nil {
 		return nil, err
@@ -193,13 +202,6 @@ func (messenger *BoostRequestMessenger) send(dest *MessageDestination, sendableM
 	message, err := sendableMessage.Message()
 	if err != nil {
 		return nil, fmt.Errorf("generating message: %v", err)
-	}
-	if message.Embed != nil {
-		message.Embed.Footer = &discordgo.MessageEmbedFooter{
-			Text:    "Huokan Boosting Community",
-			IconURL: "https://cdn.discordapp.com/attachments/721652505796411404/749063535719481394/HuokanLogoCropped.png",
-		}
-		message.Embed.Timestamp = time.Now().Format(time.RFC3339)
 	}
 	m, err := messenger.discord.ChannelMessageSendComplex(channelID, message)
 

@@ -49,6 +49,7 @@ func (m *BackendAdvertiserChosenMessage) Message() (*discordgo.MessageSend, erro
 		AdvertiserCut:  true,
 		Discount:       true,
 		DiscountTotals: true,
+		ID:             true,
 	})
 	if err != nil {
 		return nil, err

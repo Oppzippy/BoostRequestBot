@@ -35,6 +35,7 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 		AdvertiserCut:  true,
 		Discount:       true,
 		DiscountTotals: true,
+		ID:             true,
 	})
 	if err != nil {
 		return nil, err
