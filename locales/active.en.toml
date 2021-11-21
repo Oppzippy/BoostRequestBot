@@ -1,4 +1,5 @@
 AdvertiserChosenDMToRequester = "{{.AdvertiserMention}} {{.AdvertiserTag}} will reach out to you shortly. Anyone else that messages you regarding this boost request is not from Huokan Boosting Community and may attempt to scam you."
+AdvertiserConfirmReminder = "Please collect {{.Gold}} from the buyer, and attach the screenshot to the following command:\n`!brconfirm {{.BoostRequestID}}`\nOtherwise, the buyer will not receive any buyer points."
 AdvertiserRollRangeChosen = "   **<-- {{.Roll}}**"
 AdvertiserSelected = "An advertiser has been selected."
 AdvertiserWillHandleBoostRequest = "{{.AdvertiserMention}} will handle the following boost request."
@@ -11,16 +12,18 @@ HuokanBoostRequest = "Huokan Boosting Community Boost Request"
 PleaseMessage = "Please message {{.RequesterMention}} {{.RequesterTag}}."
 RemoveAdvertiserPreference = "Remove Advertiser Preference"
 RequestedBy = "Requested By"
+RequesterConfirmReminder = "Please trade all {{.Gold}} to the advertiser, and make sure they submit the deposit confirmation. You should receive a message from the bot confirming that the advertiser submitted the deposit confirmation. __If the advertiser does not do that, you will not receive your loyalty points.__"
 RollResults = "Roll Results"
 SignUp = "Sign Up"
 Steal = "Steal"
-moneyFormatCopper = "{{.Copper}}c"
-moneyFormatGold = "{{.Gold}}g"
-moneyFormatSilver = "{{.Silver}}s"
 
 [AdvertiserRollRange]
 description = "Min is inclusive, Max is exclusive."
 other = "{{.AdvertiserMention}}: {{.Min}} to {{.Max}}"
+
+[BaseAdvertiserCut]
+one = "Base Advertiser Cut"
+other = "Base Advertiser Cuts"
 
 [BoostRequest]
 one = "Boost Request"
@@ -30,9 +33,9 @@ other = "Boost Requests"
 one = "Discount"
 other = "Discounts"
 
-[DiscountedAdvertiserCut]
-one = "Discounted Advertiser Cut"
-other = "Discounted Advertiser Cuts"
+[DiscountedBaseAdvertiserCut]
+one = "Discounted Base Advertiser Cut"
+other = "Discounted Base Advertiser Cuts"
 
 [DiscountedPrice]
 one = "Discounted Price"
@@ -49,6 +52,10 @@ other = "Please message the users listed below."
 [NewBoostRequest]
 one = "New Boost Request"
 other = "New Boost Requests"
+
+[PreferredAdvertiser]
+one = "Preferred Advertiser"
+other = "Preferred Advertisers"
 
 [YouHandleBoostRequest]
 one = "You have been selected to handle a boost request."
