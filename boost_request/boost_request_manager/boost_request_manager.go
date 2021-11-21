@@ -184,14 +184,16 @@ func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.Boost
 	return nil
 }
 
-func (brm *BoostRequestManager) RemoveAdvertiserFromBoostRequest(backendMessageID string, userID string) {
+func (brm *BoostRequestManager) RemoveAdvertiserFromBoostRequest(backendMessageID string, userID string) (removed bool) {
 	req, ok := brm.activeRequests.Load(backendMessageID)
 	if ok {
 		ar, ok := req.(*active_request.ActiveRequest)
-		if ok {
+		if ok && ar.HasSignup(userID) {
 			ar.RemoveSignup(userID)
+			return true
 		}
 	}
+	return false
 }
 
 func (brm *BoostRequestManager) IsAdvertiserSignedUpForBoostRequest(backendMessageID, userID string) bool {

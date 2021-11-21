@@ -92,6 +92,16 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 						CustomID: "boostRequest:steal",
 						Style:    discordgo.PrimaryButton,
 					},
+					discordgo.Button{
+						Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+							DefaultMessage: &i18n.Message{
+								ID:    "CancelSignup",
+								Other: "Cancel Signup",
+							},
+						}),
+						CustomID: "boostRequest:cancelSignUp",
+						Style:    discordgo.SecondaryButton,
+					},
 				},
 			},
 		},

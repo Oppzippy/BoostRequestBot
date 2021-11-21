@@ -48,6 +48,7 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewRemoveAdvertiserPreferenceHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestStealHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestSignUpHandler(repo, brm))
+	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignUpHandler(brm))
 
 	return brdh
 }
