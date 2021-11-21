@@ -55,7 +55,15 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 		for i, id := range br.PreferredAdvertiserIDs {
 			mentions[i] = fmt.Sprintf("<@%s>", id)
 		}
-		preferredAdvertiserMentions = strings.Join(mentions, " ")
+		title := m.localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "PreferredAdvertiser",
+				One:   "Preferred Advertiser",
+				Other: "Preferred Advertisers",
+			},
+			PluralCount: len(br.PreferredAdvertiserIDs),
+		})
+		preferredAdvertiserMentions = fmt.Sprintf("**%s:** %s", title, strings.Join(mentions, " "))
 	}
 
 	return &discordgo.MessageSend{
