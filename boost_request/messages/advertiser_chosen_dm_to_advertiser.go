@@ -65,7 +65,7 @@ func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, erro
 		description += m.localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "AdvertiserConfirmReminder",
-				Other: "Please collect {{.Gold}} from the buyer, and attach the screenshot to the following command:\n`!brconfirm {{.BoostRequestID}}`\nOtherwise, the buyer will not receive any buyer points.",
+				Other: "Please collect {{.Gold}} from the buyer. Then, send a direct message to <@720340847928934531> (Huokan Bot) with the screenshot attached to the following command:\n`!brconfirm {{.BoostRequestID}}`\nOtherwise, the buyer will not receive any buyer points.",
 			},
 			TemplateData: map[string]string{
 				"Gold":           message_utils.FormatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
