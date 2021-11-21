@@ -3,6 +3,7 @@ package messages
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/message_utils"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -56,6 +57,20 @@ func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, erro
 				Other: "Please message the users listed below.",
 			},
 			PluralCount: 1,
+		})
+	}
+
+	if m.boostRequest.Price != 0 {
+		description += "\n\n"
+		description += m.localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "AdvertiserConfirmReminder",
+				Other: "Please collect {{.Gold}} from the buyer, and attach the screenshot to the following command:\n`!brconfirm {{.BoostRequestID}}`\nOtherwise, the buyer will not receive any buyer points.",
+			},
+			TemplateData: map[string]string{
+				"Gold":           message_utils.FormatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
+				"BoostRequestID": m.boostRequest.ExternalID.String(),
+			},
 		})
 	}
 

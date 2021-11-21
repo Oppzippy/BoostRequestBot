@@ -3,6 +3,7 @@ package messages
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messages/message_utils"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -43,6 +44,19 @@ func (m *AdvertiserChosenDMToRequester) Message() (*discordgo.MessageSend, error
 			"AdvertiserTag":     advertiser.String(),
 		},
 	})
+
+	if m.boostRequest.Price != 0 {
+		content += "\n\n"
+		content += m.localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "RequesterConfirmReminder",
+				Other: "Please trade all {{.Gold}} to the advertiser, and make sure they submit the deposit confirmation. You should receive a message from the bot confirming that the advertiser submitted the deposit confirmation. __If the advertiser does not do that, you will not receive your loyalty points.__",
+			},
+			TemplateData: map[string]string{
+				"Gold": message_utils.FormatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
+			},
+		})
+	}
 
 	embed, err := m.embedPartial.Embed(partials.BoostRequestEmbedConfiguration{
 		Description: content,
