@@ -1,5 +1,5 @@
 AdvertiserChosenDMToRequester = "{{.AdvertiserMention}} {{.AdvertiserTag}} will reach out to you shortly. Anyone else that messages you regarding this boost request is not from Huokan Boosting Community and may attempt to scam you."
-AdvertiserConfirmReminder = "Please collect {{.Gold}} from the buyer, and attach the screenshot to the following command:\n`!brconfirm {{.BoostRequestID}}`\nOtherwise, the buyer will not receive any buyer points."
+AdvertiserConfirmReminder = "Please collect {{.Gold}} from the buyer. Then, send a direct message to <@720340847928934531> (Huokan Bot) with the screenshot attached to the following command:\n`!brconfirm {{.BoostRequestID}}`\nOtherwise, the buyer will not receive any buyer points."
 AdvertiserRollRangeChosen = "   **<-- {{.Roll}}**"
 AdvertiserSelected = "An advertiser has been selected."
 AdvertiserWillHandleBoostRequest = "{{.AdvertiserMention}} will handle the following boost request."
