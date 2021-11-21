@@ -1,6 +1,9 @@
 package partials
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/message_utils"
@@ -14,12 +17,13 @@ type BoostRequestEmbedPartial struct {
 }
 
 type BoostRequestEmbedConfiguration struct {
-	Description    string
-	Price          bool
-	AdvertiserCut  bool
-	Discount       bool
-	DiscountTotals bool
-	ID             bool
+	PreferredAdvertisers bool
+	Description          string
+	Price                bool
+	AdvertiserCut        bool
+	Discount             bool
+	DiscountTotals       bool
+	ID                   bool
 }
 
 func NewBoostRequestEmbedPartial(
@@ -43,10 +47,13 @@ func (m *BoostRequestEmbedPartial) Embed(config BoostRequestEmbedConfiguration) 
 			PluralCount: 1,
 		}),
 		Description: m.boostRequest.Message,
-		Fields:      make([]*discordgo.MessageEmbedField, 0, 6),
+		Fields:      make([]*discordgo.MessageEmbedField, 0, 10),
 		Color:       0x0000FF,
 	}
 
+	if preferredAdvertisers := m.preferredAdvertisersField(); config.PreferredAdvertisers && preferredAdvertisers != nil {
+		embed.Fields = append(embed.Fields, preferredAdvertisers)
+	}
 	if config.Description != "" {
 		embed.Description = config.Description
 		if message := m.messageField(); message != nil {
@@ -77,6 +84,27 @@ func (m *BoostRequestEmbedPartial) Embed(config BoostRequestEmbedConfiguration) 
 	}
 
 	return embed, nil
+}
+
+func (m *BoostRequestEmbedPartial) preferredAdvertisersField() *discordgo.MessageEmbedField {
+	if len(m.boostRequest.PreferredAdvertiserIDs) > 0 {
+		mentions := make([]string, len(m.boostRequest.PreferredAdvertiserIDs))
+		for i, id := range m.boostRequest.PreferredAdvertiserIDs {
+			mentions[i] = fmt.Sprintf("<@%s>", id)
+		}
+		return &discordgo.MessageEmbedField{
+			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "PreferredAdvertiser",
+					One:   "Preferred Advertiser",
+					Other: "Preferred Advertisers",
+				},
+				PluralCount: len(mentions),
+			}),
+			Value: strings.Join(mentions, " "),
+		}
+	}
+	return nil
 }
 
 func (m *BoostRequestEmbedPartial) messageField() *discordgo.MessageEmbedField {
@@ -110,7 +138,14 @@ func (m *BoostRequestEmbedPartial) priceField() *discordgo.MessageEmbedField {
 func (m *BoostRequestEmbedPartial) advertiserCutField() *discordgo.MessageEmbedField {
 	if m.boostRequest.AdvertiserCut != 0 {
 		return &discordgo.MessageEmbedField{
-			Name:   "Advertiser Cut",
+			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "BaseAdvertiserCut",
+					One:   "Base Advertiser Cut",
+					Other: "Base Advertiser Cuts",
+				},
+				PluralCount: 1,
+			}),
 			Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.AdvertiserCut),
 			Inline: true,
 		}
@@ -166,9 +201,9 @@ func (m *BoostRequestEmbedPartial) discountTotalsFields() []*discordgo.MessageEm
 			{
 				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
-						ID:    "DiscountedAdvertiserCut",
-						One:   "Discounted Advertiser Cut",
-						Other: "Discounted Advertiser Cuts",
+						ID:    "DiscountedBaseAdvertiserCut",
+						One:   "Discounted Base Advertiser Cut",
+						Other: "Discounted Base Advertiser Cuts",
 					},
 					PluralCount: 1,
 				}),

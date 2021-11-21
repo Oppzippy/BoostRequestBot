@@ -54,9 +54,10 @@ func (m *BoostRequestCreatedDM) Message() (*discordgo.MessageSend, error) {
 	}
 
 	embed, err := m.embedPartial.Embed(partials.BoostRequestEmbedConfiguration{
-		Description: content,
-		Price:       true,
-		Discount:    true,
+		PreferredAdvertisers: true,
+		Description:          content,
+		Price:                true,
+		Discount:             true,
 	})
 	if err != nil {
 		return nil, err
