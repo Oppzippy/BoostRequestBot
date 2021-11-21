@@ -154,7 +154,7 @@ func (m *BoostRequestEmbedPartial) advertiserCutField() *discordgo.MessageEmbedF
 }
 
 func (m *BoostRequestEmbedPartial) roleDiscountFields() *discordgo.MessageEmbedField {
-	if m.boostRequest.Discount != 0 && m.boostRequest.Price != 0 {
+	if m.boostRequest.Price != 0 {
 		return &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
