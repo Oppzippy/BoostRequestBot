@@ -38,6 +38,8 @@ func (repo *dbRepository) getPreferredAdvertisers(br *repository.BoostRequest) (
 }
 
 func (repo *dbRepository) updatePreferredAdvertisers(tx *sql.Tx, id int64, advertiserIDs []string) error {
+	advertiserIDs = uniqueStringSlice(advertiserIDs)
+
 	err := repo.deletePreferredAdvertisersExcept(tx, id, advertiserIDs)
 	if err != nil {
 		return err
@@ -73,4 +75,16 @@ func (repo *dbRepository) insertPreferredAdvertisers(tx *sql.Tx, id int64, adver
 	}
 	_, err := tx.Exec(query, args...)
 	return err
+}
+
+func uniqueStringSlice(items []string) []string {
+	uniqueMap := make(map[string]struct{})
+	for _, item := range items {
+		uniqueMap[item] = struct{}{}
+	}
+	uniqueSlice := make([]string, 0, len(uniqueMap))
+	for item := range uniqueMap {
+		uniqueSlice = append(uniqueSlice, item)
+	}
+	return uniqueSlice
 }

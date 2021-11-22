@@ -69,6 +69,13 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	br, err = h.repo.GetBoostRequestById(br.Channel.GuildID, *br.ExternalID)
+	if err != nil {
+		log.Printf("Error fetching boost request: %v", err)
+		internalServerError(rw, r, "")
+		return
+	}
+
 	var advertiserSelectedAt string
 	if !br.ResolvedAt.IsZero() {
 		advertiserSelectedAt = br.ResolvedAt.Format(time.RFC3339)
