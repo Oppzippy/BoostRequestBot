@@ -185,7 +185,7 @@ func (m *BoostRequestEmbedPartial) roleDiscountFields() *discordgo.MessageEmbedF
 
 func (m *BoostRequestEmbedPartial) discountTotalsFields() []*discordgo.MessageEmbedField {
 	if m.boostRequest.Discount != 0 && m.boostRequest.Price != 0 {
-		return []*discordgo.MessageEmbedField{
+		fields := []*discordgo.MessageEmbedField{
 			{
 				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
@@ -198,7 +198,9 @@ func (m *BoostRequestEmbedPartial) discountTotalsFields() []*discordgo.MessageEm
 				Inline: true,
 				Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
 			},
-			{
+		}
+		if m.boostRequest.AdvertiserCut != 0 {
+			fields = append(fields, &discordgo.MessageEmbedField{
 				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:    "DiscountedBaseAdvertiserCut",
@@ -209,8 +211,9 @@ func (m *BoostRequestEmbedPartial) discountTotalsFields() []*discordgo.MessageEm
 				}),
 				Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.AdvertiserCut-m.boostRequest.Discount),
 				Inline: true,
-			},
+			})
 		}
+		return fields
 	}
 	return nil
 }
