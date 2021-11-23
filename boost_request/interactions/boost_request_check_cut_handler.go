@@ -40,7 +40,15 @@ func (h *BoostRequestCheckCutHandler) Handle(discord *discordgo.Session, event *
 	}
 	var content string
 	if bestCut > 0 {
-		content = fmt.Sprintf("Your cut for this boost request is %s.", message_utils.FormatCopper(localizer, bestCut))
+		if br.Discount == 0 {
+			content = fmt.Sprintf("Your cut for this boost request is %s.", message_utils.FormatCopper(localizer, bestCut))
+		} else {
+			content = fmt.Sprintf(
+				"Your discounted cut for this boost request is %s. Before the discount, the cut was %s",
+				message_utils.FormatCopper(localizer, bestCut-br.Discount),
+				message_utils.FormatCopper(localizer, bestCut),
+			)
+		}
 	} else {
 		content = "Your cut for this boost request is unknown."
 	}
