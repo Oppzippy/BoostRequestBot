@@ -65,6 +65,7 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 	if err != nil {
 		return nil, err
 	}
+	defer row.Close()
 
 	boostRequests := make([]*repository.BoostRequest, 0, 1) // Optimize for the common case of a specific boost request being selected
 
@@ -87,6 +88,13 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 			return nil, err
 		}
 		br.PreferredAdvertiserIDs = preferredAdvertiserIDs
+
+		// TODO another n+1
+		roleCuts, err := repo.getRoleCuts(br.ID)
+		if err != nil {
+			return nil, err
+		}
+		br.AdvertiserRoleCuts = roleCuts
 
 		boostRequests = append(boostRequests, br)
 	}
@@ -208,6 +216,10 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		return err
 	}
 	err = rollbackIfErr(tx, repo.updatePreferredAdvertisers(tx, id, br.PreferredAdvertiserIDs))
+	if err != nil {
+		return err
+	}
+	err = rollbackIfErr(tx, repo.updateRoleCuts(tx, id, br.AdvertiserRoleCuts))
 	if err != nil {
 		return err
 	}

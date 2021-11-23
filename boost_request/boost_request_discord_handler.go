@@ -32,7 +32,7 @@ func NewBoostRequestDiscordHandler(
 		repo:                repo,
 		discord:             discord,
 		handlerRemoves:      make([]func(), 0),
-		interactionRegistry: NewInteractionRegistry(discord),
+		interactionRegistry: NewInteractionRegistry(discord, bundle),
 		messenger:           messenger.NewBoostRequestMessenger(discord, bundle),
 	}
 
@@ -49,6 +49,7 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestStealHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestSignUpHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignUpHandler(brm))
+	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCheckCutHandler(repo))
 
 	return brdh
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -31,7 +32,7 @@ func (h *RemoveAdvertiserPreferenceHandler) Matches(discord *discordgo.Session, 
 	return err == nil
 }
 
-func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate) error {
+func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
 	guildID, boostRequestID, err := h.parseBoostRequestId(event)
 	if err != nil {
 		return fmt.Errorf("remove advertiser preference: parsing guid: %v", err)

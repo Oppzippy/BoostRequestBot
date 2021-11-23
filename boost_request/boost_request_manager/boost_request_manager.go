@@ -71,6 +71,7 @@ type BoostRequestPartial struct {
 	BackendMessageID       string
 	Price                  int64
 	AdvertiserCut          int64
+	AdvertiserRoleCuts     map[string]int64
 	Discount               int64
 }
 
@@ -88,6 +89,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		Message:                brPartial.Message,
 		Price:                  brPartial.Price,
 		AdvertiserCut:          brPartial.AdvertiserCut,
+		AdvertiserRoleCuts:     brPartial.AdvertiserRoleCuts,
 		Discount:               brPartial.Discount,
 		EmbedFields:            brPartial.EmbedFields,
 		PreferredAdvertiserIDs: brPartial.PreferredAdvertiserIDs,

@@ -2,6 +2,7 @@ package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 )
 
@@ -22,7 +23,7 @@ func (h *BoostRequestCancelSignUpHandler) Matches(discord *discordgo.Session, ev
 		event.Member.User != nil
 }
 
-func (h *BoostRequestCancelSignUpHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate) error {
+func (h *BoostRequestCancelSignUpHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
 	removed := h.brm.RemoveAdvertiserFromBoostRequest(event.Message.ID, event.Member.User.ID)
 	var content string
 	if removed {

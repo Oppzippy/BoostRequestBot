@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,6 +51,14 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var roleCuts map[string]string
+	if len(br.AdvertiserRoleCuts) > 0 {
+		roleCuts = make(map[string]string)
+		for roleID, cut := range br.AdvertiserRoleCuts {
+			roleCuts[roleID] = strconv.FormatInt(cut, 10)
+		}
+	}
+
 	var advertiserSelectedAt string
 	if !br.ResolvedAt.IsZero() {
 		advertiserSelectedAt = br.ResolvedAt.Format(time.RFC3339)
@@ -66,6 +75,7 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		Price:                  br.Price,
 		Discount:               br.Discount,
 		AdvertiserCut:          br.AdvertiserCut,
+		AdvertiserRoleCuts:     roleCuts,
 		PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
 		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
 		AdvertiserSelectedAt:   advertiserSelectedAt,

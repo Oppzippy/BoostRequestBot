@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
@@ -40,6 +41,18 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	roleCuts := make(map[string]int64)
+	if body.AdvertiserRoleCuts != nil {
+		for roleID, cutStr := range body.AdvertiserRoleCuts {
+			cut, err := strconv.ParseInt(cutStr, 10, 64)
+			if err != nil {
+				badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
+				return
+			}
+			roleCuts[roleID] = cut
+		}
+	}
+
 	// TODO check to make sure the channel is actually in the specified guild
 	brc := &repository.BoostRequestChannel{
 		FrontendChannelID: "",
@@ -61,6 +74,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		PreferredAdvertiserIDs: body.PreferredAdvertiserIDs,
 		Price:                  body.Price,
 		AdvertiserCut:          body.AdvertiserCut,
+		AdvertiserRoleCuts:     roleCuts,
 		Discount:               body.Discount,
 	})
 	if err != nil {
@@ -92,6 +106,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		Price:                  br.Price,
 		Discount:               br.Discount,
 		AdvertiserCut:          br.AdvertiserCut,
+		AdvertiserRoleCuts:     body.AdvertiserRoleCuts,
 		PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
 		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
 		AdvertiserSelectedAt:   advertiserSelectedAt,

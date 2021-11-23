@@ -232,6 +232,12 @@ components:
           type: string
           format: int64
           description: Advertiser's cut for the boost request in copper. This is a 64 bit integer represented as a string.
+        advertiserRoleCuts:
+          type: object
+          description: Keys are role ids, values are cuts. If an advertiser has more than one listed role, the role with the highest cut will be used. If the advertiser has none of the provided roles, the cut will fall back to advertiserCut if that was provided.
+          additionalProperties:
+            type: string
+            format: int64
         discount:
           type: string
           format: int64
@@ -277,6 +283,12 @@ components:
           type: string
           format: int64
           description: Advertiser's cut for the boost request in copper. This is a 64 bit integer represented as a string.
+        advertiserRoleCuts:
+          type: object
+          description: Keys are role ids, values are cuts. If an advertiser has more than one listed role, the role with the highest cut will be used. If the advertiser has none of the provided roles, the cut will fall back to advertiserCut if that was provided.
+          additionalProperties:
+            type: string
+            format: int64
         preferredAdvertiserIds:
           type: array
           items:

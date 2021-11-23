@@ -66,43 +66,58 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 		preferredAdvertiserMentions = fmt.Sprintf("**%s:** %s", title, strings.Join(mentions, " "))
 	}
 
+	components := []discordgo.MessageComponent{
+		discordgo.Button{
+			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "SignUp",
+					Other: "Sign Up",
+				},
+			}),
+			Style:    discordgo.PrimaryButton,
+			CustomID: "boostRequest:signUp",
+		},
+		discordgo.Button{
+			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "Steal",
+					Other: "Steal",
+				},
+			}),
+			CustomID: "boostRequest:steal",
+			Style:    discordgo.PrimaryButton,
+		},
+		discordgo.Button{
+			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "CancelSignup",
+					Other: "Cancel Signup",
+				},
+			}),
+			CustomID: "boostRequest:cancelSignUp",
+			Style:    discordgo.SecondaryButton,
+		},
+	}
+
+	if len(br.AdvertiserRoleCuts) > 0 {
+		components = append(components, discordgo.Button{
+			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "CheckMyCut",
+					Other: "Check My Cut",
+				},
+			}),
+			CustomID: "boostRequest:checkCut",
+			Style:    discordgo.SecondaryButton,
+		})
+	}
+
 	return &discordgo.MessageSend{
 		Content: preferredAdvertiserMentions,
 		Embed:   embed,
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
-				Components: []discordgo.MessageComponent{
-					discordgo.Button{
-						Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-							DefaultMessage: &i18n.Message{
-								ID:    "SignUp",
-								Other: "Sign Up",
-							},
-						}),
-						Style:    discordgo.PrimaryButton,
-						CustomID: "boostRequest:signUp",
-					},
-					discordgo.Button{
-						Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-							DefaultMessage: &i18n.Message{
-								ID:    "Steal",
-								Other: "Steal",
-							},
-						}),
-						CustomID: "boostRequest:steal",
-						Style:    discordgo.PrimaryButton,
-					},
-					discordgo.Button{
-						Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-							DefaultMessage: &i18n.Message{
-								ID:    "CancelSignup",
-								Other: "Cancel Signup",
-							},
-						}),
-						CustomID: "boostRequest:cancelSignUp",
-						Style:    discordgo.SecondaryButton,
-					},
-				},
+				Components: components,
 			},
 		},
 	}, nil

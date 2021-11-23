@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -28,7 +29,7 @@ func (h *BoostRequestStealHandler) Matches(discord *discordgo.Session, event *di
 		event.Member.User != nil
 }
 
-func (h *BoostRequestStealHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate) error {
+func (h *BoostRequestStealHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
 	br, err := h.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.Message.ID)
 	if err != nil && err != repository.ErrNoResults {
 		return fmt.Errorf("error fetching boost request: %v", err)

@@ -26,6 +26,7 @@ type BoostRequest struct {
 	Price                  int64
 	Discount               int64
 	AdvertiserCut          int64
+	AdvertiserRoleCuts     map[string]int64
 	PreferredAdvertiserIDs []string
 	RoleDiscounts          []*RoleDiscount
 	CreatedAt              time.Time
