@@ -53,6 +53,13 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	preferredAdvertiserIDs := make(map[string]struct{})
+	if body.PreferredAdvertiserIDs != nil {
+		for _, id := range body.PreferredAdvertiserIDs {
+			preferredAdvertiserIDs[id] = struct{}{}
+		}
+	}
+
 	// TODO check to make sure the channel is actually in the specified guild
 	brc := &repository.BoostRequestChannel{
 		FrontendChannelID: "",
@@ -71,7 +78,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	br, err := h.brm.CreateBoostRequest(brc, boost_request_manager.BoostRequestPartial{
 		RequesterID:            body.RequesterID,
 		Message:                body.Message,
-		PreferredAdvertiserIDs: body.PreferredAdvertiserIDs,
+		PreferredAdvertiserIDs: preferredAdvertiserIDs,
 		Price:                  body.Price,
 		AdvertiserCut:          body.AdvertiserCut,
 		AdvertiserRoleCuts:     roleCuts,
@@ -95,6 +102,11 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		advertiserSelectedAt = br.ResolvedAt.Format(time.RFC3339)
 	}
 
+	preferredAdvertiserIDsSlice := make([]string, 0, len(br.PreferredAdvertiserIDs))
+	for id := range br.PreferredAdvertiserIDs {
+		preferredAdvertiserIDsSlice = append(preferredAdvertiserIDsSlice, id)
+	}
+
 	response := &models.BoostRequest{
 		ID:                     br.ExternalID.String(), // Since we created the boost request after the UUID update, this will never be null
 		RequesterID:            br.RequesterID,
@@ -107,7 +119,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		Discount:               br.Discount,
 		AdvertiserCut:          br.AdvertiserCut,
 		AdvertiserRoleCuts:     body.AdvertiserRoleCuts,
-		PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
+		PreferredAdvertiserIDs: preferredAdvertiserIDsSlice,
 		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
 		AdvertiserSelectedAt:   advertiserSelectedAt,
 	}

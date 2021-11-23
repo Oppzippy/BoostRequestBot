@@ -88,9 +88,9 @@ func (m *BoostRequestEmbedPartial) Embed(config BoostRequestEmbedConfiguration) 
 
 func (m *BoostRequestEmbedPartial) preferredAdvertisersField() *discordgo.MessageEmbedField {
 	if len(m.boostRequest.PreferredAdvertiserIDs) > 0 {
-		mentions := make([]string, len(m.boostRequest.PreferredAdvertiserIDs))
-		for i, id := range m.boostRequest.PreferredAdvertiserIDs {
-			mentions[i] = fmt.Sprintf("<@%s>", id)
+		mentions := make([]string, 0, len(m.boostRequest.PreferredAdvertiserIDs))
+		for id := range m.boostRequest.PreferredAdvertiserIDs {
+			mentions = append(mentions, fmt.Sprintf("<@%s>", id))
 		}
 		return &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{

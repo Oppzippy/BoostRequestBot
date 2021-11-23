@@ -67,7 +67,7 @@ type BoostRequestPartial struct {
 	RequesterID            string
 	Message                string
 	EmbedFields            []*repository.MessageEmbedField
-	PreferredAdvertiserIDs []string
+	PreferredAdvertiserIDs map[string]struct{}
 	BackendMessageID       string
 	Price                  int64
 	AdvertiserCut          int64
@@ -165,7 +165,7 @@ func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.Boost
 		brm.signUp(br, userID, privileges)
 	} else {
 		var isPreferredAdvertiser bool
-		for _, id := range br.PreferredAdvertiserIDs {
+		for id := range br.PreferredAdvertiserIDs {
 			if id == userID {
 				isPreferredAdvertiser = true
 				break
@@ -212,7 +212,7 @@ func (brm *BoostRequestManager) IsAdvertiserSignedUpForBoostRequest(backendMessa
 func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, userID string) (ok, usedCredits bool) {
 	if len(br.PreferredAdvertiserIDs) > 0 {
 		var isPreferredAdvertiser bool
-		for _, id := range br.PreferredAdvertiserIDs {
+		for id := range br.PreferredAdvertiserIDs {
 			if id == userID {
 				isPreferredAdvertiser = true
 				break
@@ -306,6 +306,11 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 		}
 	}
 
+	preferredAdvertiserIDs := make([]string, 0, len(br.PreferredAdvertiserIDs))
+	for id := range br.PreferredAdvertiserIDs {
+		preferredAdvertiserIDs = append(preferredAdvertiserIDs, id)
+	}
+
 	err = brm.webhookManager.QueueToSend(br.Channel.GuildID, &webhook.WebhookEvent{
 		Event: webhook.AdvertiserChosenEvent,
 		Payload: models.BoostRequest{
@@ -318,7 +323,7 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 			Message:                br.Message,
 			Price:                  br.Price,
 			AdvertiserCut:          br.AdvertiserCut,
-			PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
+			PreferredAdvertiserIDs: preferredAdvertiserIDs,
 			CreatedAt:              br.CreatedAt.Format(time.RFC3339),
 			AdvertiserSelectedAt:   br.ResolvedAt.Format(time.RFC3339),
 		},

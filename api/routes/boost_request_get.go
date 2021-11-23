@@ -51,11 +51,16 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var roleCuts map[string]string
+	var roleCuts map[string]string = make(map[string]string)
 	if len(br.AdvertiserRoleCuts) > 0 {
-		roleCuts = make(map[string]string)
 		for roleID, cut := range br.AdvertiserRoleCuts {
 			roleCuts[roleID] = strconv.FormatInt(cut, 10)
+		}
+	}
+	preferredAdvertiserIDs := make([]string, 0, len(br.PreferredAdvertiserIDs))
+	if len(br.PreferredAdvertiserIDs) > 0 {
+		for id := range br.PreferredAdvertiserIDs {
+			preferredAdvertiserIDs = append(preferredAdvertiserIDs, id)
 		}
 	}
 
@@ -76,7 +81,7 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		Discount:               br.Discount,
 		AdvertiserCut:          br.AdvertiserCut,
 		AdvertiserRoleCuts:     roleCuts,
-		PreferredAdvertiserIDs: br.PreferredAdvertiserIDs,
+		PreferredAdvertiserIDs: preferredAdvertiserIDs,
 		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
 		AdvertiserSelectedAt:   advertiserSelectedAt,
 	}

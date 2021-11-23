@@ -27,7 +27,7 @@ type BoostRequest struct {
 	Discount               int64
 	AdvertiserCut          int64
 	AdvertiserRoleCuts     map[string]int64
-	PreferredAdvertiserIDs []string
+	PreferredAdvertiserIDs map[string]struct{}
 	RoleDiscounts          []*RoleDiscount
 	CreatedAt              time.Time
 	IsResolved             bool
