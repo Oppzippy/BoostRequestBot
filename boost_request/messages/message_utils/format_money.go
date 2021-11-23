@@ -11,8 +11,12 @@ const (
 )
 
 func FormatCopper(localizer *i18n.Localizer, copper int64) string {
+	return FormatCopperWithEmoji(localizer, copper, "<:gold:909618212717592607>")
+}
+
+func FormatCopperWithEmoji(localizer *i18n.Localizer, copper int64, goldEmoji string) string {
 	copperDecimal := decimal.NewFromInt(copper)
 	thousandsOfGold := copperDecimal.Div(decimal.NewFromInt(copperPerGold * 1000))
 	// TODO make emoji configurable
-	return thousandsOfGold.Round(2).String() + "k <:gold:909618212717592607>"
+	return thousandsOfGold.Round(2).String() + "k " + goldEmoji
 }

@@ -2,6 +2,7 @@ package interactions
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -40,13 +41,25 @@ func (h *BoostRequestCheckCutHandler) Handle(discord *discordgo.Session, event *
 	}
 	var content string
 	if bestCut > 0 {
+		emoji := "gold"
+		emojis, err := discord.GuildEmojis(event.GuildID)
+		if err != nil {
+			return err
+		}
+		for _, e := range emojis {
+			if strings.ToLower(e.Name) == "gold" {
+				emoji = e.MessageFormat()
+				break
+			}
+		}
+
 		if br.Discount == 0 {
-			content = fmt.Sprintf("Your cut for this boost request is %s.", message_utils.FormatCopper(localizer, bestCut))
+			content = fmt.Sprintf("Your cut for this boost request is %s.", message_utils.FormatCopperWithEmoji(localizer, bestCut, emoji))
 		} else {
 			content = fmt.Sprintf(
 				"Your discounted cut for this boost request is %s. Before the discount, the cut was %s",
-				message_utils.FormatCopper(localizer, bestCut-br.Discount),
-				message_utils.FormatCopper(localizer, bestCut),
+				message_utils.FormatCopperWithEmoji(localizer, bestCut-br.Discount, emoji),
+				message_utils.FormatCopperWithEmoji(localizer, bestCut, emoji),
 			)
 		}
 	} else {
