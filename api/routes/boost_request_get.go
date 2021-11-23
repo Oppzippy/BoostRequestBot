@@ -51,7 +51,7 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var roleCuts map[string]string = make(map[string]string)
+	roleCuts := make(map[string]string)
 	if len(br.AdvertiserRoleCuts) > 0 {
 		for roleID, cut := range br.AdvertiserRoleCuts {
 			roleCuts[roleID] = strconv.FormatInt(cut, 10)
