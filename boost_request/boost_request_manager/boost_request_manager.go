@@ -164,13 +164,7 @@ func (brm *BoostRequestManager) AddAdvertiserToBoostRequest(br *repository.Boost
 	if len(br.PreferredAdvertiserIDs) == 0 {
 		brm.signUp(br, userID, privileges)
 	} else {
-		var isPreferredAdvertiser bool
-		for id := range br.PreferredAdvertiserIDs {
-			if id == userID {
-				isPreferredAdvertiser = true
-				break
-			}
-		}
+		_, isPreferredAdvertiser := br.PreferredAdvertiserIDs[userID]
 		if !isPreferredAdvertiser {
 			return ErrNotPreferredAdvertiser
 		}
@@ -211,13 +205,7 @@ func (brm *BoostRequestManager) IsAdvertiserSignedUpForBoostRequest(backendMessa
 
 func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, userID string) (ok, usedCredits bool) {
 	if len(br.PreferredAdvertiserIDs) > 0 {
-		var isPreferredAdvertiser bool
-		for id := range br.PreferredAdvertiserIDs {
-			if id == userID {
-				isPreferredAdvertiser = true
-				break
-			}
-		}
+		_, isPreferredAdvertiser := br.PreferredAdvertiserIDs[userID]
 		if !isPreferredAdvertiser {
 			return false, false
 		}
