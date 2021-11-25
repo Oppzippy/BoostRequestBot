@@ -82,7 +82,7 @@ func (brdh *BoostRequestDiscordHandler) onMessageCreate(discord *discordgo.Sessi
 			if len(event.Embeds) > 0 {
 				embedFields = repository.FromDiscordEmbedFields(event.Embeds[0].Fields)
 			}
-			_, err = brdh.brm.CreateBoostRequest(brc, boost_request_manager.BoostRequestPartial{
+			_, err = brdh.brm.CreateBoostRequest(brc, &boost_request_manager.BoostRequestPartial{
 				RequesterID:      event.Author.ID,
 				Message:          event.Content,
 				EmbedFields:      embedFields,

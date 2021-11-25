@@ -4,8 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
 	"github.com/oppzippy/BoostRequestBot/api/json_unmarshaler"
@@ -41,23 +39,10 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roleCuts := make(map[string]int64)
-	if body.AdvertiserRoleCuts != nil {
-		for roleID, cutStr := range body.AdvertiserRoleCuts {
-			cut, err := strconv.ParseInt(cutStr, 10, 64)
-			if err != nil {
-				badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
-				return
-			}
-			roleCuts[roleID] = cut
-		}
-	}
-
-	preferredAdvertiserIDs := make(map[string]struct{})
-	if body.PreferredAdvertiserIDs != nil {
-		for _, id := range body.PreferredAdvertiserIDs {
-			preferredAdvertiserIDs[id] = struct{}{}
-		}
+	brPartial, err := boost_request_manager.FromModelBoostRequestPartial(&body)
+	if err != nil {
+		badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
+		return
 	}
 
 	// TODO check to make sure the channel is actually in the specified guild
@@ -75,15 +60,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	br, err := h.brm.CreateBoostRequest(brc, boost_request_manager.BoostRequestPartial{
-		RequesterID:            body.RequesterID,
-		Message:                body.Message,
-		PreferredAdvertiserIDs: preferredAdvertiserIDs,
-		Price:                  body.Price,
-		AdvertiserCut:          body.AdvertiserCut,
-		AdvertiserRoleCuts:     roleCuts,
-		Discount:               body.Discount,
-	})
+	br, err := h.brm.CreateBoostRequest(brc, brPartial)
 	if err != nil {
 		log.Printf("Error creating boost request via api: %v", err)
 		internalServerError(rw, r, "")
@@ -97,32 +74,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var advertiserSelectedAt string
-	if !br.ResolvedAt.IsZero() {
-		advertiserSelectedAt = br.ResolvedAt.Format(time.RFC3339)
-	}
-
-	preferredAdvertiserIDsSlice := make([]string, 0, len(br.PreferredAdvertiserIDs))
-	for id := range br.PreferredAdvertiserIDs {
-		preferredAdvertiserIDsSlice = append(preferredAdvertiserIDsSlice, id)
-	}
-
-	response := &models.BoostRequest{
-		ID:                     br.ExternalID.String(), // Since we created the boost request after the UUID update, this will never be null
-		RequesterID:            br.RequesterID,
-		IsAdvertiserSelected:   br.IsResolved,
-		AdvertiserID:           br.AdvertiserID,
-		BackendChannelID:       br.Channel.BackendChannelID,
-		BackendMessageID:       br.BackendMessageID,
-		Message:                br.Message,
-		Price:                  br.Price,
-		Discount:               br.Discount,
-		AdvertiserCut:          br.AdvertiserCut,
-		AdvertiserRoleCuts:     body.AdvertiserRoleCuts,
-		PreferredAdvertiserIDs: preferredAdvertiserIDsSlice,
-		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
-		AdvertiserSelectedAt:   advertiserSelectedAt,
-	}
+	var response *models.BoostRequest = models.FromRepositoryBoostRequest(br)
 	ctx = context.WithValue(ctx, middleware.MiddlewareJsonResponse, response)
 	*r = *r.Clone(ctx)
 }

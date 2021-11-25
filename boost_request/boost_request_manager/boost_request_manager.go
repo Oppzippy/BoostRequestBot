@@ -63,20 +63,9 @@ func (brm *BoostRequestManager) LoadBoostRequests() {
 	}
 }
 
-type BoostRequestPartial struct {
-	RequesterID            string
-	Message                string
-	EmbedFields            []*repository.MessageEmbedField
-	PreferredAdvertiserIDs map[string]struct{}
-	BackendMessageID       string
-	Price                  int64
-	AdvertiserCut          int64
-	AdvertiserRoleCuts     map[string]int64
-	Discount               int64
-}
-
 func (brm *BoostRequestManager) CreateBoostRequest(
-	brc *repository.BoostRequestChannel, brPartial BoostRequestPartial,
+	brc *repository.BoostRequestChannel,
+	brPartial *BoostRequestPartial,
 ) (*repository.BoostRequest, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {

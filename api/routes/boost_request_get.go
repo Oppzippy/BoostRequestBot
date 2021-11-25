@@ -2,11 +2,6 @@ package routes
 
 import (
 	"context"
-	"log"
-	"net/http"
-	"strconv"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
@@ -14,6 +9,8 @@ import (
 	"github.com/oppzippy/BoostRequestBot/api/middleware"
 	"github.com/oppzippy/BoostRequestBot/api/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+	"log"
+	"net/http"
 )
 
 type BoostRequestGet struct {
@@ -51,40 +48,7 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roleCuts := make(map[string]string)
-	if len(br.AdvertiserRoleCuts) > 0 {
-		for roleID, cut := range br.AdvertiserRoleCuts {
-			roleCuts[roleID] = strconv.FormatInt(cut, 10)
-		}
-	}
-	preferredAdvertiserIDs := make([]string, 0, len(br.PreferredAdvertiserIDs))
-	if len(br.PreferredAdvertiserIDs) > 0 {
-		for id := range br.PreferredAdvertiserIDs {
-			preferredAdvertiserIDs = append(preferredAdvertiserIDs, id)
-		}
-	}
-
-	var advertiserSelectedAt string
-	if !br.ResolvedAt.IsZero() {
-		advertiserSelectedAt = br.ResolvedAt.Format(time.RFC3339)
-	}
-
-	result := &models.BoostRequest{
-		ID:                     br.ExternalID.String(),
-		RequesterID:            br.RequesterID,
-		IsAdvertiserSelected:   br.IsResolved,
-		AdvertiserID:           br.AdvertiserID,
-		BackendChannelID:       br.Channel.BackendChannelID,
-		BackendMessageID:       br.BackendMessageID,
-		Message:                br.Message,
-		Price:                  br.Price,
-		Discount:               br.Discount,
-		AdvertiserCut:          br.AdvertiserCut,
-		AdvertiserRoleCuts:     roleCuts,
-		PreferredAdvertiserIDs: preferredAdvertiserIDs,
-		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
-		AdvertiserSelectedAt:   advertiserSelectedAt,
-	}
+	var result *models.BoostRequest = models.FromRepositoryBoostRequest(br)
 	ctx = context.WithValue(ctx, middleware.MiddlewareJsonResponse, result)
 	*r = *r.Clone(ctx)
 }

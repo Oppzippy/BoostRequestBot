@@ -1,5 +1,12 @@
 package models
 
+import (
+	"strconv"
+	"time"
+
+	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+)
+
 type BoostRequest struct {
 	ID                     string            `json:"id"`
 	RequesterID            string            `json:"requesterId"`
@@ -26,4 +33,42 @@ type BoostRequestPartial struct {
 	AdvertiserRoleCuts     map[string]string `json:"advertiserRoleCuts,omitempty"`
 	Discount               int64             `json:"discount,string,omitempty"`
 	PreferredAdvertiserIDs []string          `json:"preferredAdvertiserIds,omitempty"`
+}
+
+func FromRepositoryBoostRequest(br *repository.BoostRequest) *BoostRequest {
+	roleCuts := make(map[string]string)
+	if len(br.AdvertiserRoleCuts) > 0 {
+		for roleID, cut := range br.AdvertiserRoleCuts {
+			roleCuts[roleID] = strconv.FormatInt(cut, 10)
+		}
+	}
+
+	preferredAdvertiserIDs := make([]string, 0, len(br.PreferredAdvertiserIDs))
+	if len(br.PreferredAdvertiserIDs) > 0 {
+		for id := range br.PreferredAdvertiserIDs {
+			preferredAdvertiserIDs = append(preferredAdvertiserIDs, id)
+		}
+	}
+
+	var advertiserSelectedAt string
+	if !br.ResolvedAt.IsZero() {
+		advertiserSelectedAt = br.ResolvedAt.Format(time.RFC3339)
+	}
+
+	return &BoostRequest{
+		ID:                     br.ExternalID.String(),
+		RequesterID:            br.RequesterID,
+		IsAdvertiserSelected:   br.IsResolved,
+		AdvertiserID:           br.AdvertiserID,
+		BackendChannelID:       br.Channel.BackendChannelID,
+		BackendMessageID:       br.BackendMessageID,
+		Message:                br.Message,
+		Price:                  br.Price,
+		Discount:               br.Discount,
+		AdvertiserCut:          br.AdvertiserCut,
+		AdvertiserRoleCuts:     roleCuts,
+		PreferredAdvertiserIDs: preferredAdvertiserIDs,
+		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
+		AdvertiserSelectedAt:   advertiserSelectedAt,
+	}
 }
