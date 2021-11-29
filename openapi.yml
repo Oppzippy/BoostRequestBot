@@ -3,8 +3,8 @@ info:
   title: Boost Request Bot
   version: "1.0"
 servers:
-  - url: https://boostrequestbot.oppzippy.com/v1
-  - url: http://localhost:8080
+  - url: https://boostrequestbot.oppzippy.com/v2
+  - url: http://localhost:8080/v2
 paths:
   /users/{userId}/stealCredits:
     get:
@@ -262,12 +262,10 @@ components:
           description: Discord user id of the request of the boost request.
         isAdvertiserSelected:
           type: boolean
-        backendChannelId:
-          type: string
-          description: Discord channel id that the boost request signup message was posted in.
-        backendMessageId:
-          type: string
-          description: Discord message id of the boost request signup message.
+        backendMessages:
+          type: array
+          items:
+            $ref: "#/components/schemas/BoostRequestBackendSignupMessage"
         message:
           type: string
           description: What is being requested
@@ -308,6 +306,17 @@ components:
         - backendMessageId
         - message
         - createdAt
+    BoostRequestBackendSignupMessage:
+      type: object
+      description: Discord channel and message id of the boost request signup message.
+      properties:
+        channelId:
+          type: string
+        messageId:
+          type: string
+      required:
+        - channelId
+        - messageId
 
 security:
   - ApiKeyAuth: []
