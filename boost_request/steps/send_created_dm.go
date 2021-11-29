@@ -23,7 +23,7 @@ func NewSendCreatedDMStep(discord *discordgo.Session, messenger messenger.BoostR
 }
 
 func (step *sendCreatedDMStep) Apply() (RevertFunction, error) {
-	if step.br.Channel.SkipsBuyerDM {
+	if step.br.Channel != nil && step.br.Channel.SkipsBuyerDM {
 		return revertNoOp, nil
 	}
 

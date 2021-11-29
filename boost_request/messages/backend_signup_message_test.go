@@ -21,7 +21,7 @@ func TestBackendSignupMessage(t *testing.T) {
 	}
 	br := &repository.BoostRequest{
 		Message: "Boost please",
-		Channel: repository.BoostRequestChannel{
+		Channel: &repository.BoostRequestChannel{
 			BackendChannelID: "1",
 		},
 		ExternalID: &id,
@@ -56,7 +56,7 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 	}
 
 	br := &repository.BoostRequest{
-		Channel: repository.BoostRequestChannel{},
+		Channel: &repository.BoostRequestChannel{},
 		RoleDiscounts: []*repository.RoleDiscount{
 			{
 				RoleID:    "1",

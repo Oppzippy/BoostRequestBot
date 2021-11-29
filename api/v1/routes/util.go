@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/oppzippy/BoostRequestBot/api/middleware"
-	"github.com/oppzippy/BoostRequestBot/api/models"
+	"github.com/oppzippy/BoostRequestBot/api/v1/models"
 )
 
 func respondOK(rw http.ResponseWriter, r *http.Request) {

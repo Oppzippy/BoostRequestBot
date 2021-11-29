@@ -2,15 +2,16 @@ package routes
 
 import (
 	"context"
+	"log"
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
 	"github.com/oppzippy/BoostRequestBot/api/json_unmarshaler"
 	"github.com/oppzippy/BoostRequestBot/api/middleware"
-	"github.com/oppzippy/BoostRequestBot/api/models"
+	"github.com/oppzippy/BoostRequestBot/api/v2/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
-	"log"
-	"net/http"
 )
 
 type BoostRequestGet struct {

@@ -11,18 +11,19 @@ import (
 )
 
 type CreateSequenceArgs struct {
-	Repository        repository.Repository
-	BoostRequest      *repository.BoostRequest
-	Discord           *discordgo.Session
-	Messenger         *messenger.BoostRequestMessenger
-	ActiveRequests    *sync.Map
-	SetWinnerCallback func(*active_request.AdvertiserChosenEvent)
+	Repository               repository.Repository
+	BoostRequest             *repository.BoostRequest
+	Discord                  *discordgo.Session
+	Messenger                *messenger.BoostRequestMessenger
+	ActiveRequests           *sync.Map
+	BackendMessageChannelIDs []string
+	SetWinnerCallback        func(*active_request.AdvertiserChosenEvent)
 }
 
 func RunCreateHumanRequesterSequence(args CreateSequenceArgs) error {
 	steps := []steps.RevertableStep{
 		steps.NewSendCreatedDMStep(args.Discord, *args.Messenger, args.BoostRequest),
-		steps.NewSendMessageStep(args.Discord, args.Messenger, args.BoostRequest),
+		steps.NewSendMessageStep(args.Discord, args.Messenger, args.BoostRequest, args.BackendMessageChannelIDs),
 		steps.NewInsertBoostRequestStep(args.Repository, args.BoostRequest),
 		steps.NewStoreActiveRequestStep(args.ActiveRequests, args.BoostRequest, args.SetWinnerCallback),
 		steps.NewReactStep(args.Discord, args.BoostRequest),
@@ -35,7 +36,7 @@ func RunCreateHumanRequesterSequence(args CreateSequenceArgs) error {
 
 func RunCreateBotRequesterSequence(args CreateSequenceArgs) error {
 	steps := []steps.RevertableStep{
-		steps.NewSendMessageStep(args.Discord, args.Messenger, args.BoostRequest),
+		steps.NewSendMessageStep(args.Discord, args.Messenger, args.BoostRequest, args.BackendMessageChannelIDs),
 		steps.NewInsertBoostRequestStep(args.Repository, args.BoostRequest),
 		steps.NewStoreActiveRequestStep(args.ActiveRequests, args.BoostRequest, args.SetWinnerCallback),
 		steps.NewReactStep(args.Discord, args.BoostRequest),

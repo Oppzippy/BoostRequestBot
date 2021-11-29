@@ -1,7 +1,8 @@
 package webhook
 
 const (
-	AdvertiserChosenEvent = "advertiserChosen"
+	AdvertiserChosenEvent   = "advertiserChosen"
+	AdvertiserChosenEventV2 = "advertiserChosenV2"
 )
 
 type WebhookEvent struct {

@@ -26,9 +26,9 @@ func NewStoreActiveRequestStep(
 }
 
 func (step *storeActiveRequestStep) Apply() (RevertFunction, error) {
-	step.activeRequests.Store(step.br.BackendMessageID, active_request.NewActiveRequest(*step.br, step.setWinner))
+	step.activeRequests.Store(step.br.ID, active_request.NewActiveRequest(*step.br, step.setWinner))
 	return func() error {
-		arInterface, ok := step.activeRequests.LoadAndDelete(step.br.BackendMessageID)
+		arInterface, ok := step.activeRequests.LoadAndDelete(step.br.ID)
 		if ok {
 			ar := arInterface.(*active_request.ActiveRequest)
 			ar.Destroy()

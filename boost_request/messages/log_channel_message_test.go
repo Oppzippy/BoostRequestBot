@@ -17,7 +17,7 @@ func TestLogChannelMessage(t *testing.T) {
 		return
 	}
 	br := &repository.BoostRequest{
-		Channel:    repository.BoostRequestChannel{},
+		Channel:    &repository.BoostRequestChannel{},
 		ExternalID: &id,
 	}
 	m := messages.NewLogChannelMessage(emptyLocalizer(), &mocks.MockUserProvider{

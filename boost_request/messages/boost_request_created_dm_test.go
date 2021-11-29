@@ -20,7 +20,7 @@ func TestBoostRequestCreatedDM(t *testing.T) {
 	}
 	br := &repository.BoostRequest{
 		Message: "Boost please",
-		Channel: repository.BoostRequestChannel{
+		Channel: &repository.BoostRequestChannel{
 			SkipsBuyerDM: false,
 		},
 		ExternalID: &id,

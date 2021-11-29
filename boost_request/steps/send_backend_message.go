@@ -9,37 +9,62 @@ import (
 )
 
 type sendMessageStep struct {
-	discord   *discordgo.Session
-	messenger *messenger.BoostRequestMessenger
-	br        *repository.BoostRequest
+	discord    *discordgo.Session
+	messenger  *messenger.BoostRequestMessenger
+	br         *repository.BoostRequest
+	channelIDs []string
 }
 
-func NewSendMessageStep(discord *discordgo.Session, messenger *messenger.BoostRequestMessenger, br *repository.BoostRequest) *sendMessageStep {
+func NewSendMessageStep(discord *discordgo.Session, messenger *messenger.BoostRequestMessenger, br *repository.BoostRequest, channelIDs []string) *sendMessageStep {
 	return &sendMessageStep{
-		discord:   discord,
-		messenger: messenger,
-		br:        br,
+		discord:    discord,
+		messenger:  messenger,
+		br:         br,
+		channelIDs: channelIDs,
 	}
 }
 
 func (step *sendMessageStep) Apply() (RevertFunction, error) {
-	if step.br.BackendMessageID != "" {
+	if len(step.br.BackendMessages) != 0 {
 		// We are probably using the buyer's message as the backend message
 		// Anyway, no need to do anything since it's already sent
 		return revertNoOp, nil
 	}
 
-	backendMessage, err := step.messenger.SendBackendSignupMessage(step.br)
+	reverts := make([]RevertFunction, 0, len(step.channelIDs))
+	var err error
+	for _, channelID := range step.channelIDs {
+		var revert RevertFunction
+		revert, err = step.send(channelID)
+		if err != nil {
+			break
+		}
+		reverts = append(reverts, revert)
+	}
+
+	return func() error {
+		for i := len(reverts) - 1; i >= 0; i-- {
+			err := reverts[i]()
+			if err != nil {
+				return err
+			}
+			step.br.BackendMessages = step.br.BackendMessages[:i]
+		}
+		return nil
+	}, err
+}
+
+func (step *sendMessageStep) send(channelID string) (RevertFunction, error) {
+	backendMessage, err := step.messenger.SendBackendSignupMessage(step.br, channelID)
 	if err != nil {
 		return revertNoOp, fmt.Errorf("sending backend signup message: %w", err)
 	}
-	step.br.BackendMessageID = backendMessage.ID
+	step.br.BackendMessages = append(step.br.BackendMessages, &repository.BoostRequestBackendMessage{
+		ChannelID: backendMessage.ChannelID,
+		MessageID: backendMessage.ID,
+	})
 	return func() error {
 		err := step.discord.ChannelMessageDelete(backendMessage.ChannelID, backendMessage.ID)
-		if err != nil {
-			return err
-		}
-		step.br.BackendMessageID = ""
-		return nil
+		return err
 	}, nil
 }

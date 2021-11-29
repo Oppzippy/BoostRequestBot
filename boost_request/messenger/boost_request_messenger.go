@@ -1,8 +1,10 @@
 package messenger
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -33,7 +35,7 @@ func NewBoostRequestMessenger(discord *discordgo.Session, bundle *i18n.Bundle) *
 	return &brm
 }
 
-func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.BoostRequest) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.BoostRequest, channelID string) (*discordgo.Message, error) {
 	m := messages.NewBackendSignupMessage(
 		messenger.localizer("en"),
 		partials.NewDiscountFormatter(
@@ -44,7 +46,7 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.
 	)
 
 	message, err := messenger.send(&MessageDestination{
-		DestinationID:   br.Channel.BackendChannelID,
+		DestinationID:   channelID,
 		DestinationType: DestinationChannel,
 	}, m)
 
@@ -60,10 +62,15 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository
 		br,
 	)
 
+	var fallbackChannelID string
+	if br.Channel != nil {
+		fallbackChannelID = br.Channel.FrontendChannelID
+	}
+
 	message, err := messenger.send(&MessageDestination{
 		DestinationID:     br.RequesterID,
 		DestinationType:   DestinationUser,
-		FallbackChannelID: br.Channel.FrontendChannelID,
+		FallbackChannelID: fallbackChannelID,
 	}, m)
 
 	return message, err
@@ -71,7 +78,7 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository
 
 func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 	br *repository.BoostRequest,
-) (*discordgo.Message, error) {
+) ([]*discordgo.Message, error) {
 	localizer := messenger.localizer("en")
 	m := messages.NewBackendAdvertiserChosenMessage(
 		localizer,
@@ -80,26 +87,37 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 		br,
 	)
 
-	if br.Channel.UsesBuyerMessage {
+	if br.Channel != nil && br.Channel.UsesBuyerMessage {
 		message, err := messenger.send(&MessageDestination{
 			DestinationID:   br.Channel.BackendChannelID,
 			DestinationType: DestinationChannel,
 		}, m)
 
-		return message, err
+		return []*discordgo.Message{message}, err
 	}
 	content, err := m.Message()
 	if err != nil {
 		return nil, err
 	}
 
-	message, err := messenger.discord.ChannelMessageEditComplex(&discordgo.MessageEdit{
-		ID:         br.BackendMessageID,
-		Channel:    br.Channel.BackendChannelID,
-		Embed:      content.Embed,
-		Components: []discordgo.MessageComponent{},
-	})
-	return message, err
+	messages := make([]*discordgo.Message, 0, len(br.BackendMessages))
+	errorMessages := make([]string, 0)
+	for _, backendMessage := range br.BackendMessages {
+		message, err := messenger.discord.ChannelMessageEditComplex(&discordgo.MessageEdit{
+			ID:         backendMessage.MessageID,
+			Channel:    backendMessage.ChannelID,
+			Embed:      content.Embed,
+			Components: []discordgo.MessageComponent{},
+		})
+		if err != nil {
+			errorMessages = append(errorMessages, err.Error())
+		}
+		messages = append(messages, message)
+	}
+	if len(messages) == 0 {
+		return nil, errors.New(strings.Join(errorMessages, "\n"))
+	}
+	return messages, nil
 }
 
 func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
@@ -115,10 +133,15 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
 		),
 		br,
 	)
+
+	var fallbackChannelID string
+	if br.Channel != nil {
+		fallbackChannelID = br.Channel.FrontendChannelID
+	}
 	message, err := messenger.send(&MessageDestination{
 		DestinationID:     br.RequesterID,
 		DestinationType:   DestinationUser,
-		FallbackChannelID: br.Channel.FrontendChannelID,
+		FallbackChannelID: fallbackChannelID,
 	}, m)
 
 	return message, err
@@ -137,10 +160,15 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
 		),
 		br,
 	)
+
+	var fallbackChannelID string
+	if br.Channel != nil {
+		fallbackChannelID = br.Channel.BackendChannelID
+	}
 	message, err := messenger.send(&MessageDestination{
 		DestinationID:     br.AdvertiserID,
 		DestinationType:   DestinationUser,
-		FallbackChannelID: br.Channel.BackendChannelID,
+		FallbackChannelID: fallbackChannelID,
 	}, m)
 	return message, err
 }

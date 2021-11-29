@@ -19,7 +19,7 @@ func TestBoostRequestRollMessage(t *testing.T) {
 		return
 	}
 	br := &repository.BoostRequest{
-		Channel:    repository.BoostRequestChannel{},
+		Channel:    &repository.BoostRequestChannel{},
 		ExternalID: &id,
 	}
 	roll := roll.NewWeightedRoll(3)

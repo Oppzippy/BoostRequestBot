@@ -102,7 +102,7 @@ func (m *BoostRequestCreatedDM) components() []discordgo.MessageComponent {
 					Style: discordgo.PrimaryButton,
 					CustomID: fmt.Sprintf(
 						"removeAdvertiserPreference:%s:%s",
-						m.boostRequest.Channel.GuildID,
+						m.boostRequest.GuildID,
 						m.boostRequest.ExternalID.String(),
 					),
 				},

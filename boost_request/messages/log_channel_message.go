@@ -25,7 +25,7 @@ func NewLogChannelMessage(
 }
 
 func (m *LogChannelMessage) Message() (*discordgo.MessageSend, error) {
-	if m.boostRequest.Channel.UsesBuyerMessage {
+	if m.boostRequest.Channel != nil && m.boostRequest.Channel.UsesBuyerMessage {
 		return nil, errors.New("UsesBuyerMessage logging not implemented")
 	}
 	user, err := m.userProvider.User(m.boostRequest.RequesterID)

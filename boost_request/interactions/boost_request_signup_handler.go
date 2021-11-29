@@ -35,7 +35,7 @@ func (h *BoostRequestSignUpHandler) Handle(discord *discordgo.Session, event *di
 	}
 	if br != nil && !br.IsResolved {
 		var content string
-		if h.brm.IsAdvertiserSignedUpForBoostRequest(br.BackendMessageID, event.Member.User.ID) {
+		if h.brm.IsAdvertiserSignedUpForBoostRequest(br, event.Member.User.ID) {
 			content = "You are already signed up for this boost request."
 		} else {
 			err := h.brm.AddAdvertiserToBoostRequest(br, event.Member.User.ID)

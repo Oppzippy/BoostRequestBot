@@ -60,7 +60,8 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 	}
 
 	// TODO move this to a function to avoid bugs from forgetting to add fields here
-	_, err = h.brm.CreateBoostRequest(&br.Channel, &boost_request_manager.BoostRequestPartial{
+	_, err = h.brm.CreateBoostRequest(br.Channel, &boost_request_manager.BoostRequestPartial{
+		GuildID:       br.GuildID,
 		RequesterID:   br.RequesterID,
 		Message:       br.Message,
 		EmbedFields:   br.EmbedFields,

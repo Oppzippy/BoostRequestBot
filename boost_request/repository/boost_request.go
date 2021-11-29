@@ -17,10 +17,11 @@ type BoostRequest struct {
 	ID int64
 	// TODO generate uuids for all nulls and make the column not null
 	ExternalID             *uuid.UUID
-	Channel                BoostRequestChannel
+	Channel                *BoostRequestChannel
+	GuildID                string
 	RequesterID            string
 	AdvertiserID           string
-	BackendMessageID       string
+	BackendMessages        []*BoostRequestBackendMessage
 	Message                string
 	EmbedFields            []*MessageEmbedField
 	Price                  int64

@@ -13,7 +13,15 @@ import (
 
 func (repo *dbRepository) GetBoostRequestByBackendMessageID(backendChannelID, backendMessageID string) (*repository.BoostRequest, error) {
 	return repo.getBoostRequest(
-		"WHERE brc.backend_channel_id = ? AND br.backend_message_id = ? AND br.deleted_at IS NULL",
+		`WHERE br.deleted_at IS NULL AND br.id = (
+			SELECT
+				brbm.boost_request_id
+			FROM
+				boost_request_backend_message AS brbm
+			WHERE
+				brbm.channel_id = ? AND
+				brbm.message_id = ?
+		)`,
 		backendChannelID,
 		backendMessageID,
 	)
@@ -52,12 +60,12 @@ func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*r
 func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([]*repository.BoostRequest, error) {
 	row, err := repo.db.Query(`
 		SELECT
-			br.id, br.external_id, br.requester_id, br.advertiser_id, br.backend_message_id, br.message,
+			br.id, br.external_id, br.guild_id, br.requester_id, br.advertiser_id, br.message,
 			br.embed_fields, br.price, br.discount, br.advertiser_cut, br.created_at, br.resolved_at,
 			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM
 			boost_request br
-		INNER JOIN boost_request_channel brc ON
+		LEFT JOIN boost_request_channel brc ON
 			br.boost_request_channel_id = brc.id
 		`+where,
 		args...,
@@ -96,6 +104,13 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 		}
 		br.AdvertiserRoleCuts = roleCuts
 
+		// TODO another n+1
+		backendMessages, err := repo.getBoostRequestBackendMessages(br.ID)
+		if err != nil {
+			return nil, err
+		}
+		br.BackendMessages = backendMessages
+
 		boostRequests = append(boostRequests, br)
 	}
 
@@ -108,20 +123,25 @@ type scannable interface {
 
 func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.BoostRequest, error) {
 	var (
-		br                repository.BoostRequest
-		brc               repository.BoostRequestChannel
-		advertiserID      sql.NullString
-		resolvedAt        sql.NullTime
-		embedFieldsJSON   sql.NullString
-		price             sql.NullInt64
-		discount          sql.NullInt64
-		advertiserCut     sql.NullInt64
-		frontendChannelID sql.NullString
+		br              repository.BoostRequest
+		advertiserID    sql.NullString
+		resolvedAt      sql.NullTime
+		embedFieldsJSON sql.NullString
+		price           sql.NullInt64
+		discount        sql.NullInt64
+		advertiserCut   sql.NullInt64
+
+		brcID                sql.NullInt64
+		brcGuildID           sql.NullString
+		brcFrontendChannelID sql.NullString
+		brcBackendChannelID  sql.NullString
+		brcUsesBuyerMessage  sql.NullBool
+		brcSkipsBuyerDM      sql.NullBool
 	)
 	err := row.Scan(
-		&br.ID, &br.ExternalID, &br.RequesterID, &advertiserID, &br.BackendMessageID, &br.Message,
+		&br.ID, &br.ExternalID, &br.GuildID, &br.RequesterID, &advertiserID, &br.Message,
 		&embedFieldsJSON, &price, &discount, &advertiserCut, &br.CreatedAt, &resolvedAt,
-		&brc.ID, &brc.GuildID, &frontendChannelID, &brc.BackendChannelID, &brc.UsesBuyerMessage, &brc.SkipsBuyerDM,
+		&brcID, &brcGuildID, &brcFrontendChannelID, &brcBackendChannelID, &brcUsesBuyerMessage, &brcSkipsBuyerDM,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -137,38 +157,40 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	}
 	br.AdvertiserID = advertiserID.String
 	br.IsResolved = resolvedAt.Valid
-	if frontendChannelID.Valid {
-		brc.FrontendChannelID = frontendChannelID.String
+	br.Price = price.Int64
+	br.AdvertiserCut = advertiserCut.Int64
+	br.Discount = discount.Int64
+	if brcID.Valid {
+		br.Channel = &repository.BoostRequestChannel{
+			ID:                brcID.Int64,
+			GuildID:           brcGuildID.String,
+			FrontendChannelID: brcFrontendChannelID.String,
+			BackendChannelID:  brcBackendChannelID.String,
+			UsesBuyerMessage:  brcUsesBuyerMessage.Bool,
+			SkipsBuyerDM:      brcUsesBuyerMessage.Bool,
+		}
 	}
-	if price.Valid {
-		br.Price = price.Int64
-	}
-	if advertiserCut.Valid {
-		br.AdvertiserCut = advertiserCut.Int64
-	}
-	if discount.Valid {
-		br.Discount = discount.Int64
-	}
-	br.Channel = brc
 	return &br, nil
 }
 
 // Inserts the boost request into the database and updates the ID field to match the newly inserted row's id
 func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error {
-	var advertiserID *string
-	if br.AdvertiserID != "" {
-		advertiserID = &br.AdvertiserID
-	}
-	var embedFieldsJSON *string
+	embedFieldsJSON := sql.NullString{}
 	if br.EmbedFields != nil {
 		embedFieldsJSONBytes, err := json.Marshal(br.EmbedFields)
 		if err != nil {
 			log.Printf("Error marshalling embed field json: %v", err)
 		} else {
-			s := string(embedFieldsJSONBytes)
-			embedFieldsJSON = &s
+			embedFieldsJSON.String = string(embedFieldsJSONBytes)
+			embedFieldsJSON.Valid = true
 		}
 	}
+	channelID := sql.NullInt64{}
+	if br.Channel != nil {
+		channelID.Int64 = br.Channel.ID
+		channelID.Valid = true
+	}
+
 	tx, err := repo.db.Begin()
 	if err != nil {
 		return err
@@ -176,15 +198,18 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 	res, err := tx.Exec(
 		`INSERT INTO boost_request
 			(
-				external_id, boost_request_channel_id, requester_id, advertiser_id, backend_message_id, message, embed_fields,
+				external_id, boost_request_channel_id, guild_id, requester_id, advertiser_id, message, embed_fields,
 				price, discount, advertiser_cut, created_at
 			)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		br.ExternalID,
-		br.Channel.ID,
+		channelID,
+		br.GuildID,
 		br.RequesterID,
-		advertiserID,
-		br.BackendMessageID,
+		sql.NullString{
+			String: br.AdvertiserID,
+			Valid:  br.AdvertiserID != "",
+		},
 		br.Message,
 		embedFieldsJSON,
 		sql.NullInt64{
@@ -220,6 +245,10 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		return err
 	}
 	err = rollbackIfErr(tx, repo.updateRoleCuts(tx, id, br.AdvertiserRoleCuts))
+	if err != nil {
+		return err
+	}
+	err = rollbackIfErr(tx, repo.updateBoostRequestBackendMessages(tx, id, br.BackendMessages))
 	if err != nil {
 		return err
 	}

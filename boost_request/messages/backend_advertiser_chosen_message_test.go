@@ -22,7 +22,7 @@ func TestBackendAdvertiserChosenMessage(t *testing.T) {
 	br := &repository.BoostRequest{
 		AdvertiserID: "123",
 		Message:      "boost please!",
-		Channel:      repository.BoostRequestChannel{},
+		Channel:      &repository.BoostRequestChannel{},
 		ExternalID:   &id,
 	}
 	m := messages.NewBackendAdvertiserChosenMessage(

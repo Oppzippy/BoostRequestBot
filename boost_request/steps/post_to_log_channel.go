@@ -22,7 +22,7 @@ func NewPostToLogChannelStep(repo repository.LogChannelRepository, br *repositor
 }
 
 func (step *postToLogChannelStep) Apply() (RevertFunction, error) {
-	logChannel, err := step.repo.GetLogChannel(step.br.Channel.GuildID)
+	logChannel, err := step.repo.GetLogChannel(step.br.GuildID)
 	if err != repository.ErrNoResults {
 		if err != nil {
 			log.Printf("Error fetching log channel: %v", err)

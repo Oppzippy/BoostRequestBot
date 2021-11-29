@@ -48,7 +48,7 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewRemoveAdvertiserPreferenceHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestStealHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestSignUpHandler(repo, brm))
-	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignUpHandler(brm))
+	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignUpHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCheckCutHandler(repo))
 
 	return brdh
@@ -83,6 +83,7 @@ func (brdh *BoostRequestDiscordHandler) onMessageCreate(discord *discordgo.Sessi
 				embedFields = repository.FromDiscordEmbedFields(event.Embeds[0].Fields)
 			}
 			_, err = brdh.brm.CreateBoostRequest(brc, &boost_request_manager.BoostRequestPartial{
+				GuildID:          event.GuildID,
 				RequesterID:      event.Author.ID,
 				Message:          event.Content,
 				EmbedFields:      embedFields,
@@ -125,5 +126,10 @@ func (brdh *BoostRequestDiscordHandler) onMessageReactionAdd(discord *discordgo.
 }
 
 func (brdh *BoostRequestDiscordHandler) onMessageReactionRemove(discord *discordgo.Session, event *discordgo.MessageReactionRemove) {
-	brdh.brm.RemoveAdvertiserFromBoostRequest(event.MessageID, event.UserID)
+	br, err := brdh.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.MessageID)
+	if err != nil {
+		log.Printf("Error fetching boost request: %v", err)
+		return
+	}
+	brdh.brm.RemoveAdvertiserFromBoostRequest(br, event.UserID)
 }

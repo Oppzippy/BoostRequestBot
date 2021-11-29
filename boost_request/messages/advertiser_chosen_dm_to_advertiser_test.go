@@ -33,7 +33,7 @@ func TestAdvertiserChosenDMToAdvertiserHuman(t *testing.T) {
 		),
 		&repository.BoostRequest{
 			RequesterID: "1",
-			Channel:     repository.BoostRequestChannel{},
+			Channel:     &repository.BoostRequestChannel{},
 			ExternalID:  &id,
 		},
 	)
@@ -77,7 +77,7 @@ func TestAdvertiserChosenDMToAdvertiserBot(t *testing.T) {
 					Value: "Test",
 				},
 			},
-			Channel:    repository.BoostRequestChannel{},
+			Channel:    &repository.BoostRequestChannel{},
 			ExternalID: &id,
 		},
 	)

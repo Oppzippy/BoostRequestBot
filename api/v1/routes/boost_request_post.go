@@ -8,7 +8,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
 	"github.com/oppzippy/BoostRequestBot/api/json_unmarshaler"
 	"github.com/oppzippy/BoostRequestBot/api/middleware"
-	"github.com/oppzippy/BoostRequestBot/api/models"
+	"github.com/oppzippy/BoostRequestBot/api/v1/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -39,11 +39,12 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	brPartial, err := boost_request_manager.FromModelBoostRequestPartial(&body)
+	brPartial, err := boost_request_manager.FromModelBoostRequestPartialV1(&body)
 	if err != nil {
 		badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
 		return
 	}
+	brPartial.GuildID = guildID
 
 	// TODO check to make sure the channel is actually in the specified guild
 	brc := &repository.BoostRequestChannel{
@@ -67,7 +68,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	br, err = h.repo.GetBoostRequestById(br.Channel.GuildID, *br.ExternalID)
+	br, err = h.repo.GetBoostRequestById(br.GuildID, *br.ExternalID)
 	if err != nil {
 		log.Printf("Error fetching boost request: %v", err)
 		internalServerError(rw, r, "")
