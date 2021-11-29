@@ -24,21 +24,25 @@ func NewBoostRequestSignUpHandler(repo repository.Repository, brm *boost_request
 func (h *BoostRequestSignUpHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionMessageComponent &&
 		event.MessageComponentData().CustomID == "boostRequest:signUp" &&
-		event.Member != nil &&
-		event.Member.User != nil
+		(event.User != nil || event.Member != nil)
 }
 
 func (h *BoostRequestSignUpHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
+	user := event.User
+	if user == nil {
+		user = event.Member.User
+	}
+
 	br, err := h.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.Message.ID)
 	if err != nil && err != repository.ErrNoResults {
 		return fmt.Errorf("error fetching boost request: %v", err)
 	}
 	if br != nil && !br.IsResolved {
 		var content string
-		if h.brm.IsAdvertiserSignedUpForBoostRequest(br, event.Member.User.ID) {
+		if h.brm.IsAdvertiserSignedUpForBoostRequest(br, user.ID) {
 			content = "You are already signed up for this boost request."
 		} else {
-			err := h.brm.AddAdvertiserToBoostRequest(br, event.Member.User.ID)
+			err := h.brm.AddAdvertiserToBoostRequest(br, user.ID)
 
 			// We could check if it's a BoostRequestSignupError in addition to the switch to ensure
 			// if a case is missed, it doesn't error. An error is what we want though, so it is noticed

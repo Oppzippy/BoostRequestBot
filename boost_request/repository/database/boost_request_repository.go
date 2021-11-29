@@ -36,7 +36,7 @@ func (repo *dbRepository) GetUnresolvedBoostRequests() ([]*repository.BoostReque
 func (repo *dbRepository) GetBoostRequestById(guildID string, boostRequestID uuid.UUID) (*repository.BoostRequest, error) {
 	br, err := repo.getBoostRequest(`
 		WHERE
-			brc.guild_id = ?
+			br.guild_id = ?
 			AND br.external_id = ?
 			AND br.deleted_at IS NULL`,
 		guildID,

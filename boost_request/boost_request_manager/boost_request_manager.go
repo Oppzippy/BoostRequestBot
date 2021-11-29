@@ -68,6 +68,19 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 	brc *repository.BoostRequestChannel,
 	brPartial *BoostRequestPartial,
 ) (*repository.BoostRequest, error) {
+	br, err := brm.partialToBoostRequest(brc, brPartial)
+	if err != nil {
+		return nil, err
+	}
+
+	err = brm.dispatchBoostRequest(br, brPartial.BackendMessageChannelIDs)
+	if err != nil {
+		return nil, err
+	}
+	return br, nil
+}
+
+func (brm *BoostRequestManager) partialToBoostRequest(brc *repository.BoostRequestChannel, brPartial *BoostRequestPartial) (*repository.BoostRequest, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -87,7 +100,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		CreatedAt:              time.Now().UTC(),
 	}
 
-	if brc.UsesBuyerMessage {
+	if brc != nil && brc.UsesBuyerMessage {
 		br.BackendMessages = []*repository.BoostRequestBackendMessage{
 			{
 				ChannelID: brc.FrontendChannelID,
@@ -106,7 +119,10 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		}
 		br.RoleDiscounts = roleDiscounts
 	}
+	return br, nil
+}
 
+func (brm *BoostRequestManager) dispatchBoostRequest(br *repository.BoostRequest, backendChannelIDs []string) error {
 	sequenceArgs := sequences.CreateSequenceArgs{
 		Repository:               brm.repo,
 		BoostRequest:             br,
@@ -114,27 +130,38 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		Messenger:                brm.messenger,
 		ActiveRequests:           brm.activeRequests,
 		SetWinnerCallback:        brm.setWinner,
-		BackendMessageChannelIDs: brPartial.BackendMessageChannelIDs,
+		BackendMessageChannelIDs: backendChannelIDs,
 	}
-	if len(brPartial.BackendMessageChannelIDs) == 0 {
+	if len(sequenceArgs.BackendMessageChannelIDs) == 0 {
 		if br.Channel != nil {
 			sequenceArgs.BackendMessageChannelIDs = []string{br.Channel.BackendChannelID}
+		} else if len(br.PreferredAdvertiserIDs) > 0 {
+			// DM all preferred advertisers if preferred advertisers are set
+			channels := make([]string, 0, len(br.PreferredAdvertiserIDs))
+			for userID := range br.PreferredAdvertiserIDs {
+				channel, err := brm.discord.UserChannelCreate(userID)
+				if err != nil {
+					return err
+				}
+				channels = append(channels, channel.ID)
+			}
+			sequenceArgs.BackendMessageChannelIDs = channels
 		} else {
-			return nil, fmt.Errorf("boost request doesn't have a backend channel")
+			return fmt.Errorf("boost request doesn't have a backend channel")
 		}
 	}
 	if br.EmbedFields == nil {
 		err := sequences.RunCreateHumanRequesterSequence(sequenceArgs)
 		if err != nil {
-			return nil, fmt.Errorf("boost request creation failed with human requester: %v", err)
+			return fmt.Errorf("boost request creation failed with human requester: %v", err)
 		}
 	} else {
 		err := sequences.RunCreateBotRequesterSequence(sequenceArgs)
 		if err != nil {
-			return nil, fmt.Errorf("boost request creation failed with bot requester: %v", err)
+			return fmt.Errorf("boost request creation failed with bot requester: %v", err)
 		}
 	}
-	return br, nil
+	return nil
 }
 
 // Best is defined as the role with the highest weight

@@ -37,16 +37,21 @@ func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequest
 		preferredAdvertiserIDs[advertiserID] = struct{}{}
 	}
 
-	return &BoostRequestPartial{
-		RequesterID:              br.RequesterID,
-		Message:                  br.Message,
-		PreferredAdvertiserIDs:   preferredAdvertiserIDs,
-		Price:                    br.Price,
-		AdvertiserCut:            br.AdvertiserCut,
-		AdvertiserRoleCuts:       roleCuts,
-		Discount:                 br.Discount,
-		BackendMessageChannelIDs: []string{br.BackendChannelID},
-	}, nil
+	brPartial := &BoostRequestPartial{
+		RequesterID:            br.RequesterID,
+		Message:                br.Message,
+		PreferredAdvertiserIDs: preferredAdvertiserIDs,
+		Price:                  br.Price,
+		AdvertiserCut:          br.AdvertiserCut,
+		AdvertiserRoleCuts:     roleCuts,
+		Discount:               br.Discount,
+	}
+
+	if br.BackendChannelID != "" {
+		brPartial.BackendMessageChannelIDs = []string{br.BackendChannelID}
+	}
+
+	return brPartial, nil
 }
 
 func FromModelBoostRequestPartialV1(br *models_v1.BoostRequestPartial) (*BoostRequestPartial, error) {

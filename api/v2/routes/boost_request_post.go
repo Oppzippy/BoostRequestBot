@@ -28,6 +28,7 @@ func NewBoostRequestPostHandler(repo repository.Repository, brm *boost_request_m
 }
 
 func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	// TODO check to make sure the channel is actually in the specified guild
 	ctx := r.Context()
 
 	guildID := ctx.Value(context_key.GuildID).(string)
@@ -46,22 +47,7 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 	brPartial.GuildID = guildID
 
-	// TODO check to make sure the channel is actually in the specified guild
-	brc := &repository.BoostRequestChannel{
-		FrontendChannelID: "",
-		GuildID:           guildID,
-		BackendChannelID:  body.BackendChannelID,
-		UsesBuyerMessage:  false,
-		SkipsBuyerDM:      false,
-	}
-	err = h.repo.InsertBoostRequestChannel(brc)
-	if err != nil {
-		log.Printf("error inserting internal boost request channel (no frontend channel): %v", err)
-		internalServerError(rw, r, "")
-		return
-	}
-
-	br, err := h.brm.CreateBoostRequest(brc, brPartial)
+	br, err := h.brm.CreateBoostRequest(nil, brPartial)
 	if err != nil {
 		log.Printf("Error creating boost request via api: %v", err)
 		internalServerError(rw, r, "")

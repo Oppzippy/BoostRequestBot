@@ -25,7 +25,7 @@ type BoostRequest struct {
 
 type BoostRequestPartial struct {
 	RequesterID            string            `json:"requesterId" validate:"required"`
-	BackendChannelID       string            `json:"backendChannelId" validate:"required"`
+	BackendChannelID       string            `json:"backendChannelId"`
 	Message                string            `json:"message" validate:"required"`
 	Price                  int64             `json:"price,string,omitempty"`
 	AdvertiserCut          int64             `json:"advertiserCut,string,omitempty"`
