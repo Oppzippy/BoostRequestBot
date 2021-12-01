@@ -305,7 +305,7 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 		log.Printf("Error sending advertsier chosen DM to advertiser: %v", err)
 	}
 
-	if br.Channel != nil && !br.Channel.SkipsBuyerDM {
+	if br.Channel == nil || !br.Channel.SkipsBuyerDM {
 		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(&br)
 		if err != nil {
 			log.Printf("Error sending advertiser chosen DM to requester: %v", err)
