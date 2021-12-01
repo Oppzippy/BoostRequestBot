@@ -55,7 +55,16 @@ func (step *sendMessageStep) Apply() (RevertFunction, error) {
 }
 
 func (step *sendMessageStep) send(channelID string) (RevertFunction, error) {
-	backendMessage, err := step.messenger.SendBackendSignupMessage(step.br, channelID)
+	isDMToPreferredAdvertiser, err := step.isDMToPreferredAdvertiser(channelID)
+	if err != nil {
+		return nil, err
+	}
+	backendMessage, err := step.messenger.SendBackendSignupMessage(step.br, channelID, messenger.BackendSignupMessageButtonConfiguration{
+		SignUp:       true,
+		Steal:        !isDMToPreferredAdvertiser,
+		CancelSignup: !isDMToPreferredAdvertiser,
+		CheckMyCut:   true,
+	})
 	if err != nil {
 		return revertNoOp, fmt.Errorf("sending backend signup message: %w", err)
 	}
@@ -67,4 +76,19 @@ func (step *sendMessageStep) send(channelID string) (RevertFunction, error) {
 		err := step.discord.ChannelMessageDelete(backendMessage.ChannelID, backendMessage.ID)
 		return err
 	}, nil
+}
+
+func (step *sendMessageStep) isDMToPreferredAdvertiser(channelID string) (bool, error) {
+	channel, err := step.discord.State.Channel(channelID)
+	if err == discordgo.ErrNilState || err == discordgo.ErrStateNotFound {
+		channel, err = step.discord.Channel(channelID)
+	}
+	if err != nil {
+		return false, err
+	}
+	if len(channel.Recipients) == 1 {
+		_, isPreferredAdvertiser := step.br.PreferredAdvertiserIDs[channel.Recipients[0].ID]
+		return isPreferredAdvertiser, nil
+	}
+	return false, nil
 }

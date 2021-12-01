@@ -31,6 +31,12 @@ func TestBackendSignupMessage(t *testing.T) {
 		emptyLocalizer(),
 		&partials.DiscountFormatter{},
 		br,
+		messages.BackendSignupMessageButtonConfiguration{
+			SignUp:       true,
+			Steal:        true,
+			CancelSignup: true,
+			CheckMyCut:   true,
+		},
 	)
 
 	t.Run("Message", func(t *testing.T) {
@@ -80,6 +86,12 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 			},
 		),
 		br,
+		messages.BackendSignupMessageButtonConfiguration{
+			SignUp:       true,
+			Steal:        true,
+			CancelSignup: true,
+			CheckMyCut:   true,
+		},
 	)
 
 	message, err := bsm.Message()

@@ -36,9 +36,14 @@ func NewBoostRequestDiscordHandler(
 		messenger:           messenger.NewBoostRequestMessenger(discord, bundle),
 	}
 
+	discord.StateEnabled = true
+	discord.State.TrackChannels = true
+	discord.State.TrackEmojis = true
+
 	discord.Identify.Intents |= discordgo.IntentsGuilds
 	discord.Identify.Intents |= discordgo.IntentsGuildMessages
 	discord.Identify.Intents |= discordgo.IntentsGuildMessageReactions
+	discord.Identify.Intents |= discordgo.IntentsGuildEmojis
 	discord.Identify.Intents |= discordgo.IntentsDirectMessages
 
 	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageCreate))

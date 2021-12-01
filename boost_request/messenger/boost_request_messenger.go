@@ -35,7 +35,11 @@ func NewBoostRequestMessenger(discord *discordgo.Session, bundle *i18n.Bundle) *
 	return &brm
 }
 
-func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.BoostRequest, channelID string) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) SendBackendSignupMessage(
+	br *repository.BoostRequest,
+	channelID string,
+	buttonConfiguration BackendSignupMessageButtonConfiguration,
+) (*discordgo.Message, error) {
 	m := messages.NewBackendSignupMessage(
 		messenger.localizer("en"),
 		partials.NewDiscountFormatter(
@@ -43,6 +47,7 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(br *repository.
 			messages.NewDiscordRoleNameProvider(messenger.discord),
 		),
 		br,
+		buttonConfiguration,
 	)
 
 	message, err := messenger.send(&MessageDestination{

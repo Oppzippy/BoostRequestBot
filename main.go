@@ -87,6 +87,13 @@ func setUpDiscord() (*discordgo.Session, error) {
 		return nil, fmt.Errorf("creating discord connection: %v", err)
 	}
 	discord.Identify.Intents = discordgo.IntentsNone
+	discord.StateEnabled = false
+	discord.State.TrackChannels = false
+	discord.State.TrackEmojis = false
+	discord.State.TrackMembers = false
+	discord.State.TrackRoles = false
+	discord.State.TrackVoice = false
+	discord.State.TrackPresences = false
 
 	discord.AddHandler(func(_ *discordgo.Session, event *discordgo.Connect) {
 		fmt.Println("Connected to discord")

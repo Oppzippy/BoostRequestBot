@@ -11,20 +11,32 @@ import (
 )
 
 type BackendSignupMessage struct {
-	boostRequest      *repository.BoostRequest
-	localizer         *i18n.Localizer
-	discountFormatter *partials.DiscountFormatter
-	embedPartial      *partials.BoostRequestEmbedTemplate
+	boostRequest        *repository.BoostRequest
+	localizer           *i18n.Localizer
+	discountFormatter   *partials.DiscountFormatter
+	embedPartial        *partials.BoostRequestEmbedTemplate
+	buttonConfiguration BackendSignupMessageButtonConfiguration
+}
+
+type BackendSignupMessageButtonConfiguration struct {
+	SignUp       bool
+	Steal        bool
+	CancelSignup bool
+	CheckMyCut   bool
 }
 
 func NewBackendSignupMessage(
-	localizer *i18n.Localizer, df *partials.DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer,
+	df *partials.DiscountFormatter,
+	br *repository.BoostRequest,
+	buttonConfiguration BackendSignupMessageButtonConfiguration,
 ) *BackendSignupMessage {
 	return &BackendSignupMessage{
-		boostRequest:      br,
-		localizer:         localizer,
-		discountFormatter: df,
-		embedPartial:      partials.NewBoostRequestEmbedTemplate(localizer, df, br),
+		boostRequest:        br,
+		localizer:           localizer,
+		discountFormatter:   df,
+		embedPartial:        partials.NewBoostRequestEmbedTemplate(localizer, df, br),
+		buttonConfiguration: buttonConfiguration,
 	}
 }
 
@@ -66,8 +78,9 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 		preferredAdvertiserMentions = fmt.Sprintf("**%s:** %s", title, strings.Join(mentions, " "))
 	}
 
-	components := []discordgo.MessageComponent{
-		discordgo.Button{
+	components := make([]discordgo.MessageComponent, 0, 5)
+	if m.buttonConfiguration.SignUp {
+		components = append(components, discordgo.Button{
 			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "SignUp",
@@ -76,8 +89,10 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 			}),
 			Style:    discordgo.PrimaryButton,
 			CustomID: "boostRequest:signUp",
-		},
-		discordgo.Button{
+		})
+	}
+	if m.buttonConfiguration.Steal {
+		components = append(components, discordgo.Button{
 			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "Steal",
@@ -86,8 +101,10 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 			}),
 			CustomID: "boostRequest:steal",
 			Style:    discordgo.PrimaryButton,
-		},
-		discordgo.Button{
+		})
+	}
+	if m.buttonConfiguration.CancelSignup {
+		components = append(components, discordgo.Button{
 			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "CancelSignup",
@@ -96,10 +113,9 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 			}),
 			CustomID: "boostRequest:cancelSignUp",
 			Style:    discordgo.SecondaryButton,
-		},
+		})
 	}
-
-	if len(br.AdvertiserRoleCuts) > 0 {
+	if m.buttonConfiguration.CheckMyCut && len(br.AdvertiserRoleCuts) > 0 {
 		components = append(components, discordgo.Button{
 			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
