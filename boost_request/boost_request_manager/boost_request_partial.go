@@ -9,17 +9,17 @@ import (
 )
 
 type BoostRequestPartial struct {
-	GuildID                  string
-	RequesterID              string
-	Message                  string
-	EmbedFields              []*repository.MessageEmbedField
-	PreferredAdvertiserIDs   map[string]struct{}
-	BackendMessageID         string
-	Price                    int64
-	AdvertiserCut            int64
-	AdvertiserRoleCuts       map[string]int64
-	Discount                 int64
-	BackendMessageChannelIDs map[string]struct{}
+	GuildID                string
+	BackendChannelID       string
+	RequesterID            string
+	Message                string
+	EmbedFields            []*repository.MessageEmbedField
+	PreferredAdvertiserIDs map[string]struct{}
+	BackendMessageID       string
+	Price                  int64
+	AdvertiserCut          int64
+	AdvertiserRoleCuts     map[string]int64
+	Discount               int64
 }
 
 func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequestPartial, error) {
@@ -45,11 +45,7 @@ func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequest
 		AdvertiserCut:          br.AdvertiserCut,
 		AdvertiserRoleCuts:     roleCuts,
 		Discount:               br.Discount,
-	}
-
-	if br.BackendChannelID != "" {
-		brPartial.BackendMessageChannelIDs = make(map[string]struct{})
-		brPartial.BackendMessageChannelIDs[br.BackendChannelID] = struct{}{}
+		BackendChannelID:       br.BackendChannelID,
 	}
 
 	return brPartial, nil
@@ -70,17 +66,14 @@ func FromModelBoostRequestPartialV1(br *models_v1.BoostRequestPartial) (*BoostRe
 		preferredAdvertiserIDs[advertiserID] = struct{}{}
 	}
 
-	backendMessageChannelIDs := make(map[string]struct{})
-	backendMessageChannelIDs[br.BackendChannelID] = struct{}{}
-
 	return &BoostRequestPartial{
-		RequesterID:              br.RequesterID,
-		Message:                  br.Message,
-		PreferredAdvertiserIDs:   preferredAdvertiserIDs,
-		Price:                    br.Price,
-		AdvertiserCut:            br.AdvertiserCut,
-		AdvertiserRoleCuts:       roleCuts,
-		Discount:                 br.Discount,
-		BackendMessageChannelIDs: backendMessageChannelIDs,
+		RequesterID:            br.RequesterID,
+		Message:                br.Message,
+		PreferredAdvertiserIDs: preferredAdvertiserIDs,
+		Price:                  br.Price,
+		AdvertiserCut:          br.AdvertiserCut,
+		AdvertiserRoleCuts:     roleCuts,
+		Discount:               br.Discount,
+		BackendChannelID:       br.BackendChannelID,
 	}, nil
 }

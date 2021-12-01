@@ -220,7 +220,7 @@ components:
           description: Discord user id of the request of the boost request.
         backendChannelId:
           type: string
-          description: Discord channel id to post the boost request signup message in.
+          description: Discord channel id to post the boost request signup message in. If exactly one preferred advertiser is set, the message will go to the preferred advertiser's DMs instead. If the preferred advertiser is then removed, the boost request will be reposted in this channel.
         message:
           type: string
           description: What is being requested
@@ -260,6 +260,9 @@ components:
         requesterId:
           type: string
           description: Discord user id of the request of the boost request.
+        backendChannelId:
+          type: string
+          description: Discord channel id to post the boost request signup message in. If exactly one preferred advertiser is set, the message will go to the preferred advertiser's DMs instead. If the preferred advertiser is then removed, the boost request will be reposted in this channel.
         isAdvertiserSelected:
           type: boolean
         backendMessages:

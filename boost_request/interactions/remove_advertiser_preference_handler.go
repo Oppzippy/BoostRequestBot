@@ -61,13 +61,15 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 
 	// TODO move this to a function to avoid bugs from forgetting to add fields here
 	_, err = h.brm.CreateBoostRequest(br.Channel, &boost_request_manager.BoostRequestPartial{
-		GuildID:       br.GuildID,
-		RequesterID:   br.RequesterID,
-		Message:       br.Message,
-		EmbedFields:   br.EmbedFields,
-		Price:         br.Price,
-		AdvertiserCut: br.AdvertiserCut,
-		Discount:      br.Discount,
+		GuildID:            br.GuildID,
+		BackendChannelID:   br.BackendChannelID,
+		RequesterID:        br.RequesterID,
+		Message:            br.Message,
+		EmbedFields:        br.EmbedFields,
+		Price:              br.Price,
+		AdvertiserCut:      br.AdvertiserCut,
+		AdvertiserRoleCuts: br.AdvertiserRoleCuts,
+		Discount:           br.Discount,
 	})
 	if err != nil {
 		// todo tell them to recreate the br later

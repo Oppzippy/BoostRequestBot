@@ -47,11 +47,6 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 	brPartial.GuildID = guildID
 
-	if len(brPartial.BackendMessageChannelIDs) == 0 && len(brPartial.PreferredAdvertiserIDs) == 0 {
-		badRequest(rw, r, "At least one of either preferred advertisers or backend channel ids must be provided.")
-		return
-	}
-
 	br, err := h.brm.CreateBoostRequest(nil, brPartial)
 	if err != nil {
 		log.Printf("Error creating boost request via api: %v", err)

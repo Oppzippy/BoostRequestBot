@@ -19,6 +19,7 @@ type BoostRequest struct {
 	ExternalID             *uuid.UUID
 	Channel                *BoostRequestChannel
 	GuildID                string
+	BackendChannelID       string
 	RequesterID            string
 	AdvertiserID           string
 	BackendMessages        []*BoostRequestBackendMessage

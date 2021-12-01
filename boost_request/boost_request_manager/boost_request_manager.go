@@ -73,7 +73,7 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 		return nil, err
 	}
 
-	err = brm.dispatchBoostRequest(br, brPartial.BackendMessageChannelIDs)
+	err = brm.dispatchBoostRequest(br)
 	if err != nil {
 		return nil, err
 	}
@@ -87,6 +87,7 @@ func (brm *BoostRequestManager) partialToBoostRequest(brc *repository.BoostReque
 	}
 	br := &repository.BoostRequest{
 		GuildID:                brPartial.GuildID,
+		BackendChannelID:       brPartial.BackendChannelID,
 		ExternalID:             &id,
 		Channel:                brc,
 		RequesterID:            brPartial.RequesterID,
@@ -122,7 +123,7 @@ func (brm *BoostRequestManager) partialToBoostRequest(brc *repository.BoostReque
 	return br, nil
 }
 
-func (brm *BoostRequestManager) dispatchBoostRequest(br *repository.BoostRequest, backendChannelIDs map[string]struct{}) error {
+func (brm *BoostRequestManager) dispatchBoostRequest(br *repository.BoostRequest) error {
 	sequenceArgs := sequences.CreateSequenceArgs{
 		Repository:               brm.repo,
 		BoostRequest:             br,
@@ -130,25 +131,22 @@ func (brm *BoostRequestManager) dispatchBoostRequest(br *repository.BoostRequest
 		Messenger:                brm.messenger,
 		ActiveRequests:           brm.activeRequests,
 		SetWinnerCallback:        brm.setWinner,
-		BackendMessageChannelIDs: backendChannelIDs,
+		BackendMessageChannelIDs: make(map[string]struct{}),
 	}
 	if len(sequenceArgs.BackendMessageChannelIDs) == 0 {
 		if br.Channel != nil {
-			sequenceArgs.BackendMessageChannelIDs = make(map[string]struct{})
 			sequenceArgs.BackendMessageChannelIDs[br.Channel.BackendChannelID] = struct{}{}
-		} else if len(br.PreferredAdvertiserIDs) > 0 {
-			// DM all preferred advertisers if preferred advertisers are set
-			channels := make(map[string]struct{}, len(br.PreferredAdvertiserIDs))
+		} else if len(br.PreferredAdvertiserIDs) == 1 {
+			// Only one preferred advertiser is set so just dm them the request
 			for userID := range br.PreferredAdvertiserIDs {
 				channel, err := brm.discord.UserChannelCreate(userID)
 				if err != nil {
 					return err
 				}
-				channels[channel.ID] = struct{}{}
+				sequenceArgs.BackendMessageChannelIDs[channel.ID] = struct{}{}
 			}
-			sequenceArgs.BackendMessageChannelIDs = channels
 		} else {
-			return fmt.Errorf("boost request doesn't have a backend channel")
+			sequenceArgs.BackendMessageChannelIDs[br.BackendChannelID] = struct{}{}
 		}
 	}
 	if br.EmbedFields == nil {

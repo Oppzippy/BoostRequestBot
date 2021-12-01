@@ -60,7 +60,7 @@ func (repo *dbRepository) getBoostRequest(where string, args ...interface{}) (*r
 func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([]*repository.BoostRequest, error) {
 	row, err := repo.db.Query(`
 		SELECT
-			br.id, br.external_id, br.guild_id, br.requester_id, br.advertiser_id, br.message,
+			br.id, br.external_id, br.guild_id, br.backend_channel_id, br.requester_id, br.advertiser_id, br.message,
 			br.embed_fields, br.price, br.discount, br.advertiser_cut, br.created_at, br.resolved_at,
 			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM
@@ -139,7 +139,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 		brcSkipsBuyerDM      sql.NullBool
 	)
 	err := row.Scan(
-		&br.ID, &br.ExternalID, &br.GuildID, &br.RequesterID, &advertiserID, &br.Message,
+		&br.ID, &br.ExternalID, &br.GuildID, &br.BackendChannelID, &br.RequesterID, &advertiserID, &br.Message,
 		&embedFieldsJSON, &price, &discount, &advertiserCut, &br.CreatedAt, &resolvedAt,
 		&brcID, &brcGuildID, &brcFrontendChannelID, &brcBackendChannelID, &brcUsesBuyerMessage, &brcSkipsBuyerDM,
 	)
@@ -198,13 +198,14 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 	res, err := tx.Exec(
 		`INSERT INTO boost_request
 			(
-				external_id, boost_request_channel_id, guild_id, requester_id, advertiser_id, message, embed_fields,
+				external_id, boost_request_channel_id, guild_id, backend_channel_id, requester_id, advertiser_id, message, embed_fields,
 				price, discount, advertiser_cut, created_at
 			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		br.ExternalID,
 		channelID,
 		br.GuildID,
+		br.BackendChannelID,
 		br.RequesterID,
 		sql.NullString{
 			String: br.AdvertiserID,
