@@ -6,6 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/message_utils"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -23,8 +24,7 @@ func NewBoostRequestCheckCutHandler(repo repository.Repository) *BoostRequestChe
 func (h *BoostRequestCheckCutHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionMessageComponent &&
 		event.MessageComponentData().CustomID == "boostRequest:checkCut" &&
-		event.Member != nil &&
-		event.Member.User != nil
+		(event.Member != nil || event.User != nil)
 }
 
 func (h *BoostRequestCheckCutHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
@@ -32,8 +32,14 @@ func (h *BoostRequestCheckCutHandler) Handle(discord *discordgo.Session, event *
 	if err != nil {
 		return err
 	}
+
+	member, err := getGuildMember(discord, event, br.GuildID)
+	if err != nil {
+		return err
+	}
+
 	bestCut := br.AdvertiserCut
-	for _, roleID := range event.Member.Roles {
+	for _, roleID := range member.Roles {
 		cut := br.AdvertiserRoleCuts[roleID]
 		if cut > bestCut {
 			bestCut = cut
@@ -41,18 +47,13 @@ func (h *BoostRequestCheckCutHandler) Handle(discord *discordgo.Session, event *
 	}
 	var content string
 	if bestCut > 0 {
-		emoji := "gold"
-		emojis, err := discord.GuildEmojis(event.GuildID)
-		if err != nil {
-			return err
-		}
-		for _, e := range emojis {
-			if strings.ToLower(e.Name) == "gold" {
-				emoji = e.MessageFormat()
-				break
+		emoji := boost_emojis.GoldEmoji
+		if event.GuildID != "" {
+			emoji, err = h.getGoldEmoji(discord, event.GuildID)
+			if err != nil {
+				return err
 			}
 		}
-
 		if br.Discount == 0 {
 			content = fmt.Sprintf("Your cut for this boost request is %s.", message_utils.FormatCopperWithEmoji(localizer, bestCut, emoji))
 		} else {
@@ -74,4 +75,17 @@ func (h *BoostRequestCheckCutHandler) Handle(discord *discordgo.Session, event *
 		},
 	})
 	return err
+}
+
+func (h *BoostRequestCheckCutHandler) getGoldEmoji(discord *discordgo.Session, guildID string) (string, error) {
+	emojis, err := discord.GuildEmojis(guildID)
+	if err != nil {
+		return "", err
+	}
+	for _, e := range emojis {
+		if strings.ToLower(e.Name) == "gold" {
+			return e.MessageFormat(), nil
+		}
+	}
+	return "gold", nil
 }

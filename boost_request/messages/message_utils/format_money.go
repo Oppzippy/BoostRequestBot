@@ -2,6 +2,7 @@ package message_utils
 
 import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/shopspring/decimal"
 )
 
@@ -11,7 +12,7 @@ const (
 )
 
 func FormatCopper(localizer *i18n.Localizer, copper int64) string {
-	return FormatCopperWithEmoji(localizer, copper, "<:gold:909618212717592607>")
+	return FormatCopperWithEmoji(localizer, copper, boost_emojis.GoldEmoji)
 }
 
 func FormatCopperWithEmoji(localizer *i18n.Localizer, copper int64, goldEmoji string) string {

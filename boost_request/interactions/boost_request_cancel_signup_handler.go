@@ -22,16 +22,20 @@ func NewBoostRequestCancelSignUpHandler(repo repository.Repository, brm *boost_r
 func (h *BoostRequestCancelSignUpHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionMessageComponent &&
 		event.MessageComponentData().CustomID == "boostRequest:cancelSignUp" &&
-		event.Member != nil &&
-		event.Member.User != nil
+		(event.Member != nil || event.User != nil)
 }
 
 func (h *BoostRequestCancelSignUpHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
+	user := event.User
+	if user == nil {
+		user = event.Member.User
+	}
+
 	br, err := h.repo.GetBoostRequestByBackendMessageID(event.Message.ChannelID, event.Message.ID)
 	if err != nil {
 		return err
 	}
-	removed := h.brm.RemoveAdvertiserFromBoostRequest(br, event.Member.User.ID)
+	removed := h.brm.RemoveAdvertiserFromBoostRequest(br, user.ID)
 	var content string
 	if removed {
 		content = "Your signup has been canceled."

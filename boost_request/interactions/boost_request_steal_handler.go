@@ -25,18 +25,22 @@ func NewBoostRequestStealHandler(repo repository.Repository, brm *boost_request_
 func (h *BoostRequestStealHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionMessageComponent &&
 		event.MessageComponentData().CustomID == "boostRequest:steal" &&
-		event.Member != nil &&
-		event.Member.User != nil
+		(event.Member != nil || event.User != nil)
 }
 
 func (h *BoostRequestStealHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
+	user := event.User
+	if user == nil {
+		user = event.Member.User
+	}
+
 	br, err := h.repo.GetBoostRequestByBackendMessageID(event.ChannelID, event.Message.ID)
 	if err != nil && err != repository.ErrNoResults {
 		return fmt.Errorf("error fetching boost request: %v", err)
 	}
 	if br != nil && !br.IsResolved {
-		_, usedCredits := h.brm.StealBoostRequest(br, event.Member.User.ID)
-		newCredits, err := h.repo.GetStealCreditsForUser(event.GuildID, event.Member.User.ID)
+		_, usedCredits := h.brm.StealBoostRequest(br, user.ID)
+		newCredits, err := h.repo.GetStealCreditsForUser(event.GuildID, user.ID)
 		if err != nil {
 			log.Printf("Error fetching steal credits for user: %v", err)
 		}
