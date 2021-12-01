@@ -78,7 +78,16 @@ func (h *BoostRequestCheckCutHandler) Handle(discord *discordgo.Session, event *
 }
 
 func (h *BoostRequestCheckCutHandler) getGoldEmoji(discord *discordgo.Session, guildID string) (string, error) {
-	emojis, err := discord.GuildEmojis(guildID)
+	var emojis []*discordgo.Emoji
+	guild, err := discord.State.Guild(guildID)
+	if err == nil && guild.Emojis != nil {
+		emojis = guild.Emojis
+	} else {
+		emojis, err = discord.GuildEmojis(guildID)
+		if err != nil {
+			return "", err
+		}
+	}
 	if err != nil {
 		return "", err
 	}
