@@ -10,6 +10,7 @@ import (
 type BoostRequest struct {
 	ID                     string            `json:"id"`
 	RequesterID            string            `json:"requesterId"`
+	BackendChannelID       string            `json:"backendChannelId"`
 	IsAdvertiserSelected   bool              `json:"isAdvertiserSelected"`
 	AdvertiserID           string            `json:"advertiserId,omitempty"`
 	Message                string            `json:"message"`
@@ -61,6 +62,7 @@ func FromRepositoryBoostRequest(br *repository.BoostRequest) *BoostRequest {
 	return &BoostRequest{
 		ID:                     br.ExternalID.String(),
 		RequesterID:            br.RequesterID,
+		BackendChannelID:       br.BackendChannelID,
 		IsAdvertiserSelected:   br.IsResolved,
 		AdvertiserID:           br.AdvertiserID,
 		Message:                br.Message,
