@@ -265,10 +265,6 @@ components:
           description: Discord channel id to post the boost request signup message in. If exactly one preferred advertiser is set, the message will go to the preferred advertiser's DMs instead. If the preferred advertiser is then removed, the boost request will be reposted in this channel.
         isAdvertiserSelected:
           type: boolean
-        backendMessages:
-          type: array
-          items:
-            $ref: "#/components/schemas/BoostRequestBackendSignupMessage"
         message:
           type: string
           description: What is being requested
@@ -306,20 +302,8 @@ components:
         - requesterId
         - isAdvertiserSelected
         - backendChannelId
-        - backendMessageId
         - message
         - createdAt
-    BoostRequestBackendSignupMessage:
-      type: object
-      description: Discord channel and message id of the boost request signup message.
-      properties:
-        channelId:
-          type: string
-        messageId:
-          type: string
-      required:
-        - channelId
-        - messageId
 
 security:
   - ApiKeyAuth: []

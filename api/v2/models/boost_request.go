@@ -8,19 +8,18 @@ import (
 )
 
 type BoostRequest struct {
-	ID                     string                        `json:"id"`
-	RequesterID            string                        `json:"requesterId"`
-	IsAdvertiserSelected   bool                          `json:"isAdvertiserSelected"`
-	AdvertiserID           string                        `json:"advertiserId,omitempty"`
-	BackendMessages        []*BoostRequestBackendMessage `json:"backendMessages"`
-	Message                string                        `json:"message"`
-	Price                  int64                         `json:"price,string,omitempty"`
-	Discount               int64                         `json:"discount,string,omitempty"`
-	AdvertiserCut          int64                         `json:"advertiserCut,string,omitempty"`
-	AdvertiserRoleCuts     map[string]string             `json:"advertiserRoleCuts,omitempty"`
-	PreferredAdvertiserIDs []string                      `json:"preferredAdvertiserIds,omitempty"`
-	CreatedAt              string                        `json:"createdAt"`
-	AdvertiserSelectedAt   string                        `json:"advertiserSelectedAt,omitempty"`
+	ID                     string            `json:"id"`
+	RequesterID            string            `json:"requesterId"`
+	IsAdvertiserSelected   bool              `json:"isAdvertiserSelected"`
+	AdvertiserID           string            `json:"advertiserId,omitempty"`
+	Message                string            `json:"message"`
+	Price                  int64             `json:"price,string,omitempty"`
+	Discount               int64             `json:"discount,string,omitempty"`
+	AdvertiserCut          int64             `json:"advertiserCut,string,omitempty"`
+	AdvertiserRoleCuts     map[string]string `json:"advertiserRoleCuts,omitempty"`
+	PreferredAdvertiserIDs []string          `json:"preferredAdvertiserIds,omitempty"`
+	CreatedAt              string            `json:"createdAt"`
+	AdvertiserSelectedAt   string            `json:"advertiserSelectedAt,omitempty"`
 }
 
 type BoostRequestPartial struct {
@@ -64,7 +63,6 @@ func FromRepositoryBoostRequest(br *repository.BoostRequest) *BoostRequest {
 		RequesterID:            br.RequesterID,
 		IsAdvertiserSelected:   br.IsResolved,
 		AdvertiserID:           br.AdvertiserID,
-		BackendMessages:        FromRepositoryBackendMessages(br.BackendMessages),
 		Message:                br.Message,
 		Price:                  br.Price,
 		Discount:               br.Discount,
