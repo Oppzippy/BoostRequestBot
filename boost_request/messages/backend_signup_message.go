@@ -14,7 +14,7 @@ type BackendSignupMessage struct {
 	boostRequest      *repository.BoostRequest
 	localizer         *i18n.Localizer
 	discountFormatter *partials.DiscountFormatter
-	embedPartial      *partials.BoostRequestEmbedPartial
+	embedPartial      *partials.BoostRequestEmbedTemplate
 }
 
 func NewBackendSignupMessage(
@@ -24,7 +24,7 @@ func NewBackendSignupMessage(
 		boostRequest:      br,
 		localizer:         localizer,
 		discountFormatter: df,
-		embedPartial:      partials.NewBoostRequestEmbedPartial(localizer, df, br),
+		embedPartial:      partials.NewBoostRequestEmbedTemplate(localizer, df, br),
 	}
 }
 

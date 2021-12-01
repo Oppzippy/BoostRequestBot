@@ -13,7 +13,7 @@ type AdvertiserChosenDMToRequester struct {
 	userProvider      userProvider
 	discountFormatter *partials.DiscountFormatter
 	boostRequest      *repository.BoostRequest
-	embedPartial      *partials.BoostRequestEmbedPartial
+	embedPartial      *partials.BoostRequestEmbedTemplate
 }
 
 func NewAdvertiserChosenDMToRequester(
@@ -24,7 +24,7 @@ func NewAdvertiserChosenDMToRequester(
 		userProvider:      up,
 		discountFormatter: df,
 		boostRequest:      br,
-		embedPartial:      partials.NewBoostRequestEmbedPartial(localizer, df, br),
+		embedPartial:      partials.NewBoostRequestEmbedTemplate(localizer, df, br),
 	}
 }
 

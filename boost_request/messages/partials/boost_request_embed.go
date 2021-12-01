@@ -10,7 +10,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type BoostRequestEmbedPartial struct {
+type BoostRequestEmbedTemplate struct {
 	boostRequest      *repository.BoostRequest
 	localizer         *i18n.Localizer
 	discountFormatter *DiscountFormatter
@@ -26,17 +26,17 @@ type BoostRequestEmbedConfiguration struct {
 	ID                   bool
 }
 
-func NewBoostRequestEmbedPartial(
+func NewBoostRequestEmbedTemplate(
 	localizer *i18n.Localizer, df *DiscountFormatter, br *repository.BoostRequest,
-) *BoostRequestEmbedPartial {
-	return &BoostRequestEmbedPartial{
+) *BoostRequestEmbedTemplate {
+	return &BoostRequestEmbedTemplate{
 		boostRequest:      br,
 		localizer:         localizer,
 		discountFormatter: df,
 	}
 }
 
-func (m *BoostRequestEmbedPartial) Embed(config BoostRequestEmbedConfiguration) (*discordgo.MessageEmbed, error) {
+func (m *BoostRequestEmbedTemplate) Embed(config BoostRequestEmbedConfiguration) (*discordgo.MessageEmbed, error) {
 	embed := &discordgo.MessageEmbed{
 		Title: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
@@ -86,7 +86,7 @@ func (m *BoostRequestEmbedPartial) Embed(config BoostRequestEmbedConfiguration) 
 	return embed, nil
 }
 
-func (m *BoostRequestEmbedPartial) preferredAdvertisersField() *discordgo.MessageEmbedField {
+func (m *BoostRequestEmbedTemplate) preferredAdvertisersField() *discordgo.MessageEmbedField {
 	if len(m.boostRequest.PreferredAdvertiserIDs) > 0 {
 		mentions := make([]string, 0, len(m.boostRequest.PreferredAdvertiserIDs))
 		for id := range m.boostRequest.PreferredAdvertiserIDs {
@@ -107,7 +107,7 @@ func (m *BoostRequestEmbedPartial) preferredAdvertisersField() *discordgo.Messag
 	return nil
 }
 
-func (m *BoostRequestEmbedPartial) messageField() *discordgo.MessageEmbedField {
+func (m *BoostRequestEmbedTemplate) messageField() *discordgo.MessageEmbedField {
 	if m.boostRequest.Message != "" {
 		return &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -124,7 +124,7 @@ func (m *BoostRequestEmbedPartial) messageField() *discordgo.MessageEmbedField {
 	return nil
 }
 
-func (m *BoostRequestEmbedPartial) priceField() *discordgo.MessageEmbedField {
+func (m *BoostRequestEmbedTemplate) priceField() *discordgo.MessageEmbedField {
 	if m.boostRequest.Price != 0 {
 		return &discordgo.MessageEmbedField{
 			Name:   "Price",
@@ -135,7 +135,7 @@ func (m *BoostRequestEmbedPartial) priceField() *discordgo.MessageEmbedField {
 	return nil
 }
 
-func (m *BoostRequestEmbedPartial) advertiserCutField() *discordgo.MessageEmbedField {
+func (m *BoostRequestEmbedTemplate) advertiserCutField() *discordgo.MessageEmbedField {
 	if m.boostRequest.AdvertiserCut != 0 {
 		return &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -153,7 +153,7 @@ func (m *BoostRequestEmbedPartial) advertiserCutField() *discordgo.MessageEmbedF
 	return nil
 }
 
-func (m *BoostRequestEmbedPartial) roleDiscountFields() *discordgo.MessageEmbedField {
+func (m *BoostRequestEmbedTemplate) roleDiscountFields() *discordgo.MessageEmbedField {
 	if m.boostRequest.Price != 0 {
 		return &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -183,7 +183,7 @@ func (m *BoostRequestEmbedPartial) roleDiscountFields() *discordgo.MessageEmbedF
 	return nil
 }
 
-func (m *BoostRequestEmbedPartial) discountTotalsFields() []*discordgo.MessageEmbedField {
+func (m *BoostRequestEmbedTemplate) discountTotalsFields() []*discordgo.MessageEmbedField {
 	if m.boostRequest.Discount != 0 && m.boostRequest.Price != 0 {
 		fields := []*discordgo.MessageEmbedField{
 			{
@@ -218,7 +218,7 @@ func (m *BoostRequestEmbedPartial) discountTotalsFields() []*discordgo.MessageEm
 	return nil
 }
 
-func (m *BoostRequestEmbedPartial) idFooter() *discordgo.MessageEmbedFooter {
+func (m *BoostRequestEmbedTemplate) idFooter() *discordgo.MessageEmbedFooter {
 	return &discordgo.MessageEmbedFooter{
 		Text: m.boostRequest.ExternalID.String(),
 	}

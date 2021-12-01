@@ -13,7 +13,7 @@ type BackendAdvertiserChosenMessage struct {
 	localizer    *i18n.Localizer
 	boostRequest *repository.BoostRequest
 	userProvider userProvider
-	embedPartial *partials.BoostRequestEmbedPartial
+	embedPartial *partials.BoostRequestEmbedTemplate
 }
 
 func NewBackendAdvertiserChosenMessage(
@@ -23,7 +23,7 @@ func NewBackendAdvertiserChosenMessage(
 		localizer:    localizer,
 		boostRequest: br,
 		userProvider: up,
-		embedPartial: partials.NewBoostRequestEmbedPartial(localizer, df, br),
+		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, df, br),
 	}
 }
 
