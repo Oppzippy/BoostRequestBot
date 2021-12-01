@@ -19,7 +19,7 @@ type BoostRequestPartial struct {
 	AdvertiserCut            int64
 	AdvertiserRoleCuts       map[string]int64
 	Discount                 int64
-	BackendMessageChannelIDs []string
+	BackendMessageChannelIDs map[string]struct{}
 }
 
 func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequestPartial, error) {
@@ -48,7 +48,8 @@ func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequest
 	}
 
 	if br.BackendChannelID != "" {
-		brPartial.BackendMessageChannelIDs = []string{br.BackendChannelID}
+		brPartial.BackendMessageChannelIDs = make(map[string]struct{})
+		brPartial.BackendMessageChannelIDs[br.BackendChannelID] = struct{}{}
 	}
 
 	return brPartial, nil
@@ -69,6 +70,9 @@ func FromModelBoostRequestPartialV1(br *models_v1.BoostRequestPartial) (*BoostRe
 		preferredAdvertiserIDs[advertiserID] = struct{}{}
 	}
 
+	backendMessageChannelIDs := make(map[string]struct{})
+	backendMessageChannelIDs[br.BackendChannelID] = struct{}{}
+
 	return &BoostRequestPartial{
 		RequesterID:              br.RequesterID,
 		Message:                  br.Message,
@@ -77,6 +81,6 @@ func FromModelBoostRequestPartialV1(br *models_v1.BoostRequestPartial) (*BoostRe
 		AdvertiserCut:            br.AdvertiserCut,
 		AdvertiserRoleCuts:       roleCuts,
 		Discount:                 br.Discount,
-		BackendMessageChannelIDs: []string{br.BackendChannelID},
+		BackendMessageChannelIDs: backendMessageChannelIDs,
 	}, nil
 }

@@ -122,7 +122,7 @@ func (brm *BoostRequestManager) partialToBoostRequest(brc *repository.BoostReque
 	return br, nil
 }
 
-func (brm *BoostRequestManager) dispatchBoostRequest(br *repository.BoostRequest, backendChannelIDs []string) error {
+func (brm *BoostRequestManager) dispatchBoostRequest(br *repository.BoostRequest, backendChannelIDs map[string]struct{}) error {
 	sequenceArgs := sequences.CreateSequenceArgs{
 		Repository:               brm.repo,
 		BoostRequest:             br,
@@ -134,16 +134,17 @@ func (brm *BoostRequestManager) dispatchBoostRequest(br *repository.BoostRequest
 	}
 	if len(sequenceArgs.BackendMessageChannelIDs) == 0 {
 		if br.Channel != nil {
-			sequenceArgs.BackendMessageChannelIDs = []string{br.Channel.BackendChannelID}
+			sequenceArgs.BackendMessageChannelIDs = make(map[string]struct{})
+			sequenceArgs.BackendMessageChannelIDs[br.Channel.BackendChannelID] = struct{}{}
 		} else if len(br.PreferredAdvertiserIDs) > 0 {
 			// DM all preferred advertisers if preferred advertisers are set
-			channels := make([]string, 0, len(br.PreferredAdvertiserIDs))
+			channels := make(map[string]struct{}, len(br.PreferredAdvertiserIDs))
 			for userID := range br.PreferredAdvertiserIDs {
 				channel, err := brm.discord.UserChannelCreate(userID)
 				if err != nil {
 					return err
 				}
-				channels = append(channels, channel.ID)
+				channels[channel.ID] = struct{}{}
 			}
 			sequenceArgs.BackendMessageChannelIDs = channels
 		} else {

@@ -16,7 +16,7 @@ type CreateSequenceArgs struct {
 	Discord                  *discordgo.Session
 	Messenger                *messenger.BoostRequestMessenger
 	ActiveRequests           *sync.Map
-	BackendMessageChannelIDs []string
+	BackendMessageChannelIDs map[string]struct{}
 	SetWinnerCallback        func(*active_request.AdvertiserChosenEvent)
 }
 

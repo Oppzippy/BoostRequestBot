@@ -12,10 +12,10 @@ type sendMessageStep struct {
 	discord    *discordgo.Session
 	messenger  *messenger.BoostRequestMessenger
 	br         *repository.BoostRequest
-	channelIDs []string
+	channelIDs map[string]struct{}
 }
 
-func NewSendMessageStep(discord *discordgo.Session, messenger *messenger.BoostRequestMessenger, br *repository.BoostRequest, channelIDs []string) *sendMessageStep {
+func NewSendMessageStep(discord *discordgo.Session, messenger *messenger.BoostRequestMessenger, br *repository.BoostRequest, channelIDs map[string]struct{}) *sendMessageStep {
 	return &sendMessageStep{
 		discord:    discord,
 		messenger:  messenger,
@@ -33,7 +33,7 @@ func (step *sendMessageStep) Apply() (RevertFunction, error) {
 
 	reverts := make([]RevertFunction, 0, len(step.channelIDs))
 	var err error
-	for _, channelID := range step.channelIDs {
+	for channelID := range step.channelIDs {
 		var revert RevertFunction
 		revert, err = step.send(channelID)
 		if err != nil {
