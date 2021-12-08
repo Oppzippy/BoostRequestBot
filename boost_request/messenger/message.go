@@ -14,14 +14,14 @@ type messageGenerator interface {
 }
 
 type message struct {
-	dest     *MessageDestination
-	sendable messageGenerator
+	dest *MessageDestination
+	mg   messageGenerator
 }
 
-func newMessage(dest *MessageDestination, sendable messageGenerator) *message {
+func newMessage(dest *MessageDestination, mg messageGenerator) *message {
 	return &message{
-		dest:     dest,
-		sendable: sendable,
+		dest: dest,
+		mg:   mg,
 	}
 }
 
@@ -30,7 +30,7 @@ func (m *message) Send(discord *discordgo.Session) (*discordgo.Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolving channel id: %v", err)
 	}
-	message, err := m.sendable.Message()
+	message, err := m.mg.Message()
 	if err != nil {
 		return nil, fmt.Errorf("generating message: %v", err)
 	}

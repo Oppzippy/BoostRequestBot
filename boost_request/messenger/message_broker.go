@@ -23,22 +23,22 @@ func newMessageBroker(discord *discordgo.Session) *messageBroker {
 	}
 }
 
-func (mb *messageBroker) Send(dest *MessageDestination, sendableMessage messageGenerator) (*discordgo.Message, error) {
-	m := newMessage(dest, sendableMessage)
+func (mb *messageBroker) Send(dest *MessageDestination, mg messageGenerator) (*discordgo.Message, error) {
+	m := newMessage(dest, mg)
 	sentMessage, err := m.Send(mb.discord)
 	return sentMessage, err
 }
 
-func (mb *messageBroker) SendDelayed(dest *MessageDestination, sendableMessage messageGenerator, delay time.Duration) (<-chan *discordgo.Message, <-chan error) {
-	m := newMessage(dest, sendableMessage)
+func (mb *messageBroker) SendDelayed(dest *MessageDestination, mg messageGenerator, delay time.Duration) (<-chan *discordgo.Message, <-chan error) {
+	m := newMessage(dest, mg)
 	dm := newAsyncMessage(newDelayedMessage(m, delay))
 
 	return dm.Send(mb.discord)
 }
 
-func (mb *messageBroker) SendTemporaryMessage(dest *MessageDestination, sendableMessage messageGenerator) (*discordgo.Message, <-chan error) {
+func (mb *messageBroker) SendTemporaryMessage(dest *MessageDestination, mg messageGenerator) (*discordgo.Message, <-chan error) {
 	errChannel := make(chan error, 1)
-	m := newMessage(dest, sendableMessage)
+	m := newMessage(dest, mg)
 	sentMessage, err := m.Send(mb.discord)
 	if err != nil {
 		errChannel <- fmt.Errorf("sending temporary message: %v", err)

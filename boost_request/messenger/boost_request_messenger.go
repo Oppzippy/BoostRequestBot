@@ -205,8 +205,8 @@ func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(userID string, credi
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) send(dest *MessageDestination, sendableMessage messageGenerator) (*discordgo.Message, error) {
-	m, err := messenger.messageBroker.Send(dest, sendableMessage)
+func (messenger *BoostRequestMessenger) send(dest *MessageDestination, mg messageGenerator) (*discordgo.Message, error) {
+	m, err := messenger.messageBroker.Send(dest, mg)
 	if dest.DestinationType == DestinationUser && err == errDMBlocked {
 		_, dmBlockedErr := messenger.sendDMBlockedMessage(dest.FallbackChannelID, dest.DestinationID)
 		if dmBlockedErr != nil {
