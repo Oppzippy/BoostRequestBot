@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -17,22 +15,26 @@ import (
 )
 
 type BoostRequestMessenger struct {
-	Destroyed bool
-	discord   *discordgo.Session
-	bundle    *i18n.Bundle
-	waitGroup *sync.WaitGroup
-	quit      chan struct{}
+	Destroyed     bool
+	discord       *discordgo.Session
+	bundle        *i18n.Bundle
+	messageBroker *messageBroker
+	rnp           *messages.DiscordRoleNameProvider
 }
 
 func NewBoostRequestMessenger(discord *discordgo.Session, bundle *i18n.Bundle) *BoostRequestMessenger {
 	brm := BoostRequestMessenger{
-		Destroyed: false,
-		discord:   discord,
-		bundle:    bundle,
-		waitGroup: new(sync.WaitGroup),
-		quit:      make(chan struct{}),
+		Destroyed:     false,
+		discord:       discord,
+		bundle:        bundle,
+		messageBroker: newMessageBroker(discord),
+		rnp:           messages.NewDiscordRoleNameProvider(discord),
 	}
 	return &brm
+}
+
+func (messenger *BoostRequestMessenger) Destroy() {
+	messenger.messageBroker.Destroy()
 }
 
 func (messenger *BoostRequestMessenger) SendBackendSignupMessage(
@@ -40,12 +42,10 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(
 	channelID string,
 	buttonConfiguration BackendSignupMessageButtonConfiguration,
 ) (*discordgo.Message, error) {
+	localizer := messenger.localizer("en")
 	m := messages.NewBackendSignupMessage(
-		messenger.localizer("en"),
-		partials.NewDiscountFormatter(
-			messenger.localizer("en"),
-			messages.NewDiscordRoleNameProvider(messenger.discord),
-		),
+		localizer,
+		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 		buttonConfiguration,
 	)
@@ -63,7 +63,7 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository
 
 	m := messages.NewBoostRequestCreatedDM(localizer,
 		messenger.discord,
-		partials.NewDiscountFormatter(messenger.localizer(), messages.NewDiscordRoleNameProvider(messenger.discord)),
+		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 	)
 
@@ -88,7 +88,7 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 	m := messages.NewBackendAdvertiserChosenMessage(
 		localizer,
 		messenger.discord,
-		partials.NewDiscountFormatter(localizer, messages.NewDiscordRoleNameProvider(messenger.discord)),
+		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 	)
 
@@ -132,10 +132,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
 	m := messages.NewAdvertiserChosenDMToRequester(
 		localizer,
 		messenger.discord,
-		partials.NewDiscountFormatter(
-			localizer,
-			messages.NewDiscordRoleNameProvider(messenger.discord),
-		),
+		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 	)
 
@@ -159,10 +156,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
 	m := messages.NewAdvertiserChosenDMToAdvertiser(
 		localizer,
 		messenger.discord,
-		partials.NewDiscountFormatter(
-			localizer,
-			messages.NewDiscordRoleNameProvider(messenger.discord),
-		),
+		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 	)
 
@@ -211,71 +205,40 @@ func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(userID string, credi
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) Destroy() {
-	if !messenger.Destroyed {
-		messenger.Destroyed = true
-		close(messenger.quit)
-		messenger.waitGroup.Wait()
+func (messenger *BoostRequestMessenger) send(dest *MessageDestination, sendableMessage messageGenerator) (*discordgo.Message, error) {
+	m, err := messenger.messageBroker.Send(dest, sendableMessage)
+	if dest.DestinationType == DestinationUser && err == errDMBlocked {
+		_, dmBlockedErr := messenger.sendDMBlockedMessage(dest.FallbackChannelID, dest.DestinationID)
+		if dmBlockedErr != nil {
+			return nil, fmt.Errorf("dm was blocked: %v, error sending dm blocked message: %v", err, dmBlockedErr)
+		}
+		return nil, fmt.Errorf("dm was blocked but the user was informed of the issue: %v", err)
+	}
+	return m, err
+}
+
+func (messenger *BoostRequestMessenger) sendDMBlockedMessage(channelID, userID string) (*discordgo.Message, error) {
+	sentMessage, errChannel := messenger.messageBroker.SendTemporaryMessage(
+		&MessageDestination{
+			DestinationID:   channelID,
+			DestinationType: DestinationChannel,
+		},
+		messages.NewDMBlockedMessage(messenger.localizer("en"), userID),
+	)
+	select {
+	case err := <-errChannel:
+		return nil, err
+	default:
+		go func() {
+			err, ok := <-errChannel
+			if ok && err != nil {
+				log.Printf("send DM blocked message: %v", err)
+			}
+		}()
+		return sentMessage, nil
 	}
 }
 
 func (messenger *BoostRequestMessenger) localizer(langs ...string) *i18n.Localizer {
 	return i18n.NewLocalizer(messenger.bundle, langs...)
-}
-
-type sendable interface {
-	Message() (*discordgo.MessageSend, error)
-}
-
-func (messenger *BoostRequestMessenger) send(dest *MessageDestination, sendableMessage sendable) (*discordgo.Message, error) {
-	channelID, err := dest.ResolveChannelID(messenger.discord)
-	if err != nil {
-		return nil, fmt.Errorf("resolving channel id: %v", err)
-	}
-	message, err := sendableMessage.Message()
-	if err != nil {
-		return nil, fmt.Errorf("generating message: %v", err)
-	}
-	m, err := messenger.discord.ChannelMessageSendComplex(channelID, message)
-
-	if err != nil && dest.DestinationType == DestinationUser {
-		restErr, ok := err.(discordgo.RESTError)
-		if ok && restErr.Message.Code == discordgo.ErrCodeCannotSendMessagesToThisUser {
-			if dest.FallbackChannelID != "" {
-				messenger.sendDMBlockedMessage(dest.FallbackChannelID, dest.DestinationID)
-			}
-		}
-	}
-
-	return m, err
-}
-
-func (messenger *BoostRequestMessenger) sendDMBlockedMessage(channelID, userID string) {
-	m := messages.NewDMBlockedMessage(messenger.localizer("en"), userID)
-	message, err := m.Message()
-	if err != nil {
-		log.Printf("error generating dm blocked message: %v", err)
-		return
-	}
-	messenger.sendTemporaryMessage(channelID, message)
-}
-
-func (messenger *BoostRequestMessenger) sendTemporaryMessage(channelID string, content *discordgo.MessageSend) {
-	message, err := messenger.discord.ChannelMessageSendComplex(channelID, content)
-	if err == nil {
-		messenger.waitGroup.Add(1)
-		go func() {
-			select {
-			case <-time.After(30 * time.Second):
-			case <-messenger.quit:
-			}
-			err := messenger.discord.ChannelMessageDelete(message.ChannelID, message.ID)
-			if err != nil {
-				log.Printf("Error deleting temporary message: %v", err)
-			}
-			messenger.waitGroup.Done()
-		}()
-	} else {
-		log.Printf("Error sending temporary message: %v", err)
-	}
 }
