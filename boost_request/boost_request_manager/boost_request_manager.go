@@ -77,6 +77,9 @@ func (brm *BoostRequestManager) CreateBoostRequest(
 	if err != nil {
 		return nil, err
 	}
+
+	go brm.applyAutoSignups(br)
+
 	return br, nil
 }
 
@@ -380,4 +383,17 @@ func (brm *BoostRequestManager) CancelBoostRequest(br *repository.BoostRequest) 
 	activeRequest := activeRequestInterface.(*active_request.ActiveRequest)
 	activeRequest.Destroy()
 	return nil
+}
+
+func (brm *BoostRequestManager) applyAutoSignups(br *repository.BoostRequest) {
+	autoSignupSessions, err := brm.repo.GetEnabledAutoSignupsInGuild(br.GuildID)
+	if err != nil {
+		log.Printf("Error fetching auto signup sessions for guild: %v", err)
+	}
+	for _, s := range autoSignupSessions {
+		err := brm.AddAdvertiserToBoostRequest(br, s.AdvertiserID)
+		if err != nil {
+			log.Printf("Error auto signing up for boost request: %v", err)
+		}
+	}
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/oppzippy/BoostRequestBot/boost_request/application_commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/interactions"
@@ -55,6 +56,20 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestSignUpHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignUpHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCheckCutHandler(repo))
+	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignUpEnableHandler(repo, brm))
+
+	discord.AddHandler(func(discord *discordgo.Session, event *discordgo.Connect) {
+		_, err := discord.ApplicationCommandBulkOverwrite(
+			discord.State.User.ID,
+			"",
+			[]*discordgo.ApplicationCommand{
+				application_commands.BoostRequestCommand,
+			},
+		)
+		if err != nil {
+			log.Printf("Failed to create application command: %v", err)
+		}
+	})
 
 	return brdh
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -22,6 +23,7 @@ type Repository interface {
 	StealCreditRepository
 	RollChannelRepository
 	WebhookRepository
+	AutoSignupSessionRepository
 }
 
 type ApiKeyRepository interface {
@@ -126,4 +128,12 @@ type WebhookRepository interface {
 	InsertQueuedWebhook(webhook Webhook, body string) error
 	GetQueuedWebhooks() ([]*QueuedWebhookRequest, error)
 	InsertWebhookAttempt(attempt WebhookAttempt) error
+}
+
+type AutoSignupSessionRepository interface {
+	IsAutoSignupEnabled(guildID, advertiserID string) (bool, error)
+	EnableAutoSignup(guildID, advertiserID string, expiresAt time.Time) error
+	CancelAutoSignup(guildID, advertiserID string) error
+	GetEnabledAutoSignups() ([]*AutoSignupSession, error)
+	GetEnabledAutoSignupsInGuild(guildID string) ([]*AutoSignupSession, error)
 }
