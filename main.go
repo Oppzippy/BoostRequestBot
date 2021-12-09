@@ -19,6 +19,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/commands"
+	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/middleware"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	db_repository "github.com/oppzippy/BoostRequestBot/boost_request/repository/database"
@@ -49,11 +50,14 @@ func main() {
 	defer discord.Close()
 
 	var repo repository.Repository = db_repository.NewRepository(db)
-	brm := boost_request_manager.NewBoostRequestManager(discord, repo, localeBundle)
+
+	messenger := messenger.NewBoostRequestMessenger(discord, localeBundle, repo)
+
+	brm := boost_request_manager.NewBoostRequestManager(discord, repo, localeBundle, messenger)
 	defer brm.Destroy()
 	brm.LoadBoostRequests()
 
-	brdh := boost_request.NewBoostRequestDiscordHandler(discord, repo, brm, localeBundle)
+	brdh := boost_request.NewBoostRequestDiscordHandler(discord, repo, brm, localeBundle, messenger)
 	defer brdh.Destroy()
 	registerCommandRouter(discord, repo)
 

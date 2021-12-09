@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -15,22 +16,47 @@ import (
 )
 
 type BoostRequestMessenger struct {
-	Destroyed     bool
-	discord       *discordgo.Session
-	bundle        *i18n.Bundle
-	messageBroker *messageBroker
-	rnp           *messages.DiscordRoleNameProvider
+	Destroyed                bool
+	discord                  *discordgo.Session
+	bundle                   *i18n.Bundle
+	messageBroker            *messageBroker
+	rnp                      *messages.DiscordRoleNameProvider
+	delayedMessageRepository repository.DelayedMessageRepository
 }
 
-func NewBoostRequestMessenger(discord *discordgo.Session, bundle *i18n.Bundle) *BoostRequestMessenger {
+func NewBoostRequestMessenger(
+	discord *discordgo.Session,
+	bundle *i18n.Bundle,
+	delayedMessageRepository repository.DelayedMessageRepository,
+) *BoostRequestMessenger {
 	brm := BoostRequestMessenger{
-		Destroyed:     false,
-		discord:       discord,
-		bundle:        bundle,
-		messageBroker: newMessageBroker(discord),
-		rnp:           messages.NewDiscordRoleNameProvider(discord),
+		Destroyed:                false,
+		discord:                  discord,
+		bundle:                   bundle,
+		messageBroker:            newMessageBroker(discord),
+		rnp:                      messages.NewDiscordRoleNameProvider(discord),
+		delayedMessageRepository: delayedMessageRepository,
 	}
+	brm.loadDelayedMessages()
+
 	return &brm
+}
+
+func (messenger *BoostRequestMessenger) loadDelayedMessages() error {
+	delayedMessages, err := messenger.delayedMessageRepository.GetDelayedMessages()
+	if err != nil {
+		return err
+	}
+	for _, delayedMessage := range delayedMessages {
+		_, errChannel := messenger.addExistingDelayedMessage(delayedMessage)
+		go func() {
+			err, ok := <-errChannel
+			if ok && err != nil {
+				log.Printf("Error sending delayed message: %v", err)
+			}
+		}()
+	}
+	return nil
 }
 
 func (messenger *BoostRequestMessenger) Destroy() {
@@ -205,6 +231,15 @@ func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(userID string, credi
 	return message, err
 }
 
+func (messenger *BoostRequestMessenger) SendAutoSignUpExpiredMessage(userID string, expiresAt time.Time) (<-chan *discordgo.Message, <-chan error) {
+	m := messages.NewAutoSignUpExpiredMessage(messenger.localizer("en"))
+	delay := time.Until(expiresAt)
+	return messenger.sendDelayed(&MessageDestination{
+		DestinationID:   userID,
+		DestinationType: DestinationUser,
+	}, m, delay)
+}
+
 func (messenger *BoostRequestMessenger) send(dest *MessageDestination, mg messageGenerator) (*discordgo.Message, error) {
 	m, err := messenger.messageBroker.Send(dest, mg)
 	if dest.DestinationType == DestinationUser && err == errDMBlocked {
@@ -215,6 +250,87 @@ func (messenger *BoostRequestMessenger) send(dest *MessageDestination, mg messag
 		return nil, fmt.Errorf("dm was blocked but the user was informed of the issue: %v", err)
 	}
 	return m, err
+}
+
+func (messenger *BoostRequestMessenger) sendDelayed(
+	dest *MessageDestination,
+	mg messageGenerator,
+	delay time.Duration,
+) (<-chan *discordgo.Message, <-chan error) {
+	delayedMessageDTO, err := messenger.storeDelayedMessageInRepository(dest, mg, delay)
+	if err != nil {
+		messageChannel, errChannel := make(chan *discordgo.Message, 1), make(chan error, 1)
+		errChannel <- err
+		close(messageChannel)
+		close(errChannel)
+		return messageChannel, errChannel
+	}
+
+	return messenger.addExistingDelayedMessage(delayedMessageDTO)
+}
+
+func (messenger *BoostRequestMessenger) storeDelayedMessageInRepository(
+	dest *MessageDestination,
+	mg messageGenerator,
+	delay time.Duration,
+) (*repository.DelayedMessage, error) {
+	destType := repository.DestinationTypeChannel
+	if dest.DestinationType == DestinationUser {
+		destType = repository.DestinationTypeUser
+	}
+	message, err := mg.Message()
+	if err != nil {
+		return nil, err
+	}
+
+	delayedMessageDTO := repository.DelayedMessage{
+		DestinationID:     dest.DestinationID,
+		DestinationType:   destType,
+		FallbackChannelID: dest.FallbackChannelID,
+		Message:           message,
+		SendAt:            time.Now().Add(delay),
+	}
+	err = messenger.delayedMessageRepository.InsertDelayedMessage(&delayedMessageDTO)
+	if err != nil {
+		return nil, err
+	}
+
+	return &delayedMessageDTO, nil
+}
+
+func (messenger *BoostRequestMessenger) addExistingDelayedMessage(
+	delayedMessageDTO *repository.DelayedMessage,
+) (<-chan *discordgo.Message, <-chan error) {
+	messageChannel, errChannel := make(chan *discordgo.Message, 1), make(chan error, 1)
+
+	go func() {
+		defer close(messageChannel)
+		defer close(errChannel)
+
+		destType := DestinationChannel
+		if delayedMessageDTO.DestinationType == repository.DestinationTypeUser {
+			destType = DestinationUser
+		}
+
+		sendDelayedMessage, sendDelayedErr := messenger.messageBroker.SendDelayed(
+			&MessageDestination{
+				DestinationID:     delayedMessageDTO.DestinationID,
+				DestinationType:   destType,
+				FallbackChannelID: delayedMessageDTO.FallbackChannelID,
+			},
+			messages.NewStaticMessage(delayedMessageDTO.Message),
+			time.Until(delayedMessageDTO.SendAt),
+		)
+		select {
+		case m := <-sendDelayedMessage:
+			messageChannel <- m
+		case err := <-sendDelayedErr:
+			errChannel <- err
+		}
+		messenger.delayedMessageRepository.FlagDelayedMessageAsSent(delayedMessageDTO)
+	}()
+
+	return messageChannel, errChannel
 }
 
 func (messenger *BoostRequestMessenger) sendDMBlockedMessage(channelID, userID string) (*discordgo.Message, error) {

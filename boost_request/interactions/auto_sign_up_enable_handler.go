@@ -56,7 +56,7 @@ func (h *AutoSignUpEnableHandler) Handle(discord *discordgo.Session, event *disc
 		}
 	}
 
-	err := h.repo.EnableAutoSignup(event.GuildID, event.Member.User.ID, time.Now().UTC().Add(duration))
+	err := h.brm.EnableAutoSignUp(event.GuildID, event.Member.User.ID, duration)
 	if err != nil {
 		return err
 	}

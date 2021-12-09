@@ -29,12 +29,17 @@ type BoostRequestManager struct {
 	isLoadedLock   *sync.Mutex
 }
 
-func NewBoostRequestManager(discord *discordgo.Session, repo repository.Repository, bundle *i18n.Bundle) *BoostRequestManager {
+func NewBoostRequestManager(
+	discord *discordgo.Session,
+	repo repository.Repository,
+	bundle *i18n.Bundle,
+	messenger *messenger.BoostRequestMessenger,
+) *BoostRequestManager {
 	brm := &BoostRequestManager{
 		discord:        discord,
 		repo:           repo,
 		bundle:         bundle,
-		messenger:      messenger.NewBoostRequestMessenger(discord, bundle),
+		messenger:      messenger,
 		webhookManager: webhook.NewWebhookManager(repo),
 		activeRequests: new(sync.Map),
 		isLoadedLock:   new(sync.Mutex),
@@ -382,6 +387,22 @@ func (brm *BoostRequestManager) CancelBoostRequest(br *repository.BoostRequest) 
 	}
 	activeRequest := activeRequestInterface.(*active_request.ActiveRequest)
 	activeRequest.Destroy()
+	return nil
+}
+
+func (brm *BoostRequestManager) EnableAutoSignUp(guildID, userID string, duration time.Duration) error {
+	expiresAt := time.Now().Add(duration)
+	err := brm.repo.EnableAutoSignup(guildID, userID, expiresAt)
+	if err != nil {
+		return err
+	}
+	_, errChannel := brm.messenger.SendAutoSignUpExpiredMessage(userID, expiresAt)
+	go func() {
+		err, ok := <-errChannel
+		if ok && err != nil {
+			log.Printf("error sending auto signup expired message: %v", err)
+		}
+	}()
 	return nil
 }
 

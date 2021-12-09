@@ -27,6 +27,7 @@ func NewBoostRequestDiscordHandler(
 	repo repository.Repository,
 	brm *boost_request_manager.BoostRequestManager,
 	bundle *i18n.Bundle,
+	messenger *messenger.BoostRequestMessenger,
 ) *BoostRequestDiscordHandler {
 	brdh := &BoostRequestDiscordHandler{
 		brm:                 brm,
@@ -34,7 +35,7 @@ func NewBoostRequestDiscordHandler(
 		discord:             discord,
 		handlerRemoves:      make([]func(), 0),
 		interactionRegistry: NewInteractionRegistry(discord, bundle),
-		messenger:           messenger.NewBoostRequestMessenger(discord, bundle),
+		messenger:           messenger,
 	}
 
 	discord.StateEnabled = true

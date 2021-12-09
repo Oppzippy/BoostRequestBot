@@ -24,6 +24,7 @@ type Repository interface {
 	RollChannelRepository
 	WebhookRepository
 	AutoSignupSessionRepository
+	DelayedMessageRepository
 }
 
 type ApiKeyRepository interface {
@@ -136,4 +137,10 @@ type AutoSignupSessionRepository interface {
 	CancelAutoSignup(guildID, advertiserID string) error
 	GetEnabledAutoSignups() ([]*AutoSignupSession, error)
 	GetEnabledAutoSignupsInGuild(guildID string) ([]*AutoSignupSession, error)
+}
+
+type DelayedMessageRepository interface {
+	GetDelayedMessages() ([]*DelayedMessage, error)
+	InsertDelayedMessage(delayedMessage *DelayedMessage) error
+	FlagDelayedMessageAsSent(message *DelayedMessage) error
 }
