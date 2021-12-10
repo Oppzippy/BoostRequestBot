@@ -1,6 +1,7 @@
 package database
 
 import (
+	"strings"
 	"time"
 
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
@@ -26,13 +27,13 @@ func (repo *dbRepository) IsAutoSignupEnabled(guildID, advertiserID string) (boo
 	}
 	defer rows.Close()
 
-	return rows.Next(), nil
+	return rows.Next(), rows.Err()
 }
 
-func (repo *dbRepository) EnableAutoSignup(guildID, advertiserID string, expiresAt time.Time) error {
+func (repo *dbRepository) EnableAutoSignup(guildID, advertiserID string, expiresAt time.Time) (*repository.AutoSignUpSession, error) {
 	tx, err := repo.db.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	_, err = tx.Exec(`
 		UPDATE
@@ -49,9 +50,9 @@ func (repo *dbRepository) EnableAutoSignup(guildID, advertiserID string, expires
 		time.Now().UTC(),
 	)
 	if err := rollbackIfErr(tx, err); err != nil {
-		return err
+		return nil, err
 	}
-	_, err = tx.Exec(`
+	res, err := tx.Exec(`
 		INSERT INTO
 			auto_signup_session (
 				guild_id,
@@ -66,9 +67,21 @@ func (repo *dbRepository) EnableAutoSignup(guildID, advertiserID string, expires
 		expiresAt,
 	)
 	if err := rollbackIfErr(tx, err); err != nil {
-		return err
+		return nil, err
 	}
-	return tx.Commit()
+
+	id, err := res.LastInsertId()
+	if err := rollbackIfErr(tx, err); err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+	return &repository.AutoSignUpSession{
+		ID: id,
+	}, nil
 }
 
 func (repo *dbRepository) CancelAutoSignup(guildID, advertiserID string) error {
@@ -133,4 +146,51 @@ func (repo *dbRepository) getAutoSignups(where string, args ...interface{}) ([]*
 		sessions = append(sessions, &session)
 	}
 	return sessions, nil
+}
+
+func (repo *dbRepository) InsertAutoSignupDelayedMessages(autoSignup *repository.AutoSignUpSession, delayedMessages []*repository.DelayedMessage) error {
+	if len(delayedMessages) == 0 {
+		return nil
+	}
+	values := make([]interface{}, 0, len(delayedMessages)*2)
+	for _, m := range delayedMessages {
+		values = append(values, autoSignup.ID, m.ID)
+	}
+
+	_, err := repo.db.Exec(`
+		INSERT INTO
+			auto_signup_delayed_message (
+				auto_signup_id,
+				delayed_message_id
+			) VALUES (?, ?)`+strings.Repeat(", (?, ?)", len(delayedMessages)-1),
+		values...,
+	)
+	return err
+}
+
+func (repo *dbRepository) GetAutoSignupDelayedMessageIDs(autoSignup *repository.AutoSignUpSession) ([]int64, error) {
+	rows, err := repo.db.Query(`
+		SELECT
+			delayed_message_id
+		FROM
+			auto_signup_delayed_message
+		WHERE
+			auto_signup_id = ?`,
+		autoSignup.ID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ids := make([]int64, 0, 10)
+	for rows.Next() {
+		var id int64
+		err := rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
 }

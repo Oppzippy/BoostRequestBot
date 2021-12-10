@@ -12,6 +12,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+	"github.com/oppzippy/BoostRequestBot/channels"
 	"github.com/oppzippy/BoostRequestBot/roll"
 )
 
@@ -231,13 +232,54 @@ func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(userID string, credi
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendAutoSignUpExpiredMessage(userID string, expiresAt time.Time) (<-chan *discordgo.Message, <-chan error) {
+func (messenger *BoostRequestMessenger) SendAutoSignUpMessages(
+	userID string,
+	expiresAt time.Time,
+) ([]*repository.DelayedMessage, <-chan error) {
+	expiringSoonDelayedMessage, expiringSoonErrChannel := messenger.sendAutoSignUpExpiringSoonMessage(userID, expiresAt, 5*time.Minute)
+	expiredDelayedMessage, expiredErrChannel := messenger.sendAutoSignUpExpiredMessage(userID, expiresAt)
+
+	errChannel := channels.MergeErrorChannels(expiredErrChannel, expiringSoonErrChannel)
+
+	delayedMessages := make([]*repository.DelayedMessage, 0, 2)
+	if expiringSoonDelayedMessage != nil {
+		delayedMessages = append(delayedMessages, expiringSoonDelayedMessage)
+	}
+	if expiredDelayedMessage != nil {
+		delayedMessages = append(delayedMessages, expiredDelayedMessage)
+	}
+	return delayedMessages, errChannel
+}
+
+func (messenger *BoostRequestMessenger) sendAutoSignUpExpiringSoonMessage(
+	userID string,
+	expiresAt time.Time,
+	warningTime time.Duration,
+) (*repository.DelayedMessage, <-chan error) {
+	m := messages.NewAutoSignUpExpiringSoonMessage(messenger.localizer("en"), warningTime)
+	delay := time.Until(expiresAt.Add(warningTime * -1))
+	if delay > 0 {
+		messenger.sendDelayed(&MessageDestination{
+			DestinationID:   userID,
+			DestinationType: DestinationUser,
+		}, m, delay)
+	}
+	errChannel := make(chan error)
+	close(errChannel)
+	return nil, errChannel
+}
+
+func (messenger *BoostRequestMessenger) sendAutoSignUpExpiredMessage(
+	userID string,
+	expiresAt time.Time,
+) (*repository.DelayedMessage, <-chan error) {
 	m := messages.NewAutoSignUpExpiredMessage(messenger.localizer("en"))
 	delay := time.Until(expiresAt)
-	return messenger.sendDelayed(&MessageDestination{
+	delayedMessage, _, errChannel := messenger.sendDelayed(&MessageDestination{
 		DestinationID:   userID,
 		DestinationType: DestinationUser,
 	}, m, delay)
+	return delayedMessage, errChannel
 }
 
 func (messenger *BoostRequestMessenger) send(dest *MessageDestination, mg messageGenerator) (*discordgo.Message, error) {
@@ -256,17 +298,18 @@ func (messenger *BoostRequestMessenger) sendDelayed(
 	dest *MessageDestination,
 	mg messageGenerator,
 	delay time.Duration,
-) (<-chan *discordgo.Message, <-chan error) {
+) (*repository.DelayedMessage, <-chan *discordgo.Message, <-chan error) {
 	delayedMessageDTO, err := messenger.storeDelayedMessageInRepository(dest, mg, delay)
 	if err != nil {
 		messageChannel, errChannel := make(chan *discordgo.Message, 1), make(chan error, 1)
 		errChannel <- err
 		close(messageChannel)
 		close(errChannel)
-		return messageChannel, errChannel
+		return nil, messageChannel, errChannel
 	}
 
-	return messenger.addExistingDelayedMessage(delayedMessageDTO)
+	messageChannel, errChannel := messenger.addExistingDelayedMessage(delayedMessageDTO)
+	return delayedMessageDTO, messageChannel, errChannel
 }
 
 func (messenger *BoostRequestMessenger) storeDelayedMessageInRepository(

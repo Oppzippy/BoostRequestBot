@@ -23,6 +23,7 @@ func (repo *dbRepository) GetDelayedMessages() ([]*repository.DelayedMessage, er
 			delayed_message
 		WHERE
 			sent_at IS NULL AND
+			deleted_at IS NULL AND
 			send_at > ?`,
 		// Don't bother with messages over an hour old
 		time.Now().Add(-1*time.Hour),
@@ -91,6 +92,21 @@ func (repo *dbRepository) InsertDelayedMessage(delayedMessage *repository.Delaye
 		return err
 	}
 	delayedMessage.ID, err = res.LastInsertId()
+	return err
+}
+
+func (repo *dbRepository) DeleteDelayedMessage(message *repository.DelayedMessage) error {
+	_, err := repo.db.Exec(`
+		UPDATE
+			delayed_message
+		SET
+			deleted_at = ?
+		WHERE
+			id = ? AND
+			deleted_at IS NULL`,
+		time.Now().UTC(),
+		message.ID,
+	)
 	return err
 }
 
