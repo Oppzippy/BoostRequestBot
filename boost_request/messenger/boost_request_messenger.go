@@ -21,7 +21,7 @@ type BoostRequestMessenger struct {
 	Destroyed                    bool
 	discord                      *discordgo.Session
 	bundle                       *i18n.Bundle
-	messageBroker                *messageBroker
+	messageBroker                *MessageBroker
 	rnp                          *messages.DiscordRoleNameProvider
 	delayedMessageRepository     repository.DelayedMessageRepository
 	delayedMessageCancelChannels sync.Map
@@ -36,7 +36,7 @@ func NewBoostRequestMessenger(
 		Destroyed:                false,
 		discord:                  discord,
 		bundle:                   bundle,
-		messageBroker:            newMessageBroker(discord),
+		messageBroker:            NewMessageBroker(discord),
 		rnp:                      messages.NewDiscordRoleNameProvider(discord),
 		delayedMessageRepository: delayedMessageRepository,
 	}
@@ -411,6 +411,7 @@ func (messenger *BoostRequestMessenger) sendDMBlockedMessage(channelID, userID s
 			DestinationType: DestinationChannel,
 		},
 		messages.NewDMBlockedMessage(messenger.localizer("en"), userID),
+		30*time.Second,
 	)
 	select {
 	case err := <-errChannel:

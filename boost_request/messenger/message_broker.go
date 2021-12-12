@@ -8,28 +8,28 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type messageBroker struct {
+type MessageBroker struct {
 	discord   DiscordSenderAndDeleter
 	waitGroup *sync.WaitGroup
 	quit      chan struct{}
 	destroyed bool
 }
 
-func newMessageBroker(discord DiscordSenderAndDeleter) *messageBroker {
-	return &messageBroker{
+func NewMessageBroker(discord DiscordSenderAndDeleter) *MessageBroker {
+	return &MessageBroker{
 		discord:   discord,
 		waitGroup: new(sync.WaitGroup),
 		quit:      make(chan struct{}),
 	}
 }
 
-func (mb *messageBroker) Send(dest *MessageDestination, mg MessageGenerator) (*discordgo.Message, error) {
+func (mb *MessageBroker) Send(dest *MessageDestination, mg MessageGenerator) (*discordgo.Message, error) {
 	m := NewMessage(dest, mg)
 	sentMessage, err := m.Send(mb.discord)
 	return sentMessage, err
 }
 
-func (mb *messageBroker) SendDelayed(
+func (mb *MessageBroker) SendDelayed(
 	dest *MessageDestination,
 	mg MessageGenerator,
 	delay time.Duration,
@@ -41,7 +41,7 @@ func (mb *messageBroker) SendDelayed(
 	return dm.Send(mb.discord)
 }
 
-func (mb *messageBroker) SendTemporaryMessage(dest *MessageDestination, mg MessageGenerator) (*discordgo.Message, <-chan error) {
+func (mb *MessageBroker) SendTemporaryMessage(dest *MessageDestination, mg MessageGenerator, duration time.Duration) (*discordgo.Message, <-chan error) {
 	errChannel := make(chan error, 1)
 	m := NewMessage(dest, mg)
 	sentMessage, err := m.Send(mb.discord)
@@ -56,7 +56,7 @@ func (mb *messageBroker) SendTemporaryMessage(dest *MessageDestination, mg Messa
 		defer close(errChannel)
 
 		select {
-		case <-time.After(30 * time.Second):
+		case <-time.After(duration):
 		case <-mb.quit:
 		}
 
@@ -69,7 +69,7 @@ func (mb *messageBroker) SendTemporaryMessage(dest *MessageDestination, mg Messa
 	return sentMessage, errChannel
 }
 
-func (mb *messageBroker) Destroy() {
+func (mb *MessageBroker) Destroy() {
 	if !mb.destroyed {
 		mb.destroyed = true
 		close(mb.quit)
