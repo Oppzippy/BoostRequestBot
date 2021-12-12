@@ -2,17 +2,17 @@ package messenger
 
 import "github.com/bwmarrin/discordgo"
 
-type asyncMessage struct {
-	sendable sendable
+type AsyncMessage struct {
+	sendable Sendable
 }
 
-func newAsyncMessage(sendable sendable) *asyncMessage {
-	return &asyncMessage{
+func NewAsyncMessage(sendable Sendable) *AsyncMessage {
+	return &AsyncMessage{
 		sendable: sendable,
 	}
 }
 
-func (m *asyncMessage) Send(discord *discordgo.Session) (<-chan *discordgo.Message, <-chan error) {
+func (m *AsyncMessage) Send(discord DiscordSender) (<-chan *discordgo.Message, <-chan error) {
 	messageChannel := make(chan *discordgo.Message, 1)
 	errChannel := make(chan error, 1)
 	go func() {

@@ -9,13 +9,13 @@ import (
 )
 
 type messageBroker struct {
-	discord   *discordgo.Session
+	discord   DiscordSenderAndDeleter
 	waitGroup *sync.WaitGroup
 	quit      chan struct{}
 	destroyed bool
 }
 
-func newMessageBroker(discord *discordgo.Session) *messageBroker {
+func newMessageBroker(discord DiscordSenderAndDeleter) *messageBroker {
 	return &messageBroker{
 		discord:   discord,
 		waitGroup: new(sync.WaitGroup),
@@ -23,27 +23,27 @@ func newMessageBroker(discord *discordgo.Session) *messageBroker {
 	}
 }
 
-func (mb *messageBroker) Send(dest *MessageDestination, mg messageGenerator) (*discordgo.Message, error) {
-	m := newMessage(dest, mg)
+func (mb *messageBroker) Send(dest *MessageDestination, mg MessageGenerator) (*discordgo.Message, error) {
+	m := NewMessage(dest, mg)
 	sentMessage, err := m.Send(mb.discord)
 	return sentMessage, err
 }
 
 func (mb *messageBroker) SendDelayed(
 	dest *MessageDestination,
-	mg messageGenerator,
+	mg MessageGenerator,
 	delay time.Duration,
 	cancel <-chan struct{},
 ) (<-chan *discordgo.Message, <-chan error) {
-	m := newMessage(dest, mg)
-	dm := newAsyncMessage(newDelayedMessage(m, delay, cancel))
+	m := NewMessage(dest, mg)
+	dm := NewAsyncMessage(NewDelayedMessage(m, delay, cancel))
 
 	return dm.Send(mb.discord)
 }
 
-func (mb *messageBroker) SendTemporaryMessage(dest *MessageDestination, mg messageGenerator) (*discordgo.Message, <-chan error) {
+func (mb *messageBroker) SendTemporaryMessage(dest *MessageDestination, mg MessageGenerator) (*discordgo.Message, <-chan error) {
 	errChannel := make(chan error, 1)
-	m := newMessage(dest, mg)
+	m := NewMessage(dest, mg)
 	sentMessage, err := m.Send(mb.discord)
 	if err != nil {
 		errChannel <- fmt.Errorf("sending temporary message: %v", err)

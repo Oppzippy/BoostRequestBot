@@ -285,7 +285,7 @@ func (messenger *BoostRequestMessenger) sendAutoSignUpExpiredMessage(
 	return delayedMessage, errChannel
 }
 
-func (messenger *BoostRequestMessenger) send(dest *MessageDestination, mg messageGenerator) (*discordgo.Message, error) {
+func (messenger *BoostRequestMessenger) send(dest *MessageDestination, mg MessageGenerator) (*discordgo.Message, error) {
 	m, err := messenger.messageBroker.Send(dest, mg)
 	if dest.DestinationType == DestinationUser && err == errDMBlocked {
 		_, dmBlockedErr := messenger.sendDMBlockedMessage(dest.FallbackChannelID, dest.DestinationID)
@@ -299,7 +299,7 @@ func (messenger *BoostRequestMessenger) send(dest *MessageDestination, mg messag
 
 func (messenger *BoostRequestMessenger) sendDelayed(
 	dest *MessageDestination,
-	mg messageGenerator,
+	mg MessageGenerator,
 	delay time.Duration,
 ) (*repository.DelayedMessage, <-chan *discordgo.Message, <-chan error) {
 	delayedMessageDTO, err := messenger.storeDelayedMessageInRepository(dest, mg, delay)
@@ -317,7 +317,7 @@ func (messenger *BoostRequestMessenger) sendDelayed(
 
 func (messenger *BoostRequestMessenger) storeDelayedMessageInRepository(
 	dest *MessageDestination,
-	mg messageGenerator,
+	mg MessageGenerator,
 	delay time.Duration,
 ) (*repository.DelayedMessage, error) {
 	destType := repository.DestinationTypeChannel

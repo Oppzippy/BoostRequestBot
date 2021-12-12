@@ -6,25 +6,21 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type sendable interface {
-	Send(discord *discordgo.Session) (*discordgo.Message, error)
-}
-
-type delayedMessage struct {
-	message sendable
+type DelayedMessage struct {
+	message Sendable
 	delay   time.Duration
 	cancel  <-chan struct{}
 }
 
-func newDelayedMessage(sendable sendable, delay time.Duration, cancel <-chan struct{}) *delayedMessage {
-	return &delayedMessage{
+func NewDelayedMessage(sendable Sendable, delay time.Duration, cancel <-chan struct{}) *DelayedMessage {
+	return &DelayedMessage{
 		message: sendable,
 		delay:   delay,
 		cancel:  cancel,
 	}
 }
 
-func (m *delayedMessage) Send(discord *discordgo.Session) (*discordgo.Message, error) {
+func (m *DelayedMessage) Send(discord DiscordSender) (*discordgo.Message, error) {
 	select {
 	case <-time.After(m.delay):
 		return m.message.Send(discord)

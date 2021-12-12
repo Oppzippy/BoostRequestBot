@@ -9,23 +9,23 @@ import (
 
 var errDMBlocked = errors.New("the user has the bot blocked")
 
-type messageGenerator interface {
+type MessageGenerator interface {
 	Message() (*discordgo.MessageSend, error)
 }
 
-type message struct {
+type Message struct {
 	dest *MessageDestination
-	mg   messageGenerator
+	mg   MessageGenerator
 }
 
-func newMessage(dest *MessageDestination, mg messageGenerator) *message {
-	return &message{
+func NewMessage(dest *MessageDestination, mg MessageGenerator) *Message {
+	return &Message{
 		dest: dest,
 		mg:   mg,
 	}
 }
 
-func (m *message) Send(discord *discordgo.Session) (*discordgo.Message, error) {
+func (m *Message) Send(discord DiscordSender) (*discordgo.Message, error) {
 	channelID, err := m.dest.ResolveChannelID(discord)
 	if err != nil {
 		return nil, fmt.Errorf("resolving channel id: %v", err)

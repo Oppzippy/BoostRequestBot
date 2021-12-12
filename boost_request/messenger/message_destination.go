@@ -2,8 +2,6 @@ package messenger
 
 import (
 	"fmt"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 type DestinationType int
@@ -19,7 +17,7 @@ type MessageDestination struct {
 	FallbackChannelID string
 }
 
-func (dest *MessageDestination) ResolveChannelID(discord *discordgo.Session) (string, error) {
+func (dest *MessageDestination) ResolveChannelID(discord discordUserChannelCreate) (string, error) {
 	switch dest.DestinationType {
 	case DestinationChannel:
 		return dest.DestinationID, nil
