@@ -29,9 +29,14 @@ func (mb *messageBroker) Send(dest *MessageDestination, mg messageGenerator) (*d
 	return sentMessage, err
 }
 
-func (mb *messageBroker) SendDelayed(dest *MessageDestination, mg messageGenerator, delay time.Duration) (<-chan *discordgo.Message, <-chan error) {
+func (mb *messageBroker) SendDelayed(
+	dest *MessageDestination,
+	mg messageGenerator,
+	delay time.Duration,
+	cancel <-chan struct{},
+) (<-chan *discordgo.Message, <-chan error) {
 	m := newMessage(dest, mg)
-	dm := newAsyncMessage(newDelayedMessage(m, delay))
+	dm := newAsyncMessage(newDelayedMessage(m, delay, cancel))
 
 	return dm.Send(mb.discord)
 }

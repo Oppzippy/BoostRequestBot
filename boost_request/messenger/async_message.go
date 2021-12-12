@@ -22,9 +22,10 @@ func (m *asyncMessage) Send(discord *discordgo.Session) (<-chan *discordgo.Messa
 		sentMessage, err := m.sendable.Send(discord)
 		if err != nil {
 			errChannel <- err
-			return
 		}
-		messageChannel <- sentMessage
+		if sentMessage != nil {
+			messageChannel <- sentMessage
+		}
 	}()
 	return messageChannel, errChannel
 }

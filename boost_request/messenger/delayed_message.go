@@ -13,16 +13,22 @@ type sendable interface {
 type delayedMessage struct {
 	message sendable
 	delay   time.Duration
+	cancel  <-chan struct{}
 }
 
-func newDelayedMessage(sendable sendable, delay time.Duration) *delayedMessage {
+func newDelayedMessage(sendable sendable, delay time.Duration, cancel <-chan struct{}) *delayedMessage {
 	return &delayedMessage{
 		message: sendable,
 		delay:   delay,
+		cancel:  cancel,
 	}
 }
 
 func (m *delayedMessage) Send(discord *discordgo.Session) (*discordgo.Message, error) {
-	time.Sleep(m.delay)
-	return m.message.Send(discord)
+	select {
+	case <-time.After(m.delay):
+		return m.message.Send(discord)
+	case <-m.cancel:
+		return nil, nil
+	}
 }

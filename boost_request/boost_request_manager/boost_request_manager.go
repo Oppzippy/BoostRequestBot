@@ -391,6 +391,8 @@ func (brm *BoostRequestManager) CancelBoostRequest(br *repository.BoostRequest) 
 }
 
 func (brm *BoostRequestManager) EnableAutoSignUp(guildID, userID string, duration time.Duration) error {
+	brm.CancelAutoSignUp(guildID, userID)
+
 	expiresAt := time.Now().Add(duration)
 	autoSignUp, err := brm.repo.EnableAutoSignup(guildID, userID, expiresAt)
 	if err != nil {
@@ -404,6 +406,24 @@ func (brm *BoostRequestManager) EnableAutoSignUp(guildID, userID string, duratio
 			log.Printf("error sending auto signup expired message: %v", err)
 		}
 	}()
+	return nil
+}
+
+func (brm *BoostRequestManager) CancelAutoSignUp(guildID, userID string) error {
+	err := brm.repo.CancelAutoSignup(guildID, userID)
+	if err != nil {
+		return err
+	}
+	ids, err := brm.repo.GetAutoSignupDelayedMessageIDs(guildID, userID)
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		err := brm.messenger.CancelDelayedMessage(id)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

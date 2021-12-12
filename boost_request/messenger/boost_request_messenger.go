@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -17,12 +18,13 @@ import (
 )
 
 type BoostRequestMessenger struct {
-	Destroyed                bool
-	discord                  *discordgo.Session
-	bundle                   *i18n.Bundle
-	messageBroker            *messageBroker
-	rnp                      *messages.DiscordRoleNameProvider
-	delayedMessageRepository repository.DelayedMessageRepository
+	Destroyed                    bool
+	discord                      *discordgo.Session
+	bundle                       *i18n.Bundle
+	messageBroker                *messageBroker
+	rnp                          *messages.DiscordRoleNameProvider
+	delayedMessageRepository     repository.DelayedMessageRepository
+	delayedMessageCancelChannels sync.Map
 }
 
 func NewBoostRequestMessenger(
@@ -256,17 +258,18 @@ func (messenger *BoostRequestMessenger) sendAutoSignUpExpiringSoonMessage(
 	expiresAt time.Time,
 	warningTime time.Duration,
 ) (*repository.DelayedMessage, <-chan error) {
-	m := messages.NewAutoSignUpExpiringSoonMessage(messenger.localizer("en"), warningTime)
 	delay := time.Until(expiresAt.Add(warningTime * -1))
-	if delay > 0 {
-		messenger.sendDelayed(&MessageDestination{
-			DestinationID:   userID,
-			DestinationType: DestinationUser,
-		}, m, delay)
+	if delay <= 0 {
+		errChannel := make(chan error)
+		close(errChannel)
+		return nil, errChannel
 	}
-	errChannel := make(chan error)
-	close(errChannel)
-	return nil, errChannel
+	m := messages.NewAutoSignUpExpiringSoonMessage(messenger.localizer("en"), warningTime)
+	delayedMessage, _, errChannel := messenger.sendDelayed(&MessageDestination{
+		DestinationID:   userID,
+		DestinationType: DestinationUser,
+	}, m, delay)
+	return delayedMessage, errChannel
 }
 
 func (messenger *BoostRequestMessenger) sendAutoSignUpExpiredMessage(
@@ -345,10 +348,14 @@ func (messenger *BoostRequestMessenger) addExistingDelayedMessage(
 	delayedMessageDTO *repository.DelayedMessage,
 ) (<-chan *discordgo.Message, <-chan error) {
 	messageChannel, errChannel := make(chan *discordgo.Message, 1), make(chan error, 1)
+	cancelChannel := make(chan struct{})
+	var cancelChannelReadOnly chan<- struct{} = cancelChannel
+	messenger.delayedMessageCancelChannels.Store(delayedMessageDTO.ID, cancelChannelReadOnly)
 
 	go func() {
 		defer close(messageChannel)
 		defer close(errChannel)
+		defer messenger.delayedMessageCancelChannels.Delete(delayedMessageDTO.ID)
 
 		destType := DestinationChannel
 		if delayedMessageDTO.DestinationType == repository.DestinationTypeUser {
@@ -363,17 +370,38 @@ func (messenger *BoostRequestMessenger) addExistingDelayedMessage(
 			},
 			messages.NewStaticMessage(delayedMessageDTO.Message),
 			time.Until(delayedMessageDTO.SendAt),
+			cancelChannel,
 		)
 		select {
-		case m := <-sendDelayedMessage:
-			messageChannel <- m
-		case err := <-sendDelayedErr:
-			errChannel <- err
+		case m, ok := <-sendDelayedMessage:
+			if ok {
+				messenger.delayedMessageRepository.FlagDelayedMessageAsSent(delayedMessageDTO)
+				messageChannel <- m
+			}
+		case err, ok := <-sendDelayedErr:
+			if ok {
+				errChannel <- err
+			}
 		}
-		messenger.delayedMessageRepository.FlagDelayedMessageAsSent(delayedMessageDTO)
 	}()
 
 	return messageChannel, errChannel
+}
+
+func (messenger *BoostRequestMessenger) CancelDelayedMessage(id int64) error {
+	cancelChannelUntyped, ok := messenger.delayedMessageCancelChannels.LoadAndDelete(id)
+	if !ok {
+		return nil
+	}
+	cancelChannel := cancelChannelUntyped.(chan<- struct{})
+
+	select {
+	case cancelChannel <- struct{}{}:
+		err := messenger.delayedMessageRepository.DeleteDelayedMessage(id)
+		return err
+	default:
+	}
+	return nil
 }
 
 func (messenger *BoostRequestMessenger) sendDMBlockedMessage(channelID, userID string) (*discordgo.Message, error) {

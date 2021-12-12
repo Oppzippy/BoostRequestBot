@@ -168,15 +168,23 @@ func (repo *dbRepository) InsertAutoSignupDelayedMessages(autoSignup *repository
 	return err
 }
 
-func (repo *dbRepository) GetAutoSignupDelayedMessageIDs(autoSignup *repository.AutoSignUpSession) ([]int64, error) {
+func (repo *dbRepository) GetAutoSignupDelayedMessageIDs(guildID string, advertiserID string) ([]int64, error) {
 	rows, err := repo.db.Query(`
 		SELECT
-			delayed_message_id
+			asdm.delayed_message_id
 		FROM
-			auto_signup_delayed_message
+			auto_signup_delayed_message AS asdm
+		INNER JOIN auto_signup_session AS ass
+			ON ass.id = asdm.auto_signup_id
+		INNER JOIN delayed_message AS dm
+			ON dm.id = asdm.delayed_message_id
 		WHERE
-			auto_signup_id = ?`,
-		autoSignup.ID,
+			ass.guild_id = ? AND
+			ass.advertiser_id = ? AND
+			dm.deleted_at IS NULL AND
+			dm.sent_at IS NULL`,
+		guildID,
+		advertiserID,
 	)
 	if err != nil {
 		return nil, err

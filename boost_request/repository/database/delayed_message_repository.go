@@ -95,7 +95,7 @@ func (repo *dbRepository) InsertDelayedMessage(delayedMessage *repository.Delaye
 	return err
 }
 
-func (repo *dbRepository) DeleteDelayedMessage(message *repository.DelayedMessage) error {
+func (repo *dbRepository) DeleteDelayedMessage(id int64) error {
 	_, err := repo.db.Exec(`
 		UPDATE
 			delayed_message
@@ -105,7 +105,7 @@ func (repo *dbRepository) DeleteDelayedMessage(message *repository.DelayedMessag
 			id = ? AND
 			deleted_at IS NULL`,
 		time.Now().UTC(),
-		message.ID,
+		id,
 	)
 	return err
 }

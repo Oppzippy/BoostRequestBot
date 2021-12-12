@@ -138,12 +138,12 @@ type AutoSignupSessionRepository interface {
 	GetEnabledAutoSignups() ([]*AutoSignupSession, error)
 	GetEnabledAutoSignupsInGuild(guildID string) ([]*AutoSignupSession, error)
 	InsertAutoSignupDelayedMessages(autoSignup *AutoSignUpSession, delayedMessages []*DelayedMessage) error
-	GetAutoSignupDelayedMessageIDs(autoSignup *AutoSignUpSession) ([]int64, error)
+	GetAutoSignupDelayedMessageIDs(guildID, advertiserID string) ([]int64, error)
 }
 
 type DelayedMessageRepository interface {
 	GetDelayedMessages() ([]*DelayedMessage, error)
 	InsertDelayedMessage(delayedMessage *DelayedMessage) error
-	DeleteDelayedMessage(message *DelayedMessage) error
+	DeleteDelayedMessage(id int64) error
 	FlagDelayedMessageAsSent(message *DelayedMessage) error
 }
