@@ -234,12 +234,12 @@ func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(userID string, credi
 	return message, err
 }
 
-func (messenger *BoostRequestMessenger) SendAutoSignUpMessages(
+func (messenger *BoostRequestMessenger) SendAutoSignupMessages(
 	userID string,
 	expiresAt time.Time,
 ) ([]*repository.DelayedMessage, <-chan error) {
-	expiringSoonDelayedMessage, expiringSoonErrChannel := messenger.sendAutoSignUpExpiringSoonMessage(userID, expiresAt, 5*time.Minute)
-	expiredDelayedMessage, expiredErrChannel := messenger.sendAutoSignUpExpiredMessage(userID, expiresAt)
+	expiringSoonDelayedMessage, expiringSoonErrChannel := messenger.sendAutoSignupExpiringSoonMessage(userID, expiresAt, 5*time.Minute)
+	expiredDelayedMessage, expiredErrChannel := messenger.sendAutoSignupExpiredMessage(userID, expiresAt)
 
 	errChannel := channels.MergeErrorChannels(expiredErrChannel, expiringSoonErrChannel)
 
@@ -253,7 +253,7 @@ func (messenger *BoostRequestMessenger) SendAutoSignUpMessages(
 	return delayedMessages, errChannel
 }
 
-func (messenger *BoostRequestMessenger) sendAutoSignUpExpiringSoonMessage(
+func (messenger *BoostRequestMessenger) sendAutoSignupExpiringSoonMessage(
 	userID string,
 	expiresAt time.Time,
 	warningTime time.Duration,
@@ -264,7 +264,7 @@ func (messenger *BoostRequestMessenger) sendAutoSignUpExpiringSoonMessage(
 		close(errChannel)
 		return nil, errChannel
 	}
-	m := messages.NewAutoSignUpExpiringSoonMessage(messenger.localizer("en"), warningTime)
+	m := messages.NewAutoSignupExpiringSoonMessage(messenger.localizer("en"), warningTime)
 	delayedMessage, _, errChannel := messenger.sendDelayed(&MessageDestination{
 		DestinationID:   userID,
 		DestinationType: DestinationUser,
@@ -272,11 +272,11 @@ func (messenger *BoostRequestMessenger) sendAutoSignUpExpiringSoonMessage(
 	return delayedMessage, errChannel
 }
 
-func (messenger *BoostRequestMessenger) sendAutoSignUpExpiredMessage(
+func (messenger *BoostRequestMessenger) sendAutoSignupExpiredMessage(
 	userID string,
 	expiresAt time.Time,
 ) (*repository.DelayedMessage, <-chan error) {
-	m := messages.NewAutoSignUpExpiredMessage(messenger.localizer("en"))
+	m := messages.NewAutoSignupExpiredMessage(messenger.localizer("en"))
 	delay := time.Until(expiresAt)
 	delayedMessage, _, errChannel := messenger.sendDelayed(&MessageDestination{
 		DestinationID:   userID,

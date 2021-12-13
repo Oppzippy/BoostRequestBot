@@ -7,24 +7,24 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type AutoSignUpDisableHandler struct {
+type AutoSignupDisableHandler struct {
 	brm  *boost_request_manager.BoostRequestManager
 	repo repository.Repository
 }
 
-func NewAutoSignUpDisableHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *AutoSignUpDisableHandler {
-	return &AutoSignUpDisableHandler{
+func NewAutoSignupDisableHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *AutoSignupDisableHandler {
+	return &AutoSignupDisableHandler{
 		brm:  brm,
 		repo: repo,
 	}
 }
 
-func (h *AutoSignUpDisableHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
+func (h *AutoSignupDisableHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionApplicationCommand &&
 		MatchesCommandPath(event.ApplicationCommandData(), "boostrequest", "autosignup", "stop")
 }
 
-func (h *AutoSignUpDisableHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
+func (h *AutoSignupDisableHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
 	if event.Member == nil {
 		err := discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -51,7 +51,7 @@ func (h *AutoSignUpDisableHandler) Handle(discord *discordgo.Session, event *dis
 			Data: &discordgo.InteractionResponseData{
 				Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
-						ID:    "AutoSignUpNotEnabled",
+						ID:    "AutoSignupNotEnabled",
 						Other: "You do not currently have auto sign up active.",
 					},
 				}),
@@ -61,7 +61,7 @@ func (h *AutoSignUpDisableHandler) Handle(discord *discordgo.Session, event *dis
 		return nil
 	}
 
-	err = h.brm.CancelAutoSignUp(event.GuildID, event.Member.User.ID)
+	err = h.brm.CancelAutoSignup(event.GuildID, event.Member.User.ID)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (h *AutoSignUpDisableHandler) Handle(discord *discordgo.Session, event *dis
 		Data: &discordgo.InteractionResponseData{
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
-					ID:    "AutoSignUpDisable",
+					ID:    "AutoSignupDisable",
 					Other: "You will no longer automatically sign up for boost requests.",
 				},
 			}),

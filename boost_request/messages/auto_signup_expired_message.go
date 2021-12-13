@@ -5,23 +5,23 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
-type AutoSignUpExpiredMessage struct {
+type AutoSignupExpiredMessage struct {
 	localizer *i18n.Localizer
 }
 
-func NewAutoSignUpExpiredMessage(
+func NewAutoSignupExpiredMessage(
 	localizer *i18n.Localizer,
-) *AutoSignUpExpiredMessage {
-	return &AutoSignUpExpiredMessage{
+) *AutoSignupExpiredMessage {
+	return &AutoSignupExpiredMessage{
 		localizer: localizer,
 	}
 }
 
-func (m *AutoSignUpExpiredMessage) Message() (*discordgo.MessageSend, error) {
+func (m *AutoSignupExpiredMessage) Message() (*discordgo.MessageSend, error) {
 	return &discordgo.MessageSend{
 		Content: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
-				ID:    "AutoSignUpExpired",
+				ID:    "AutoSignupExpired",
 				Other: "Auto sign up expired.",
 			},
 		}),

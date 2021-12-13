@@ -30,7 +30,7 @@ func (repo *dbRepository) IsAutoSignupEnabled(guildID, advertiserID string) (boo
 	return rows.Next(), rows.Err()
 }
 
-func (repo *dbRepository) EnableAutoSignup(guildID, advertiserID string, expiresAt time.Time) (*repository.AutoSignUpSession, error) {
+func (repo *dbRepository) EnableAutoSignup(guildID, advertiserID string, expiresAt time.Time) (*repository.AutoSignupSession, error) {
 	tx, err := repo.db.Begin()
 	if err != nil {
 		return nil, err
@@ -80,8 +80,11 @@ func (repo *dbRepository) EnableAutoSignup(guildID, advertiserID string, expires
 	if err != nil {
 		return nil, err
 	}
-	return &repository.AutoSignUpSession{
-		ID: id,
+	return &repository.AutoSignupSession{
+		ID:           id,
+		GuildID:      guildID,
+		AdvertiserID: advertiserID,
+		ExpiresAt:    expiresAt,
 	}, nil
 }
 
@@ -121,6 +124,7 @@ func (repo *dbRepository) GetEnabledAutoSignupsInGuild(guildID string) ([]*repos
 func (repo *dbRepository) getAutoSignups(where string, args ...interface{}) ([]*repository.AutoSignupSession, error) {
 	query := `
 		SELECT
+			id,
 			guild_id,
 			advertiser_id,
 			MAX(expires_at)
@@ -140,7 +144,7 @@ func (repo *dbRepository) getAutoSignups(where string, args ...interface{}) ([]*
 	sessions := make([]*repository.AutoSignupSession, 0, 50)
 	for rows.Next() {
 		var session repository.AutoSignupSession
-		err := rows.Scan(&session.GuildID, &session.AdvertiserID, &session.ExpiresAt)
+		err := rows.Scan(&session.ID, &session.GuildID, &session.AdvertiserID, &session.ExpiresAt)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +153,7 @@ func (repo *dbRepository) getAutoSignups(where string, args ...interface{}) ([]*
 	return sessions, nil
 }
 
-func (repo *dbRepository) InsertAutoSignupDelayedMessages(autoSignup *repository.AutoSignUpSession, delayedMessages []*repository.DelayedMessage) error {
+func (repo *dbRepository) InsertAutoSignupDelayedMessages(autoSignup *repository.AutoSignupSession, delayedMessages []*repository.DelayedMessage) error {
 	if len(delayedMessages) == 0 {
 		return nil
 	}

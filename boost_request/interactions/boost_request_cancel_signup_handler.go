@@ -7,25 +7,26 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type BoostRequestCancelSignUpHandler struct {
+type BoostRequestCancelSignupHandler struct {
 	brm  *boost_request_manager.BoostRequestManager
 	repo repository.Repository
 }
 
-func NewBoostRequestCancelSignUpHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *BoostRequestCancelSignUpHandler {
-	return &BoostRequestCancelSignUpHandler{
+func NewBoostRequestCancelSignupHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *BoostRequestCancelSignupHandler {
+	return &BoostRequestCancelSignupHandler{
 		brm:  brm,
 		repo: repo,
 	}
 }
 
-func (h *BoostRequestCancelSignUpHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
+func (h *BoostRequestCancelSignupHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionMessageComponent &&
-		event.MessageComponentData().CustomID == "boostRequest:cancelSignUp" &&
+		// TODO remove cancelSignUp in later version
+		(event.MessageComponentData().CustomID == "boostRequest:cancelSignUp" || event.MessageComponentData().CustomID == "boostRequest:cancelSignup") &&
 		(event.Member != nil || event.User != nil)
 }
 
-func (h *BoostRequestCancelSignUpHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
+func (h *BoostRequestCancelSignupHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
 	user := event.User
 	if user == nil {
 		user = event.Member.User

@@ -7,22 +7,22 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
-type AutoSignUpExpiringSoonMessage struct {
+type AutoSignupExpiringSoonMessage struct {
 	localizer *i18n.Localizer
 	timeLeft  time.Duration
 }
 
-func NewAutoSignUpExpiringSoonMessage(
+func NewAutoSignupExpiringSoonMessage(
 	localizer *i18n.Localizer,
 	timeLeft time.Duration,
-) *AutoSignUpExpiringSoonMessage {
-	return &AutoSignUpExpiringSoonMessage{
+) *AutoSignupExpiringSoonMessage {
+	return &AutoSignupExpiringSoonMessage{
 		localizer: localizer,
 		timeLeft:  timeLeft,
 	}
 }
 
-func (m *AutoSignUpExpiringSoonMessage) Message() (*discordgo.MessageSend, error) {
+func (m *AutoSignupExpiringSoonMessage) Message() (*discordgo.MessageSend, error) {
 	return &discordgo.MessageSend{
 		Content: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{

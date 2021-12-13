@@ -9,25 +9,25 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type BoostRequestSignUpHandler struct {
+type BoostRequestSignupHandler struct {
 	brm  *boost_request_manager.BoostRequestManager
 	repo repository.Repository
 }
 
-func NewBoostRequestSignUpHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *BoostRequestSignUpHandler {
-	return &BoostRequestSignUpHandler{
+func NewBoostRequestSignupHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *BoostRequestSignupHandler {
+	return &BoostRequestSignupHandler{
 		brm:  brm,
 		repo: repo,
 	}
 }
 
-func (h *BoostRequestSignUpHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
+func (h *BoostRequestSignupHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionMessageComponent &&
 		event.MessageComponentData().CustomID == "boostRequest:signUp" &&
 		(event.User != nil || event.Member != nil)
 }
 
-func (h *BoostRequestSignUpHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
+func (h *BoostRequestSignupHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
 	user := event.User
 	if user == nil {
 		user = event.Member.User

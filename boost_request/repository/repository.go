@@ -133,11 +133,11 @@ type WebhookRepository interface {
 
 type AutoSignupSessionRepository interface {
 	IsAutoSignupEnabled(guildID, advertiserID string) (bool, error)
-	EnableAutoSignup(guildID, advertiserID string, expiresAt time.Time) (*AutoSignUpSession, error)
+	EnableAutoSignup(guildID, advertiserID string, expiresAt time.Time) (*AutoSignupSession, error)
 	CancelAutoSignup(guildID, advertiserID string) error
 	GetEnabledAutoSignups() ([]*AutoSignupSession, error)
 	GetEnabledAutoSignupsInGuild(guildID string) ([]*AutoSignupSession, error)
-	InsertAutoSignupDelayedMessages(autoSignup *AutoSignUpSession, delayedMessages []*DelayedMessage) error
+	InsertAutoSignupDelayedMessages(autoSignup *AutoSignupSession, delayedMessages []*DelayedMessage) error
 	GetAutoSignupDelayedMessageIDs(guildID, advertiserID string) ([]int64, error)
 }
 

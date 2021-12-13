@@ -111,7 +111,7 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 					Other: "Cancel Signup",
 				},
 			}),
-			CustomID: "boostRequest:cancelSignUp",
+			CustomID: "boostRequest:cancelSignup",
 			Style:    discordgo.SecondaryButton,
 		})
 	}

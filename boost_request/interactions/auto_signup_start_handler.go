@@ -9,24 +9,24 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type AutoSignUpEnableHandler struct {
+type AutoSignupEnableHandler struct {
 	brm  *boost_request_manager.BoostRequestManager
 	repo repository.Repository
 }
 
-func NewAutoSignUpEnableHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *AutoSignUpEnableHandler {
-	return &AutoSignUpEnableHandler{
+func NewAutoSignupEnableHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *AutoSignupEnableHandler {
+	return &AutoSignupEnableHandler{
 		brm:  brm,
 		repo: repo,
 	}
 }
 
-func (h *AutoSignUpEnableHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
+func (h *AutoSignupEnableHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionApplicationCommand &&
 		MatchesCommandPath(event.ApplicationCommandData(), "boostrequest", "autosignup", "start")
 }
 
-func (h *AutoSignUpEnableHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
+func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
 	if event.Member == nil {
 		err := discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -54,7 +54,7 @@ func (h *AutoSignUpEnableHandler) Handle(discord *discordgo.Session, event *disc
 		}
 	}
 
-	err := h.brm.EnableAutoSignUp(event.GuildID, event.Member.User.ID, duration)
+	err := h.brm.EnableAutoSignup(event.GuildID, event.Member.User.ID, duration)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (h *AutoSignUpEnableHandler) Handle(discord *discordgo.Session, event *disc
 		Data: &discordgo.InteractionResponseData{
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
-					ID:    "AutoSignUpEnable",
+					ID:    "AutoSignupEnable",
 					Other: "You will automatically sign up for all boost requests for the next {{.Duration}}.",
 				},
 				TemplateData: map[string]interface{}{
