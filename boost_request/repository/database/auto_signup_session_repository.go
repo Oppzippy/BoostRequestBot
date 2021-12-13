@@ -16,7 +16,7 @@ func (repo *dbRepository) IsAutoSignupEnabled(guildID, advertiserID string) (boo
 		WHERE
 			guild_id = ? AND
 			advertiser_id = ? AND
-			expires_at < ? AND
+			expires_at > ? AND
 			deleted_at IS NULL`,
 		guildID,
 		advertiserID,
@@ -43,7 +43,8 @@ func (repo *dbRepository) EnableAutoSignup(guildID, advertiserID string, expires
 		WHERE
 			guild_id = ? AND
 			advertiser_id = ? AND
-			expires_at > ?`,
+			expires_at > ? AND
+			deleted_at IS NULL`,
 		time.Now().UTC(),
 		guildID,
 		advertiserID,

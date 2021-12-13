@@ -23,9 +23,7 @@ func NewAutoSignUpEnableHandler(repo repository.Repository, brm *boost_request_m
 
 func (h *AutoSignUpEnableHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
 	return event.Type == discordgo.InteractionApplicationCommand &&
-		event.ApplicationCommandData().Name == "boostrequest" &&
-		len(event.ApplicationCommandData().Options) >= 1 &&
-		event.ApplicationCommandData().Options[0].Name == "autosignup"
+		MatchesCommandPath(event.ApplicationCommandData(), "boostrequest", "autosignup", "start")
 }
 
 func (h *AutoSignUpEnableHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
@@ -46,7 +44,7 @@ func (h *AutoSignUpEnableHandler) Handle(discord *discordgo.Session, event *disc
 	}
 
 	duration := 15 * time.Minute
-	options := event.ApplicationCommandData().Options[0].Options
+	options := event.ApplicationCommandData().Options[0].Options[0].Options
 	if len(options) == 1 {
 		duration = time.Duration(options[0].IntValue()) * time.Minute
 		if duration < 1*time.Minute {

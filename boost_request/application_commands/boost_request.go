@@ -7,6 +7,6 @@ var BoostRequestCommand = &discordgo.ApplicationCommand{
 	Description: "Boost Request Bot commands",
 	Type:        discordgo.ChatApplicationCommand,
 	Options: []*discordgo.ApplicationCommandOption{
-		AutoSignupSubCommand,
+		autoSignupSubCommand,
 	},
 }
