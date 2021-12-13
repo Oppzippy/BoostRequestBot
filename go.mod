@@ -22,8 +22,8 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/zekroTJA/timedmap v1.4.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871 // indirect
-	golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1 // indirect
+	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b // indirect
+	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect
 	golang.org/x/text v0.3.7
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
