@@ -30,7 +30,8 @@ func (repo *dbRepository) getAdvertiserPrivileges(where string, args ...interfac
 			guild_id,
 			role_id,
 			weight,
-			delay
+			delay,
+			auto_signup_duration
 		FROM advertiser_privileges `+where,
 		args...,
 	)
@@ -42,7 +43,7 @@ func (repo *dbRepository) getAdvertiserPrivileges(where string, args ...interfac
 	privileges := make([]*repository.AdvertiserPrivileges, 0, 15)
 	for res.Next() {
 		p := repository.AdvertiserPrivileges{}
-		res.Scan(&p.ID, &p.GuildID, &p.RoleID, &p.Weight, &p.Delay)
+		res.Scan(&p.ID, &p.GuildID, &p.RoleID, &p.Weight, &p.Delay, &p.AutoSignupDuration)
 		privileges = append(privileges, &p)
 	}
 	if res.Err() != nil && err != sql.ErrNoRows {
@@ -58,15 +59,18 @@ func (repo *dbRepository) InsertAdvertiserPrivileges(privileges *repository.Adve
 			role_id,
 			weight,
 			delay,
+			auto_signup_duration,
 			created_at
-		) VALUES (?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?)
 		ON DUPLICATE KEY UPDATE
 			weight = VALUES(weight),
-			delay = VALUES(delay)`,
+			delay = VALUES(delay),
+			auto_signup_duration = VALUES(auto_signup_duration)`,
 		privileges.GuildID,
 		privileges.RoleID,
 		privileges.Weight,
 		privileges.Delay,
+		privileges.AutoSignupDuration,
 		time.Now().UTC(),
 	)
 	if err != nil {

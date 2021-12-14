@@ -37,8 +37,12 @@ func listPrivilegesHandler(ctx *dgc.Ctx) {
 		sb.WriteString(" Weight: ")
 		sb.WriteString(strconv.FormatFloat(p.Weight, 'f', -1, 64))
 		sb.WriteString(", Delay: ")
-		sb.WriteString(fmt.Sprintf("%d", p.Delay))
-		sb.WriteString("s\n")
+		sb.WriteString(fmt.Sprintf("%ds", p.Delay))
+		if p.AutoSignupDuration > 0 {
+			sb.WriteString(", Auto Signup Duration: ")
+			sb.WriteString(fmt.Sprintf("%dm", p.AutoSignupDuration/60))
+		}
+		sb.WriteString("\n")
 	}
 	if sb.Len() > 0 {
 		_, err = ctx.Session.ChannelMessageSendComplex(ctx.Event.ChannelID, &discordgo.MessageSend{

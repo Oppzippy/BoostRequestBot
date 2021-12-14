@@ -5,5 +5,8 @@ type AdvertiserPrivileges struct {
 	GuildID string
 	RoleID  string
 	Weight  float64
-	Delay   int
+	// Delay in seconds
+	Delay int
+	// AutoSignupDuration in seconds
+	AutoSignupDuration int
 }

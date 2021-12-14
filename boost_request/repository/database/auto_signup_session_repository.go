@@ -127,13 +127,12 @@ func (repo *dbRepository) getAutoSignups(where string, args ...interface{}) ([]*
 			id,
 			guild_id,
 			advertiser_id,
-			MAX(expires_at)
+			expires_at
 		FROM
 			auto_signup_session `
 	if where != "" {
 		query += " WHERE " + where
 	}
-	query += " GROUP BY guild_id, advertiser_id"
 
 	rows, err := repo.db.Query(query, args...)
 	if err != nil {

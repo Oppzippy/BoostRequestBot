@@ -43,14 +43,32 @@ func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *disc
 		return err
 	}
 
+	privileges := h.brm.GetBestRolePrivileges(event.GuildID, event.Member.Roles)
+
+	if privileges.AutoSignupDuration == 0 {
+		err := discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "NotAllowedToUseCommand",
+						Other: "You are not allowed to use this command.",
+					},
+				}),
+				Flags: 1 << 6, // Ephemeral
+			},
+		})
+		return err
+	}
+
 	duration := 15 * time.Minute
 	options := event.ApplicationCommandData().Options[0].Options[0].Options
 	if len(options) == 1 {
 		duration = time.Duration(options[0].IntValue()) * time.Minute
 		if duration < 1*time.Minute {
 			duration = 1 * time.Minute
-		} else if duration > 60*time.Minute {
-			duration = 60 * time.Minute
+		} else if duration > time.Duration(privileges.AutoSignupDuration)*time.Second {
+			duration = time.Duration(privileges.AutoSignupDuration) * time.Second
 		}
 	}
 
