@@ -51,7 +51,7 @@ func (h *AutoSignupButtonHandler) Handle(discord *discordgo.Session, event *disc
 
 	privileges := h.brm.GetBestRolePrivileges(guildID, member.Roles)
 
-	if privileges.AutoSignupDuration == 0 {
+	if privileges == nil || privileges.AutoSignupDuration == 0 {
 		err := discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
