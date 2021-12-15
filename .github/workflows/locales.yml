@@ -16,7 +16,7 @@ jobs:
         with:
           go-version: ^1.17
       - name: Install goi18n CLI
-        run: go get -u github.com/nicksnyder/go-i18n/v2/goi18n
+        run: go install github.com/nicksnyder/go-i18n/v2/goi18n
       - name: Extract Locales
         run: goi18n extract
       - name: Overwrite old locales
