@@ -59,6 +59,7 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCheckCutHandler(repo))
 	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupEnableHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupDisableHandler(repo, brm))
+	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupButtonHandler(repo, brm))
 
 	discord.AddHandler(func(discord *discordgo.Session, event *discordgo.Connect) {
 		_, err := discord.ApplicationCommandBulkOverwrite(

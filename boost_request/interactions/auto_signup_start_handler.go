@@ -61,14 +61,15 @@ func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *disc
 		return err
 	}
 
-	duration := 15 * time.Minute
+	maxDuration := time.Duration(privileges.AutoSignupDuration) * time.Second
+	duration := maxDuration
 	options := event.ApplicationCommandData().Options[0].Options[0].Options
 	if len(options) == 1 {
 		duration = time.Duration(options[0].IntValue()) * time.Minute
 		if duration < 1*time.Minute {
 			duration = 1 * time.Minute
-		} else if duration > time.Duration(privileges.AutoSignupDuration)*time.Second {
-			duration = time.Duration(privileges.AutoSignupDuration) * time.Second
+		} else if duration > maxDuration {
+			duration = maxDuration
 		}
 	}
 

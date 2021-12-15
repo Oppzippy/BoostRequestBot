@@ -235,11 +235,12 @@ func (messenger *BoostRequestMessenger) SendCreditsUpdateDM(userID string, credi
 }
 
 func (messenger *BoostRequestMessenger) SendAutoSignupMessages(
+	guildID string,
 	userID string,
 	expiresAt time.Time,
 ) ([]*repository.DelayedMessage, <-chan error) {
 	expiringSoonDelayedMessage, expiringSoonErrChannel := messenger.sendAutoSignupExpiringSoonMessage(userID, expiresAt, 5*time.Minute)
-	expiredDelayedMessage, expiredErrChannel := messenger.sendAutoSignupExpiredMessage(userID, expiresAt)
+	expiredDelayedMessage, expiredErrChannel := messenger.sendAutoSignupExpiredMessage(guildID, userID, expiresAt)
 
 	errChannel := channels.MergeErrorChannels(expiredErrChannel, expiringSoonErrChannel)
 
@@ -273,10 +274,11 @@ func (messenger *BoostRequestMessenger) sendAutoSignupExpiringSoonMessage(
 }
 
 func (messenger *BoostRequestMessenger) sendAutoSignupExpiredMessage(
+	guildID string,
 	userID string,
 	expiresAt time.Time,
 ) (*repository.DelayedMessage, <-chan error) {
-	m := messages.NewAutoSignupExpiredMessage(messenger.localizer("en"))
+	m := messages.NewAutoSignupExpiredMessage(messenger.localizer("en"), guildID)
 	delay := time.Until(expiresAt)
 	delayedMessage, _, errChannel := messenger.sendDelayed(&MessageDestination{
 		DestinationID:   userID,

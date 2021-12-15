@@ -399,7 +399,7 @@ func (brm *BoostRequestManager) EnableAutoSignup(guildID, userID string, duratio
 		return err
 	}
 
-	delayedMessages, errChannel := brm.messenger.SendAutoSignupMessages(userID, expiresAt)
+	delayedMessages, errChannel := brm.messenger.SendAutoSignupMessages(guildID, userID, expiresAt)
 	brm.repo.InsertAutoSignupDelayedMessages(autoSignup, delayedMessages)
 	go func() {
 		for err := range errChannel {
