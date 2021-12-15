@@ -53,13 +53,27 @@ func (repo *dbRepository) GetDelayedMessages() ([]*repository.DelayedMessage, er
 		}
 		delayedMessage.FallbackChannelID = fallbackChannelID.String
 
-		var message discordgo.MessageSend
+		// XXX change if discordgo fixes discordgo.MessageSend unmarshal
+		// discordgo.MessageSend unmarshal will error if there are message components.
+		// discordgo.Message has most of the same fields, so just go with that for now.
+		var message discordgo.Message
 		err = json.Unmarshal([]byte(messageJSON), &message)
 		if err != nil {
-			log.Printf("failed to unmarshal delayed message (id %v): %v", delayedMessage.ID, err)
+			log.Printf("failed to unmarshal delayed message as discordgo.Message (id %v): %v", delayedMessage.ID, err)
 			continue
 		}
-		delayedMessage.Message = &message
+		var embed *discordgo.MessageEmbed
+		if len(message.Embeds) > 0 {
+			embed = message.Embeds[0]
+		}
+
+		delayedMessage.Message = &discordgo.MessageSend{
+			Content:    message.Content,
+			Embeds:     message.Embeds,
+			TTS:        message.TTS,
+			Components: message.Components,
+			Embed:      embed,
+		}
 
 		messages = append(messages, &delayedMessage)
 	}
