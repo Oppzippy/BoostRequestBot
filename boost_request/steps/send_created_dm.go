@@ -10,11 +10,11 @@ import (
 
 type sendCreatedDMStep struct {
 	discord   *discordgo.Session
-	messenger messenger.BoostRequestMessenger
+	messenger *messenger.BoostRequestMessenger
 	br        *repository.BoostRequest
 }
 
-func NewSendCreatedDMStep(discord *discordgo.Session, messenger messenger.BoostRequestMessenger, br *repository.BoostRequest) *sendCreatedDMStep {
+func NewSendCreatedDMStep(discord *discordgo.Session, messenger *messenger.BoostRequestMessenger, br *repository.BoostRequest) *sendCreatedDMStep {
 	return &sendCreatedDMStep{
 		discord:   discord,
 		messenger: messenger,

@@ -292,11 +292,16 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 	br := event.BoostRequest
 	userID := event.UserID
 
+	err := brm.cancelDelayedMessages(&br)
+	if err != nil {
+		log.Printf("error canceling delayed messages: %v", err)
+	}
+
 	brm.activeRequests.Delete(br.ID)
 	br.AdvertiserID = userID
 	br.IsResolved = true
 	br.ResolvedAt = time.Now()
-	err := brm.repo.ResolveBoostRequest(&br)
+	err = brm.repo.ResolveBoostRequest(&br)
 	if err != nil {
 		// Log the error but try to keep things running.
 		// There will be data loss, but that is better than a lost sale.
@@ -370,6 +375,10 @@ func (brm *BoostRequestManager) signUp(br *repository.BoostRequest, userID strin
 }
 
 func (brm *BoostRequestManager) CancelBoostRequest(br *repository.BoostRequest) error {
+	err := brm.cancelDelayedMessages(br)
+	if err != nil {
+		return err
+	}
 	for _, message := range br.BackendMessages {
 		err := brm.discord.ChannelMessageDelete(message.ChannelID, message.MessageID)
 		if err != nil {
@@ -377,7 +386,7 @@ func (brm *BoostRequestManager) CancelBoostRequest(br *repository.BoostRequest) 
 			log.Printf("failed to delete backend message when cancelling boost request: %v", err)
 		}
 	}
-	err := brm.repo.DeleteBoostRequest(br)
+	err = brm.repo.DeleteBoostRequest(br)
 	if err != nil {
 		return err
 	}
@@ -387,6 +396,20 @@ func (brm *BoostRequestManager) CancelBoostRequest(br *repository.BoostRequest) 
 	}
 	activeRequest := activeRequestInterface.(*active_request.ActiveRequest)
 	activeRequest.Destroy()
+	return nil
+}
+
+func (brm *BoostRequestManager) cancelDelayedMessages(br *repository.BoostRequest) error {
+	delayedMessageIDs, err := brm.repo.GetBoostRequestDelayedMessageIDs(br)
+	if err != nil {
+		return err
+	}
+	for _, id := range delayedMessageIDs {
+		err := brm.messenger.CancelDelayedMessage(id)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

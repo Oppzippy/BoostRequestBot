@@ -48,6 +48,8 @@ type BoostRequestRepository interface {
 	ResolveBoostRequest(br *BoostRequest) error
 	// DeleteBoostRequest Deletes a boost request
 	DeleteBoostRequest(br *BoostRequest) error
+	InsertBoostRequestDelayedMessage(br *BoostRequest, delayedMessage *DelayedMessage) error
+	GetBoostRequestDelayedMessageIDs(br *BoostRequest) ([]int64, error)
 }
 
 type BoostRequestChannelRepository interface {

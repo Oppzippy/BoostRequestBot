@@ -378,3 +378,44 @@ func (repo *dbRepository) DeleteBoostRequest(br *repository.BoostRequest) error 
 	)
 	return err
 }
+
+func (repo *dbRepository) InsertBoostRequestDelayedMessage(br *repository.BoostRequest, delayedMessage *repository.DelayedMessage) error {
+	_, err := repo.db.Exec(`
+		INSERT INTO
+			boost_request_delayed_message (
+				boost_request_id,
+				delayed_message_id
+			)
+		VALUES (?, ?)`,
+		br.ID,
+		delayedMessage.ID,
+	)
+	return err
+}
+
+func (repo *dbRepository) GetBoostRequestDelayedMessageIDs(br *repository.BoostRequest) ([]int64, error) {
+	rows, err := repo.db.Query(`
+		SELECT
+			delayed_message_id
+		FROM
+			boost_request_delayed_message
+		WHERE
+			boost_request_id = ?`,
+		br.ID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ids := make([]int64, 0, 5)
+	for rows.Next() {
+		var id int64
+		err := rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}

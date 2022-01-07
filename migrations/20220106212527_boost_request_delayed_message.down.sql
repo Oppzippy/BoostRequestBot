@@ -1,0 +1,1 @@
+DROP TABLE boost_request_delayed_message;

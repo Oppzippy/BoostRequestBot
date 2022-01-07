@@ -110,6 +110,24 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository
 	return message, err
 }
 
+func (messenger *BoostRequestMessenger) SendPreferredAdvertiserReminder(br *repository.BoostRequest) (*repository.DelayedMessage, <-chan error) {
+	localizer := messenger.localizer("en")
+
+	delayedMessage, _, errChannel := messenger.sendDelayed(
+		&MessageDestination{
+			DestinationID:   br.RequesterID,
+			DestinationType: DestinationUser,
+		},
+		messages.NewBoostRequestPreferredAdvertiserReminder(
+			localizer,
+			partials.NewDiscountFormatter(localizer, messenger.rnp),
+			br,
+		),
+		15*time.Minute,
+	)
+	return delayedMessage, errChannel
+}
+
 func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 	br *repository.BoostRequest,
 ) ([]*discordgo.Message, error) {
