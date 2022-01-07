@@ -28,7 +28,7 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/zekroTJA/timedmap v1.4.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b // indirect
-	golang.org/x/sys v0.0.0-20211214234402-4825e8c3871d // indirect
+	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
