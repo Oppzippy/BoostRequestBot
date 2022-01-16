@@ -100,6 +100,8 @@ func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, erro
 	}
 
 	return &discordgo.MessageSend{
-		Embed: embed,
+		Content:         requester.Mention(),
+		AllowedMentions: &discordgo.MessageAllowedMentions{},
+		Embed:           embed,
 	}, nil
 }
