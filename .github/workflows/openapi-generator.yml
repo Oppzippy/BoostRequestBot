@@ -17,7 +17,7 @@ jobs:
 
       - name: Generate Python SDK
         run: |
-          docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
+          docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli:latest-release generate \
             -i /local/openapi.yml \
             -g python \
             -c /local/openapi-config-python.yml \
@@ -27,7 +27,7 @@ jobs:
 
       - name: Generate Docs
         run: |
-          docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate \
+          docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli:latest-release generate \
             -i /local/openapi.yml \
             -g markdown \
             -o /local/docs
