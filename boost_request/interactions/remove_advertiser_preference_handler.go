@@ -40,6 +40,16 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 	if err != nil {
 		return fmt.Errorf("remove advertiser preference: boost request is nil: guild %v, boost request %v: %v", guildID, boostRequestID, err)
 	}
+	if br.IsResolved {
+		err := discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "An advertiser was already chosen for this boost request.",
+				Flags:   1 << 6, // Ephemeral
+			},
+		})
+		return err
+	}
 
 	err = h.brm.CancelBoostRequest(br)
 	if err != nil {
