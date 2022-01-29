@@ -372,6 +372,7 @@ func (repo *dbRepository) DeleteBoostRequest(br *repository.BoostRequest) error 
 		WHERE
 			id = ?
 		AND
+			resolved_at IS NULL AND
 			deleted_at IS NULL`,
 		time.Now(),
 		br.ID,
