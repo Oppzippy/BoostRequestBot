@@ -13,7 +13,6 @@ import (
 func TestMessageSend(t *testing.T) {
 	t.Parallel()
 	mockController := gomock.NewController(t)
-	defer mockController.Finish()
 	discord := mock_messenger.NewMockDiscordSender(mockController)
 
 	m := messenger.NewMessage(&messenger.MessageDestination{

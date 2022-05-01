@@ -13,7 +13,6 @@ import (
 func TestMessageDestinationResolveChannel(t *testing.T) {
 	t.Parallel()
 	mockController := gomock.NewController(t)
-	defer mockController.Finish()
 	discord := mock_messenger.NewMockdiscordUserChannelCreate(mockController)
 
 	dest := messenger.MessageDestination{
@@ -33,7 +32,6 @@ func TestMessageDestinationResolveChannel(t *testing.T) {
 func TestMessageDestinationResolveDM(t *testing.T) {
 	t.Parallel()
 	mockController := gomock.NewController(t)
-	defer mockController.Finish()
 	discord := mock_messenger.NewMockdiscordUserChannelCreate(mockController)
 	discord.
 		EXPECT().
@@ -59,7 +57,6 @@ func TestMessageDestinationResolveDM(t *testing.T) {
 func TestMessageDestinationResolveFallbackDM(t *testing.T) {
 	t.Parallel()
 	mockController := gomock.NewController(t)
-	defer mockController.Finish()
 	discord := mock_messenger.NewMockdiscordUserChannelCreate(mockController)
 	discord.
 		EXPECT().

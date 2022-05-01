@@ -14,7 +14,6 @@ import (
 func TestMessageBrokerSend(t *testing.T) {
 	t.Parallel()
 	mockController := gomock.NewController(t)
-	defer mockController.Finish()
 	discord := mock_messenger.NewMockDiscordSenderAndDeleter(mockController)
 	discord.
 		EXPECT().
@@ -41,7 +40,6 @@ func TestMessageBrokerSend(t *testing.T) {
 func TestMessageBrokerSendDelayed(t *testing.T) {
 	t.Parallel()
 	mockController := gomock.NewController(t)
-	defer mockController.Finish()
 	discord := mock_messenger.NewMockDiscordSenderAndDeleter(mockController)
 	discord.
 		EXPECT().
@@ -88,7 +86,6 @@ func TestMessageBrokerSendDelayed(t *testing.T) {
 func TestMessageBrokerSendTemporary(t *testing.T) {
 	t.Parallel()
 	mockController := gomock.NewController(t)
-	defer mockController.Finish()
 	discord := mock_messenger.NewMockDiscordSenderAndDeleter(mockController)
 	discord.
 		EXPECT().

@@ -14,7 +14,6 @@ import (
 func TestDelayedMessageSendFuture(t *testing.T) {
 	t.Parallel()
 	mockController := gomock.NewController(t)
-	defer mockController.Finish()
 	discord := mock_messenger.NewMockDiscordSender(mockController)
 	sendable := mock_messenger.NewMockSendable(mockController)
 
