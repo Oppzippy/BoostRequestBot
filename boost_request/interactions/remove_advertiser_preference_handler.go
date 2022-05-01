@@ -84,7 +84,7 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 		// todo tell them to recreate the br later
 		return err
 	}
-	_, err = discord.FollowupMessageCreate(discord.State.User.ID, event.Interaction, true, &discordgo.WebhookParams{
+	_, err = discord.FollowupMessageCreate(event.Interaction, true, &discordgo.WebhookParams{
 		Content: "A new boost request was created with no advertiser preference.",
 	})
 	if err != nil {
