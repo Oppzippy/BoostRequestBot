@@ -220,7 +220,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
 }
 
 func (messenger *BoostRequestMessenger) SendRoll(
-	channelID string, br *repository.BoostRequest, rollResults *roll.WeightedRollResults,
+	channelID string, br *repository.BoostRequest, rollResults *roll.WeightedRollResults[string],
 ) (*discordgo.Message, error) {
 	m := messages.NewBoostRequestRollMessage(messenger.localizer("en"), br, rollResults)
 	message, err := messenger.send(&MessageDestination{

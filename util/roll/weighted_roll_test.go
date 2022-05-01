@@ -9,14 +9,14 @@ import (
 
 func TestWeightedRollWithNoItems(t *testing.T) {
 	t.Parallel()
-	roll := roll.NewWeightedRoll(0)
+	roll := roll.NewWeightedRoll[string](0)
 	results, ok := roll.Roll()
 	checkNotOK(t, results, ok)
 }
 
 func TestWeightedRollWithOneItem(t *testing.T) {
 	t.Parallel()
-	roll := roll.NewWeightedRoll(1)
+	roll := roll.NewWeightedRoll[string](1)
 	roll.AddItem("test", 1)
 	results, ok := roll.Roll()
 	if !checkOK(t, results, ok) {
@@ -31,7 +31,7 @@ func TestWeightedRollWithOneItem(t *testing.T) {
 
 func TestWeightedRollZeroWeight(t *testing.T) {
 	t.Parallel()
-	roll := roll.NewWeightedRoll(1)
+	roll := roll.NewWeightedRoll[string](1)
 	roll.AddItem("test", 0)
 	results, ok := roll.Roll()
 	checkNotOK(t, results, ok)
@@ -39,7 +39,7 @@ func TestWeightedRollZeroWeight(t *testing.T) {
 
 func TestWeightedRollResultsIterator(t *testing.T) {
 	t.Parallel()
-	roll := roll.NewWeightedRoll(2)
+	roll := roll.NewWeightedRoll[string](2)
 	roll.AddItem("one", 1)
 	roll.AddItem("two", 2)
 	results, ok := roll.Roll()
@@ -72,7 +72,7 @@ func TestRandomness(t *testing.T) {
 	iterations := 100000
 
 	items := []string{"zero", "one", "two", "three"}
-	roll := roll.NewWeightedRoll(len(items))
+	roll := roll.NewWeightedRoll[string](len(items))
 	for i, item := range items {
 		roll.AddItem(item, float64(i))
 	}
@@ -108,7 +108,7 @@ func triangleNumber(n int) int {
 	return (n*n + n) / 2
 }
 
-func checkOK(t *testing.T, results *roll.WeightedRollResults, ok bool) bool {
+func checkOK[T any](t *testing.T, results *roll.WeightedRollResults[T], ok bool) bool {
 	if !ok {
 		t.Errorf("roll wasn't ok")
 		return false
@@ -120,7 +120,7 @@ func checkOK(t *testing.T, results *roll.WeightedRollResults, ok bool) bool {
 	return true
 }
 
-func checkNotOK(t *testing.T, results *roll.WeightedRollResults, ok bool) bool {
+func checkNotOK[T any](t *testing.T, results *roll.WeightedRollResults[T], ok bool) bool {
 	if ok {
 		t.Errorf("roll was ok, expected not ok")
 		return false

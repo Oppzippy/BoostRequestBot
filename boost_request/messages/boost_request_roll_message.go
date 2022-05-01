@@ -14,11 +14,11 @@ import (
 type BoostRequestRollMessage struct {
 	localizer    *i18n.Localizer
 	boostRequest *repository.BoostRequest
-	rollResults  *roll.WeightedRollResults
+	rollResults  *roll.WeightedRollResults[string]
 }
 
 func NewBoostRequestRollMessage(
-	localizer *i18n.Localizer, br *repository.BoostRequest, rollResults *roll.WeightedRollResults,
+	localizer *i18n.Localizer, br *repository.BoostRequest, rollResults *roll.WeightedRollResults[string],
 ) *BoostRequestRollMessage {
 	return &BoostRequestRollMessage{
 		localizer:    localizer,

@@ -5,26 +5,26 @@ import (
 	"math/rand"
 )
 
-type WeightedRoll struct {
-	items       []string
+type WeightedRoll[T any] struct {
+	items       []T
 	weights     []float64
 	totalWeight float64
 }
 
-func NewWeightedRoll(expectedSize int) *WeightedRoll {
-	return &WeightedRoll{
-		items:   make([]string, 0, expectedSize),
+func NewWeightedRoll[T any](expectedSize int) *WeightedRoll[T] {
+	return &WeightedRoll[T]{
+		items:   make([]T, 0, expectedSize),
 		weights: make([]float64, 0, expectedSize),
 	}
 }
 
-func (roll *WeightedRoll) AddItem(item string, weight float64) {
+func (roll *WeightedRoll[T]) AddItem(item T, weight float64) {
 	roll.items = append(roll.items, item)
 	roll.weights = append(roll.weights, weight)
 	roll.totalWeight += weight
 }
 
-func (roll *WeightedRoll) Roll() (results *WeightedRollResults, ok bool) {
+func (roll *WeightedRoll[T]) Roll() (results *WeightedRollResults[T], ok bool) {
 	if len(roll.items) == 0 {
 		return nil, false
 	}
@@ -44,7 +44,7 @@ func (roll *WeightedRoll) Roll() (results *WeightedRollResults, ok bool) {
 		return nil, false
 	}
 
-	return &WeightedRollResults{
+	return &WeightedRollResults[T]{
 		items:       roll.items,
 		weights:     roll.weights,
 		chosenIndex: chosenIndex,

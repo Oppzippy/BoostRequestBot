@@ -11,7 +11,7 @@ import (
 type AdvertiserChosenEvent struct {
 	BoostRequest repository.BoostRequest
 	UserID       string
-	RollResults  *roll.WeightedRollResults
+	RollResults  *roll.WeightedRollResults[string]
 }
 
 type ActiveRequest struct {
@@ -130,13 +130,13 @@ func (r *ActiveRequest) setAdvertiserWithoutLocking(event *AdvertiserChosenEvent
 }
 
 // mutex should be locked before calling this method
-func (r *ActiveRequest) chooseAdvertiser(delay int) (rollInfo *roll.WeightedRollResults, ok bool) {
+func (r *ActiveRequest) chooseAdvertiser(delay int) (rollInfo *roll.WeightedRollResults[string], ok bool) {
 	users := r.signupsByDelay[delay]
 	if len(users) == 0 {
 		return nil, false
 	}
 
-	weightedRoll := roll.NewWeightedRoll(len(users))
+	weightedRoll := roll.NewWeightedRoll[string](len(users))
 	for _, user := range users {
 		weightedRoll.AddItem(user.userID, user.privileges.Weight)
 	}

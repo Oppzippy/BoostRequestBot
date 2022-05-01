@@ -1,32 +1,34 @@
 package roll
 
-type WeightedRollResults struct {
-	items       []string
+type WeightedRollResults[T any] struct {
+	items       []T
 	weights     []float64
 	chosenIndex int
 	roll        float64
 }
 
-func (results *WeightedRollResults) Iterator() *WeightedRollResultsIterator {
-	return &WeightedRollResultsIterator{
+func (results *WeightedRollResults[T]) Iterator() *WeightedRollResultsIterator[T] {
+	return &WeightedRollResultsIterator[T]{
 		results: *results,
 	}
 }
 
-func (results *WeightedRollResults) HasChosenItem() bool {
+func (results *WeightedRollResults[T]) HasChosenItem() bool {
 	return results.chosenIndex != -1
 }
 
-func (results *WeightedRollResults) ChosenItem() (item string) {
+func (results *WeightedRollResults[T]) ChosenItem() (item T) {
 	if !results.HasChosenItem() {
-		return ""
+		var zero T
+		return zero
 	}
 	return results.items[results.chosenIndex]
 }
 
-func (results *WeightedRollResults) ChosenItemAndWeight() (item string, weight float64) {
+func (results *WeightedRollResults[T]) ChosenItemAndWeight() (item T, weight float64) {
 	if !results.HasChosenItem() {
-		return "", 0
+		var zero T
+		return zero, 0
 	}
 	item = results.items[results.chosenIndex]
 	weight = results.weights[results.chosenIndex]
@@ -34,6 +36,6 @@ func (results *WeightedRollResults) ChosenItemAndWeight() (item string, weight f
 }
 
 // Roll Returns the random number used to determine the chosen item
-func (results *WeightedRollResults) Roll() float64 {
+func (results *WeightedRollResults[T]) Roll() float64 {
 	return results.roll
 }

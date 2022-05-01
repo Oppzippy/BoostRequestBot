@@ -1,17 +1,18 @@
 package roll
 
-type WeightedRollResultsIterator struct {
-	results WeightedRollResults
+type WeightedRollResultsIterator[T any] struct {
+	results WeightedRollResults[T]
 	index   int
 }
 
-func (iter *WeightedRollResultsIterator) HasNext() bool {
+func (iter *WeightedRollResultsIterator[T]) HasNext() bool {
 	return iter.index < len(iter.results.items)
 }
 
-func (iter *WeightedRollResultsIterator) Next() (item string, weight float64, isChosenItem bool) {
+func (iter *WeightedRollResultsIterator[T]) Next() (item T, weight float64, isChosenItem bool) {
 	if iter.index == len(iter.results.items) {
-		return "", 0, false
+		var zero T
+		return zero, 0, false
 	}
 	item = iter.results.items[iter.index]
 	weight = iter.results.weights[iter.index]

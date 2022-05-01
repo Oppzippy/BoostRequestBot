@@ -22,7 +22,7 @@ func TestBoostRequestRollMessage(t *testing.T) {
 		Channel:    &repository.BoostRequestChannel{},
 		ExternalID: &id,
 	}
-	roll := roll.NewWeightedRoll(3)
+	roll := roll.NewWeightedRoll[string](3)
 	roll.AddItem("advertiser1", 1)
 	roll.AddItem("advertiser2", 2)
 	roll.AddItem("advertiser3", 3)
