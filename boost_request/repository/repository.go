@@ -19,7 +19,6 @@ type Repository interface {
 	BoostRequestRepository
 	AdvertiserPrivilegesRepository
 	LogChannelRepository
-	RoleDiscountRepository
 	StealCreditRepository
 	RollChannelRepository
 	WebhookRepository
@@ -85,21 +84,6 @@ type LogChannelRepository interface {
 	InsertLogChannel(guildID, channelID string) error
 	// DeleteLogChannel Deletes a guild's log channel.
 	DeleteLogChannel(guildID string) error
-}
-
-type RoleDiscountRepository interface {
-	// GetBestDiscountsForRoles Returns the best discount of each boost type available to the provided roles.
-	GetBestDiscountsForRoles(guildID string, roleID []string) ([]*RoleDiscount, error)
-	// GetRoleDiscountsForRole Returns a role's discounts on all types of boosts.
-	GetRoleDiscountsForRole(guildID, roleID string) ([]*RoleDiscount, error)
-	// GetRoleDiscountForBoostType Returns a role's discount for a specific boost type or ErrNoResults.
-	GetRoleDiscountForBoostType(guildID, roleID, boostType string) (*RoleDiscount, error)
-	// GetRoleDiscountsForGuild Returns all role discounts in a guild.
-	GetRoleDiscountsForGuild(guildID string) ([]*RoleDiscount, error)
-	// InsertRoleDiscount Creates a role discount in a guild. If the discount already exists, it will be updated.
-	InsertRoleDiscount(rd *RoleDiscount) error
-	// DeleteRoleDiscount Deletes a role discount in a guild.
-	DeleteRoleDiscount(rd *RoleDiscount) error
 }
 
 type StealCreditRepository interface {

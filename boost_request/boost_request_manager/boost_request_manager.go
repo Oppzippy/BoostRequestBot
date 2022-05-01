@@ -9,8 +9,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	models_v1 "github.com/oppzippy/BoostRequestBot/api/v1/models"
-	"github.com/oppzippy/BoostRequestBot/api/v2/models"
+	"github.com/oppzippy/BoostRequestBot/api/v3/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/active_request"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
@@ -101,9 +100,6 @@ func (brm *BoostRequestManager) partialToBoostRequest(brc *repository.BoostReque
 		RequesterID:            brPartial.RequesterID,
 		Message:                brPartial.Message,
 		Price:                  brPartial.Price,
-		AdvertiserCut:          brPartial.AdvertiserCut,
-		AdvertiserRoleCuts:     brPartial.AdvertiserRoleCuts,
-		Discount:               brPartial.Discount,
 		EmbedFields:            brPartial.EmbedFields,
 		PreferredAdvertiserIDs: brPartial.PreferredAdvertiserIDs,
 		CreatedAt:              time.Now().UTC(),
@@ -118,16 +114,6 @@ func (brm *BoostRequestManager) partialToBoostRequest(brc *repository.BoostReque
 		}
 	}
 
-	// Essentially checking if the user is a bot
-	// TODO add IsBot to BoostRequest
-	if br.EmbedFields == nil && br.Price == 0 {
-		roleDiscounts, err := brm.getRoleDiscountsForUser(br.GuildID, br.RequesterID)
-		if err != nil {
-			// They won't get their discounts, but we don't have to abort
-			log.Printf("Error searching roles for discounts: %v", err)
-		}
-		br.RoleDiscounts = roleDiscounts
-	}
 	return br, nil
 }
 
@@ -337,32 +323,14 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 		}
 	}
 
-	// v1
+	// v3
 	err = brm.webhookManager.QueueToSend(br.GuildID, &webhook.WebhookEvent{
-		Event:   webhook.AdvertiserChosenEvent,
-		Payload: models_v1.FromRepositoryBoostRequest(&br),
-	})
-	if err != nil {
-		log.Printf("error queueing webhook: %v", err)
-	}
-
-	// v2
-	err = brm.webhookManager.QueueToSend(br.GuildID, &webhook.WebhookEvent{
-		Event:   webhook.AdvertiserChosenEventV2,
+		Event:   webhook.AdvertiserChosenEventV3,
 		Payload: models.FromRepositoryBoostRequest(&br),
 	})
 	if err != nil {
 		log.Printf("error queueing webhook: %v", err)
 	}
-}
-
-func (brm *BoostRequestManager) getRoleDiscountsForUser(guildID, userID string) ([]*repository.RoleDiscount, error) {
-	member, err := brm.discord.GuildMember(guildID, userID)
-	if err != nil {
-		return nil, err
-	}
-	bestDiscounts, err := brm.repo.GetBestDiscountsForRoles(guildID, member.Roles)
-	return bestDiscounts, err
 }
 
 func (brm *BoostRequestManager) signUp(br *repository.BoostRequest, userID string, privileges *repository.AdvertiserPrivileges) {

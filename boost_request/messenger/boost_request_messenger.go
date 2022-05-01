@@ -11,7 +11,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
-	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/util/channels"
 	"github.com/oppzippy/BoostRequestBot/util/roll"
@@ -74,7 +73,6 @@ func (messenger *BoostRequestMessenger) SendBackendSignupMessage(
 	localizer := messenger.localizer("en")
 	m := messages.NewBackendSignupMessage(
 		localizer,
-		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 		buttonConfiguration,
 	)
@@ -92,7 +90,6 @@ func (messenger *BoostRequestMessenger) SendBoostRequestCreatedDM(br *repository
 
 	m := messages.NewBoostRequestCreatedDM(localizer,
 		messenger.discord,
-		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 	)
 
@@ -120,7 +117,6 @@ func (messenger *BoostRequestMessenger) SendPreferredAdvertiserReminder(br *repo
 		},
 		messages.NewBoostRequestPreferredAdvertiserReminder(
 			localizer,
-			partials.NewDiscountFormatter(localizer, messenger.rnp),
 			br,
 		),
 		15*time.Minute,
@@ -135,7 +131,6 @@ func (messenger *BoostRequestMessenger) SendBackendAdvertiserChosenMessage(
 	m := messages.NewBackendAdvertiserChosenMessage(
 		localizer,
 		messenger.discord,
-		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 	)
 
@@ -179,7 +174,6 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToRequester(
 	m := messages.NewAdvertiserChosenDMToRequester(
 		localizer,
 		messenger.discord,
-		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 	)
 
@@ -203,7 +197,6 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
 	m := messages.NewAdvertiserChosenDMToAdvertiser(
 		localizer,
 		messenger.discord,
-		partials.NewDiscountFormatter(localizer, messenger.rnp),
 		br,
 	)
 

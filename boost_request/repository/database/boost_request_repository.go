@@ -61,7 +61,7 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 	row, err := repo.db.Query(`
 		SELECT
 			br.id, br.external_id, br.guild_id, br.backend_channel_id, br.requester_id, br.advertiser_id, br.message,
-			br.embed_fields, br.price, br.discount, br.advertiser_cut, br.created_at, br.resolved_at,
+			br.embed_fields, br.price, br.created_at, br.resolved_at,
 			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM
 			boost_request br
@@ -83,26 +83,11 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 			return nil, err
 		}
 		// TODO do this in 2 queries rather than n+1
-		// n is usually 1 though, so it's 2 queries in the most common case anyway
-		rd, err := getBoostRequestRoleDiscounts(repo.db, br.ID)
-		if err != nil {
-			return nil, err
-		}
-		br.RoleDiscounts = rd
-
-		// TODO another n+1
 		preferredAdvertiserIDs, err := repo.getPreferredAdvertisers(br)
 		if err != nil {
 			return nil, err
 		}
 		br.PreferredAdvertiserIDs = preferredAdvertiserIDs
-
-		// TODO another n+1
-		roleCuts, err := repo.getRoleCuts(br.ID)
-		if err != nil {
-			return nil, err
-		}
-		br.AdvertiserRoleCuts = roleCuts
 
 		// TODO another n+1
 		backendMessages, err := repo.getBoostRequestBackendMessages(br.ID)
@@ -128,8 +113,6 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 		resolvedAt      sql.NullTime
 		embedFieldsJSON sql.NullString
 		price           sql.NullInt64
-		discount        sql.NullInt64
-		advertiserCut   sql.NullInt64
 
 		brcID                sql.NullInt64
 		brcGuildID           sql.NullString
@@ -140,7 +123,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	)
 	err := row.Scan(
 		&br.ID, &br.ExternalID, &br.GuildID, &br.BackendChannelID, &br.RequesterID, &advertiserID, &br.Message,
-		&embedFieldsJSON, &price, &discount, &advertiserCut, &br.CreatedAt, &resolvedAt,
+		&embedFieldsJSON, &price, &br.CreatedAt, &resolvedAt,
 		&brcID, &brcGuildID, &brcFrontendChannelID, &brcBackendChannelID, &brcUsesBuyerMessage, &brcSkipsBuyerDM,
 	)
 	if err != nil {
@@ -158,8 +141,6 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	br.AdvertiserID = advertiserID.String
 	br.IsResolved = resolvedAt.Valid
 	br.Price = price.Int64
-	br.AdvertiserCut = advertiserCut.Int64
-	br.Discount = discount.Int64
 	if brcID.Valid {
 		br.Channel = &repository.BoostRequestChannel{
 			ID:                brcID.Int64,
@@ -199,7 +180,7 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		`INSERT INTO boost_request
 			(
 				external_id, boost_request_channel_id, guild_id, backend_channel_id, requester_id, advertiser_id, message, embed_fields,
-				price, discount, advertiser_cut, created_at
+				price, created_at
 			)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		br.ExternalID,
@@ -217,14 +198,6 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 			Int64: br.Price,
 			Valid: br.Price != 0,
 		},
-		sql.NullInt64{
-			Int64: br.Discount,
-			Valid: br.Discount != 0,
-		},
-		sql.NullInt64{
-			Int64: br.AdvertiserCut,
-			Valid: br.AdvertiserCut != 0,
-		},
 		br.CreatedAt,
 	)
 	err = rollbackIfErr(tx, err)
@@ -237,18 +210,11 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		return err
 	}
 
-	err = rollbackIfErr(tx, insertRoleDiscounts(tx, br))
-	if err != nil {
-		return err
-	}
 	err = rollbackIfErr(tx, repo.updatePreferredAdvertisers(tx, id, br.PreferredAdvertiserIDs))
 	if err != nil {
 		return err
 	}
-	err = rollbackIfErr(tx, repo.updateRoleCuts(tx, id, br.AdvertiserRoleCuts))
-	if err != nil {
-		return err
-	}
+
 	err = rollbackIfErr(tx, repo.updateBoostRequestBackendMessages(tx, id, br.BackendMessages))
 	if err != nil {
 		return err
@@ -284,83 +250,8 @@ func (repo *dbRepository) ResolveBoostRequest(br *repository.BoostRequest) error
 		return err
 	}
 
-	err = rollbackIfErr(tx, insertRoleDiscounts(tx, br))
-	if err != nil {
-		return err
-	}
-
 	err = tx.Commit()
 	return err
-}
-
-type queryable interface {
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	Exec(query string, args ...interface{}) (sql.Result, error)
-}
-
-func insertRoleDiscounts(db queryable, br *repository.BoostRequest) error {
-	numRoleDiscounts := len(br.RoleDiscounts)
-	args := make([]interface{}, 0, numRoleDiscounts+1)
-	args = append(args, br.ID)
-	if br.RoleDiscounts != nil {
-		for _, rd := range br.RoleDiscounts {
-			args = append(args, rd.ID)
-		}
-	}
-	_, err := db.Exec(`
-		DELETE FROM
-			boost_request_role_discount
-		WHERE
-			boost_request_id = ?
-			AND role_discount_id NOT IN `+SQLSet(numRoleDiscounts),
-		args...,
-	)
-	if err != nil {
-		return err
-	}
-	if numRoleDiscounts == 0 {
-		return nil
-	}
-
-	args = make([]interface{}, 0, numRoleDiscounts*2)
-	for _, rd := range br.RoleDiscounts {
-		args = append(args, br.ID, rd.ID)
-	}
-
-	_, err = db.Exec(
-		`INSERT IGNORE INTO boost_request_role_discount (
-			boost_request_id, role_discount_id
-		) VALUES `+SQLSets(2, numRoleDiscounts),
-		args...,
-	)
-	return err
-}
-
-func getBoostRequestRoleDiscounts(db queryable, boostRequestID int64) ([]*repository.RoleDiscount, error) {
-	rows, err := db.Query(`
-		SELECT
-			rd.id, rd.guild_id, rd.role_id, rd.boost_type, rd.discount
-		FROM
-			boost_request_role_discount brrd
-		INNER JOIN
-			role_discount rd ON brrd.role_discount_id = rd.id
-		WHERE
-			brrd.boost_request_id = ?`,
-		boostRequestID,
-	)
-	if err != nil {
-		return nil, err
-	}
-	discounts := make([]*repository.RoleDiscount, 0, 10)
-	for rows.Next() {
-		var rd repository.RoleDiscount
-		err := rows.Scan(&rd.ID, &rd.GuildID, &rd.RoleID, &rd.BoostType, &rd.Discount)
-		if err != nil {
-			return nil, err
-		}
-		discounts = append(discounts, &rd)
-	}
-	return discounts, nil
 }
 
 func (repo *dbRepository) DeleteBoostRequest(br *repository.BoostRequest) error {

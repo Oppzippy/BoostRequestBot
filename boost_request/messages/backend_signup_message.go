@@ -13,7 +13,6 @@ import (
 type BackendSignupMessage struct {
 	boostRequest        *repository.BoostRequest
 	localizer           *i18n.Localizer
-	discountFormatter   *partials.DiscountFormatter
 	embedPartial        *partials.BoostRequestEmbedTemplate
 	buttonConfiguration BackendSignupMessageButtonConfiguration
 }
@@ -22,20 +21,17 @@ type BackendSignupMessageButtonConfiguration struct {
 	SignUp       bool
 	Steal        bool
 	CancelSignup bool
-	CheckMyCut   bool
 }
 
 func NewBackendSignupMessage(
 	localizer *i18n.Localizer,
-	df *partials.DiscountFormatter,
 	br *repository.BoostRequest,
 	buttonConfiguration BackendSignupMessageButtonConfiguration,
 ) *BackendSignupMessage {
 	return &BackendSignupMessage{
 		boostRequest:        br,
 		localizer:           localizer,
-		discountFormatter:   df,
-		embedPartial:        partials.NewBoostRequestEmbedTemplate(localizer, df, br),
+		embedPartial:        partials.NewBoostRequestEmbedTemplate(localizer, br),
 		buttonConfiguration: buttonConfiguration,
 	}
 }
@@ -112,18 +108,6 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 				},
 			}),
 			CustomID: "boostRequest:cancelSignup",
-			Style:    discordgo.SecondaryButton,
-		})
-	}
-	if m.buttonConfiguration.CheckMyCut && len(br.AdvertiserRoleCuts) > 0 {
-		components = append(components, discordgo.Button{
-			Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "CheckMyCut",
-					Other: "Check My Cut",
-				},
-			}),
-			CustomID: "boostRequest:checkCut",
 			Style:    discordgo.SecondaryButton,
 		})
 	}

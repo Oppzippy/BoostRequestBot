@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
-	"github.com/oppzippy/BoostRequestBot/api/v2/models"
+	"github.com/oppzippy/BoostRequestBot/api/v3/models"
 )
 
 // Requires API key middleware

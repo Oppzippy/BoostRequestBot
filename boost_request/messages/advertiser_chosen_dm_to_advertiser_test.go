@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
-	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -27,10 +26,6 @@ func TestAdvertiserChosenDMToAdvertiserHuman(t *testing.T) {
 				Discriminator: "1234",
 			},
 		},
-		partials.NewDiscountFormatter(
-			emptyLocalizer(),
-			&mocks.MockRoleNameProvider{},
-		),
 		&repository.BoostRequest{
 			RequesterID: "1",
 			Channel:     &repository.BoostRequestChannel{},
@@ -65,10 +60,6 @@ func TestAdvertiserChosenDMToAdvertiserBot(t *testing.T) {
 				Discriminator: "1234",
 			},
 		},
-		partials.NewDiscountFormatter(
-			emptyLocalizer(),
-			&mocks.MockRoleNameProvider{},
-		),
 		&repository.BoostRequest{
 			RequesterID: "1",
 			EmbedFields: []*repository.MessageEmbedField{

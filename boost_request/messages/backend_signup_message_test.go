@@ -6,10 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
-	"github.com/oppzippy/BoostRequestBot/boost_request/messages/mocks"
-	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
-	"github.com/shopspring/decimal"
 )
 
 func TestBackendSignupMessage(t *testing.T) {
@@ -29,13 +26,11 @@ func TestBackendSignupMessage(t *testing.T) {
 
 	bsm := messages.NewBackendSignupMessage(
 		emptyLocalizer(),
-		&partials.DiscountFormatter{},
 		br,
 		messages.BackendSignupMessageButtonConfiguration{
 			SignUp:       true,
 			Steal:        true,
 			CancelSignup: true,
-			CheckMyCut:   true,
 		},
 	)
 
@@ -56,41 +51,21 @@ func TestBackendSignupMessageRoleDiscount(t *testing.T) {
 		t.Errorf("generate uuid: %v", err)
 		return
 	}
-	discount, err := decimal.NewFromString("0.2")
 	if err != nil {
 		t.Errorf("parsing discount: %v", err)
 	}
 
 	br := &repository.BoostRequest{
-		Channel: &repository.BoostRequestChannel{},
-		RoleDiscounts: []*repository.RoleDiscount{
-			{
-				RoleID:    "1",
-				BoostType: "mythic+",
-				Discount:  discount,
-			},
-			{
-				RoleID:    "1",
-				BoostType: "raid",
-				Discount:  discount,
-			},
-		},
+		Channel:    &repository.BoostRequestChannel{},
 		ExternalID: &id,
 	}
 	bsm := messages.NewBackendSignupMessage(
 		emptyLocalizer(),
-		partials.NewDiscountFormatter(
-			emptyLocalizer(),
-			&mocks.MockRoleNameProvider{
-				Value: "booster",
-			},
-		),
 		br,
 		messages.BackendSignupMessageButtonConfiguration{
 			SignUp:       true,
 			Steal:        true,
 			CancelSignup: true,
-			CheckMyCut:   true,
 		},
 	)
 

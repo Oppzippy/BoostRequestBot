@@ -63,7 +63,6 @@ func (step *sendMessageStep) send(channelID string) (RevertFunction, error) {
 		SignUp:       true,
 		Steal:        !isDMToPreferredAdvertiser,
 		CancelSignup: !isDMToPreferredAdvertiser,
-		CheckMyCut:   true,
 	})
 	if err != nil {
 		return revertNoOp, fmt.Errorf("sending backend signup message: %w", err)

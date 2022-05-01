@@ -26,11 +26,7 @@ type BoostRequest struct {
 	Message                string
 	EmbedFields            []*MessageEmbedField
 	Price                  int64
-	Discount               int64
-	AdvertiserCut          int64
-	AdvertiserRoleCuts     map[string]int64
 	PreferredAdvertiserIDs map[string]struct{}
-	RoleDiscounts          []*RoleDiscount
 	CreatedAt              time.Time
 	IsResolved             bool
 	ResolvedAt             time.Time

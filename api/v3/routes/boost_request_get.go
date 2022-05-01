@@ -10,7 +10,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
 	"github.com/oppzippy/BoostRequestBot/api/json_unmarshaler"
 	"github.com/oppzippy/BoostRequestBot/api/middleware"
-	"github.com/oppzippy/BoostRequestBot/api/v2/models"
+	"github.com/oppzippy/BoostRequestBot/api/v3/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 

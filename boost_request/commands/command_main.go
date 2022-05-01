@@ -26,10 +26,6 @@ var MainCommand = dgc.Command{
 		&addStealCreditsCommand,
 		&setStealCreditsCommand,
 		&checkStealCreditsCommand,
-		// Role discounts
-		&setRoleDiscountCommand,
-		&listRoleDiscountsCommand,
-		&removeRoleDiscountCommand,
 		// Boost request RNG Rolls
 		&setRollChannelCommand,
 		&removeRollChannelCommand,

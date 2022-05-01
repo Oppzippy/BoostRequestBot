@@ -11,9 +11,8 @@ import (
 )
 
 type BoostRequestEmbedTemplate struct {
-	boostRequest      *repository.BoostRequest
-	localizer         *i18n.Localizer
-	discountFormatter *DiscountFormatter
+	boostRequest *repository.BoostRequest
+	localizer    *i18n.Localizer
 }
 
 type BoostRequestEmbedConfiguration struct {
@@ -27,12 +26,11 @@ type BoostRequestEmbedConfiguration struct {
 }
 
 func NewBoostRequestEmbedTemplate(
-	localizer *i18n.Localizer, df *DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer, br *repository.BoostRequest,
 ) *BoostRequestEmbedTemplate {
 	return &BoostRequestEmbedTemplate{
-		boostRequest:      br,
-		localizer:         localizer,
-		discountFormatter: df,
+		boostRequest: br,
+		localizer:    localizer,
 	}
 }
 
@@ -62,15 +60,6 @@ func (m *BoostRequestEmbedTemplate) Embed(config BoostRequestEmbedConfiguration)
 	}
 	if price := m.priceField(); config.Price && price != nil {
 		embed.Fields = append(embed.Fields, price)
-	}
-	if advertiserCut := m.advertiserCutField(); config.AdvertiserCut && advertiserCut != nil {
-		embed.Fields = append(embed.Fields, advertiserCut)
-	}
-	if rd := m.roleDiscountFields(); config.Discount && rd != nil {
-		embed.Fields = append(embed.Fields, rd)
-	}
-	if totals := m.discountTotalsFields(); config.DiscountTotals && totals != nil {
-		embed.Fields = append(embed.Fields, totals...)
 	}
 	if len(m.boostRequest.EmbedFields) != 0 {
 		embed.Fields = append(embed.Fields, repository.ToDiscordEmbedFields(m.boostRequest.EmbedFields)...)
@@ -131,89 +120,6 @@ func (m *BoostRequestEmbedTemplate) priceField() *discordgo.MessageEmbedField {
 			Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.Price),
 			Inline: true,
 		}
-	}
-	return nil
-}
-
-func (m *BoostRequestEmbedTemplate) advertiserCutField() *discordgo.MessageEmbedField {
-	if m.boostRequest.AdvertiserCut != 0 {
-		return &discordgo.MessageEmbedField{
-			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "BaseAdvertiserCut",
-					One:   "Base Advertiser Cut",
-					Other: "Base Advertiser Cuts",
-				},
-				PluralCount: 1,
-			}),
-			Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.AdvertiserCut),
-			Inline: true,
-		}
-	}
-	return nil
-}
-
-func (m *BoostRequestEmbedTemplate) roleDiscountFields() *discordgo.MessageEmbedField {
-	if m.boostRequest.Price != 0 {
-		return &discordgo.MessageEmbedField{
-			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "Discount",
-					One:   "Discount",
-					Other: "Discounts",
-				},
-				PluralCount: 1,
-			}),
-			Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.Discount),
-			Inline: true,
-		}
-	} else if len(m.boostRequest.RoleDiscounts) != 0 {
-		return &discordgo.MessageEmbedField{
-			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-				DefaultMessage: &i18n.Message{
-					ID:    "Discount",
-					One:   "Discount",
-					Other: "Discounts",
-				},
-				PluralCount: 10,
-			}),
-			Value: m.discountFormatter.FormatDiscounts(m.boostRequest.RoleDiscounts),
-		}
-	}
-	return nil
-}
-
-func (m *BoostRequestEmbedTemplate) discountTotalsFields() []*discordgo.MessageEmbedField {
-	if m.boostRequest.Discount != 0 && m.boostRequest.Price != 0 {
-		fields := []*discordgo.MessageEmbedField{
-			{
-				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:    "DiscountedPrice",
-						One:   "Discounted Price",
-						Other: "Discounted Prices",
-					},
-					PluralCount: 1,
-				}),
-				Inline: true,
-				Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
-			},
-		}
-		if m.boostRequest.AdvertiserCut != 0 {
-			fields = append(fields, &discordgo.MessageEmbedField{
-				Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:    "DiscountedBaseAdvertiserCut",
-						One:   "Discounted Base Advertiser Cut",
-						Other: "Discounted Base Advertiser Cuts",
-					},
-					PluralCount: 1,
-				}),
-				Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.AdvertiserCut-m.boostRequest.Discount),
-				Inline: true,
-			})
-		}
-		return fields
 	}
 	return nil
 }

@@ -64,7 +64,6 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestStealHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestSignupHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignupHandler(repo, brm))
-	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCheckCutHandler(repo))
 	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupButtonHandler(repo, brm))
 
 	brdh.slashCommandRegistry.RegisterCommand([]string{"boostrequest", "autosignup", "start"}, command_handlers.NewAutoSignupEnableHandler(bundle, repo, brm).Handle)

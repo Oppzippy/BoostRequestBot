@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/oppzippy/BoostRequestBot/api/middleware"
-	"github.com/oppzippy/BoostRequestBot/api/v2/models"
+	"github.com/oppzippy/BoostRequestBot/api/v3/models"
 )
 
 func NotFoundHandler(rw http.ResponseWriter, r *http.Request) {

@@ -9,22 +9,20 @@ import (
 )
 
 type AdvertiserChosenDMToRequester struct {
-	localizer         *i18n.Localizer
-	userProvider      userProvider
-	discountFormatter *partials.DiscountFormatter
-	boostRequest      *repository.BoostRequest
-	embedPartial      *partials.BoostRequestEmbedTemplate
+	localizer    *i18n.Localizer
+	userProvider userProvider
+	boostRequest *repository.BoostRequest
+	embedPartial *partials.BoostRequestEmbedTemplate
 }
 
 func NewAdvertiserChosenDMToRequester(
-	localizer *i18n.Localizer, up userProvider, df *partials.DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer, up userProvider, br *repository.BoostRequest,
 ) *AdvertiserChosenDMToRequester {
 	return &AdvertiserChosenDMToRequester{
-		localizer:         localizer,
-		userProvider:      up,
-		discountFormatter: df,
-		boostRequest:      br,
-		embedPartial:      partials.NewBoostRequestEmbedTemplate(localizer, df, br),
+		localizer:    localizer,
+		userProvider: up,
+		boostRequest: br,
+		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, br),
 	}
 }
 
@@ -53,7 +51,7 @@ func (m *AdvertiserChosenDMToRequester) Message() (*discordgo.MessageSend, error
 				Other: "Please trade all {{.Gold}} to the advertiser, and make sure they submit the deposit confirmation. You should receive a message from the bot confirming that the advertiser submitted the deposit confirmation. __If the advertiser does not do that, you will not receive your loyalty points.__",
 			},
 			TemplateData: map[string]string{
-				"Gold": message_utils.FormatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
+				"Gold": message_utils.FormatCopper(m.localizer, m.boostRequest.Price),
 			},
 		})
 	}

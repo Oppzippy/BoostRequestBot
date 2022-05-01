@@ -17,13 +17,13 @@ type BoostRequestCreatedDM struct {
 }
 
 func NewBoostRequestCreatedDM(
-	localizer *i18n.Localizer, userProvider userProvider, df *partials.DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer, userProvider userProvider, br *repository.BoostRequest,
 ) *BoostRequestCreatedDM {
 	return &BoostRequestCreatedDM{
 		localizer:    localizer,
 		boostRequest: br,
 		userProvider: userProvider,
-		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, df, br),
+		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, br),
 	}
 }
 

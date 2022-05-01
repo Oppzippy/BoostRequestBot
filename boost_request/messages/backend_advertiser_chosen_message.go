@@ -17,13 +17,13 @@ type BackendAdvertiserChosenMessage struct {
 }
 
 func NewBackendAdvertiserChosenMessage(
-	localizer *i18n.Localizer, up userProvider, df *partials.DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer, up userProvider, br *repository.BoostRequest,
 ) *BackendAdvertiserChosenMessage {
 	return &BackendAdvertiserChosenMessage{
 		localizer:    localizer,
 		boostRequest: br,
 		userProvider: up,
-		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, df, br),
+		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, br),
 	}
 }
 

@@ -14,12 +14,12 @@ type BoostRequestPreferredAdvertiserReminder struct {
 }
 
 func NewBoostRequestPreferredAdvertiserReminder(
-	localizer *i18n.Localizer, df *partials.DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer, br *repository.BoostRequest,
 ) *BoostRequestPreferredAdvertiserReminder {
 	return &BoostRequestPreferredAdvertiserReminder{
 		localizer:    localizer,
 		boostRequest: br,
-		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, df, br),
+		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, br),
 	}
 }
 

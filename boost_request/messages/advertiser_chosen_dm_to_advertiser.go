@@ -9,22 +9,20 @@ import (
 )
 
 type AdvertiserChosenDMToAdvertiser struct {
-	localizer         *i18n.Localizer
-	boostRequest      *repository.BoostRequest
-	userProvider      userProvider
-	discountFormatter *partials.DiscountFormatter
-	embedPartial      *partials.BoostRequestEmbedTemplate
+	localizer    *i18n.Localizer
+	boostRequest *repository.BoostRequest
+	userProvider userProvider
+	embedPartial *partials.BoostRequestEmbedTemplate
 }
 
 func NewAdvertiserChosenDMToAdvertiser(
-	localizer *i18n.Localizer, up userProvider, df *partials.DiscountFormatter, br *repository.BoostRequest,
+	localizer *i18n.Localizer, up userProvider, br *repository.BoostRequest,
 ) *AdvertiserChosenDMToAdvertiser {
 	return &AdvertiserChosenDMToAdvertiser{
-		localizer:         localizer,
-		boostRequest:      br,
-		userProvider:      up,
-		discountFormatter: df,
-		embedPartial:      partials.NewBoostRequestEmbedTemplate(localizer, df, br),
+		localizer:    localizer,
+		boostRequest: br,
+		userProvider: up,
+		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, br),
 	}
 }
 
@@ -68,7 +66,7 @@ func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, erro
 				Other: "Please collect {{.Gold}} from the buyer. Then, send a direct message to <@720340847928934531> (Huokan Bot) with the screenshot attached to the following command:\n`!brconfirm {{.BoostRequestID}}`\nOtherwise, the buyer will not receive any buyer points.",
 			},
 			TemplateData: map[string]string{
-				"Gold":           message_utils.FormatCopper(m.localizer, m.boostRequest.Price-m.boostRequest.Discount),
+				"Gold":           message_utils.FormatCopper(m.localizer, m.boostRequest.Price),
 				"BoostRequestID": m.boostRequest.ExternalID.String(),
 			},
 		})
