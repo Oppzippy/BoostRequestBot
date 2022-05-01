@@ -14,20 +14,22 @@ type SlashCommandRegistry struct {
 
 func NewSlashCommandRegistry() *SlashCommandRegistry {
 	registry := &SlashCommandRegistry{
+		Logger:          log.Default(),
 		commandHandlers: map[string]SlashCommandHandler{},
 		middleware:      []SlashCommandMiddleware{},
-		Logger:          log.Default(),
 	}
 
 	return registry
 }
 
 func (r *SlashCommandRegistry) AttachToDiscord(discord *discordgo.Session) (removeHandler func()) {
-	return discord.AddHandler(r.OnInteraction)
+	return discord.AddHandler(func(discord *discordgo.Session, i *discordgo.InteractionCreate) {
+		r.OnInteraction(discord, i)
+	})
 }
 
-func (r *SlashCommandRegistry) RegisterCommand(path string, handler SlashCommandHandler) {
-	r.commandHandlers[path] = handler
+func (r *SlashCommandRegistry) RegisterCommand(path []string, handler SlashCommandHandler) {
+	r.commandHandlers[commandPathToString(path)] = handler
 }
 
 func (r *SlashCommandRegistry) RegisterMidleware(middleware SlashCommandMiddleware) {
@@ -40,7 +42,7 @@ func (r *SlashCommandRegistry) OnInteraction(responder interactionResponder, i *
 	}
 
 	commandData := i.ApplicationCommandData()
-	commandPath := CommandPathToString(&commandData)
+	commandPath := getCommandPathString(&commandData)
 	commandHandler := r.commandHandlers[commandPath]
 	if commandHandler == nil {
 		return
@@ -50,8 +52,11 @@ func (r *SlashCommandRegistry) OnInteraction(responder interactionResponder, i *
 	response := r.runPipeline(pipeline, i, &commandData)
 	if response == nil {
 		r.Logger.Printf("slash command didn't return a response: %v", commandPath)
-		response.Data = &discordgo.InteractionResponseData{
-			Content: "An error has occurred.",
+		response = &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "An error has occurred.",
+			},
 		}
 	}
 
@@ -68,10 +73,10 @@ func (r *SlashCommandRegistry) runPipeline(
 ) *discordgo.InteractionResponse {
 	options := parseOptions(commandData)
 
-	for i, middleware := range r.middleware {
+	for i, middleware := range pipeline {
 		response, err := middleware(interaction, options)
 		if err != nil {
-			r.Logger.Printf("error running slash command %s: pipeline step %d: %v", CommandPathToString(commandData), i, err)
+			r.Logger.Printf("error running slash command %s: pipeline step %d: %v", getCommandPathString(commandData), i, err)
 		}
 		if response != nil {
 			return response

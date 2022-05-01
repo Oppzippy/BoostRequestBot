@@ -32,16 +32,30 @@ func MatchesCommandPath(commandData discordgo.ApplicationCommandInteractionData,
 	return true
 }
 
-func CommandPathToString(commandData *discordgo.ApplicationCommandInteractionData) string {
-	sb := strings.Builder{}
-	sb.WriteString(commandData.Name)
+func getCommandPathString(commandData *discordgo.ApplicationCommandInteractionData) string {
+	return commandPathToString(getCommandPath(commandData))
+}
 
-	for option := commandData.Options[0]; isOptionSubCommandOrGroup(option); option = option.Options[0] {
-		sb.WriteRune('.')
-		sb.WriteString(option.Name)
+func commandPathToString(path []string) string {
+	return strings.Join(path, ".")
+}
+
+func getCommandPath(commandData *discordgo.ApplicationCommandInteractionData) []string {
+	path := []string{commandData.Name}
+	if len(commandData.Options) == 0 {
+		return path
 	}
 
-	return sb.String()
+	for option := commandData.Options[0]; isOptionSubCommandOrGroup(option); {
+		path = append(path, option.Name)
+
+		if len(option.Options) > 0 {
+			option = option.Options[0]
+		} else {
+			option = nil
+		}
+	}
+	return path
 }
 
 func isOptionSubCommandOrGroup(option *discordgo.ApplicationCommandInteractionDataOption) bool {

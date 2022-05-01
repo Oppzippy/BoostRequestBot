@@ -8,18 +8,21 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/application_commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
+	"github.com/oppzippy/BoostRequestBot/boost_request/command_handlers"
 	"github.com/oppzippy/BoostRequestBot/boost_request/interactions"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
+	"github.com/oppzippy/BoostRequestBot/framework/slash_commands"
 )
 
 type BoostRequestDiscordHandler struct {
-	discord             *discordgo.Session
-	repo                repository.Repository
-	brm                 *boost_request_manager.BoostRequestManager
-	handlerRemoves      []func()
-	interactionRegistry *InteractionRegistry
-	messenger           *messenger.BoostRequestMessenger
+	discord              *discordgo.Session
+	repo                 repository.Repository
+	brm                  *boost_request_manager.BoostRequestManager
+	handlerRemoves       []func()
+	interactionRegistry  *InteractionRegistry
+	slashCommandRegistry *slash_commands.SlashCommandRegistry
+	messenger            *messenger.BoostRequestMessenger
 }
 
 func NewBoostRequestDiscordHandler(
@@ -30,12 +33,13 @@ func NewBoostRequestDiscordHandler(
 	messenger *messenger.BoostRequestMessenger,
 ) *BoostRequestDiscordHandler {
 	brdh := &BoostRequestDiscordHandler{
-		brm:                 brm,
-		repo:                repo,
-		discord:             discord,
-		handlerRemoves:      make([]func(), 0),
-		interactionRegistry: NewInteractionRegistry(discord, bundle),
-		messenger:           messenger,
+		brm:                  brm,
+		repo:                 repo,
+		discord:              discord,
+		handlerRemoves:       make([]func(), 0),
+		interactionRegistry:  NewInteractionRegistry(discord, bundle),
+		slashCommandRegistry: slash_commands.NewSlashCommandRegistry(),
+		messenger:            messenger,
 	}
 
 	discord.StateEnabled = true
@@ -48,9 +52,13 @@ func NewBoostRequestDiscordHandler(
 	discord.Identify.Intents |= discordgo.IntentsGuildEmojis
 	discord.Identify.Intents |= discordgo.IntentsDirectMessages
 
-	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageCreate))
-	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageReactionAdd))
-	brdh.handlerRemoves = append(brdh.handlerRemoves, discord.AddHandler(brdh.onMessageReactionRemove))
+	brdh.handlerRemoves = append(
+		brdh.handlerRemoves,
+		discord.AddHandler(brdh.onMessageCreate),
+		discord.AddHandler(brdh.onMessageReactionAdd),
+		discord.AddHandler(brdh.onMessageReactionRemove),
+		brdh.slashCommandRegistry.AttachToDiscord(discord),
+	)
 
 	brdh.interactionRegistry.AddHandler(interactions.NewRemoveAdvertiserPreferenceHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestStealHandler(repo, brm))
@@ -58,8 +66,9 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignupHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCheckCutHandler(repo))
 	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupEnableHandler(repo, brm))
-	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupDisableHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupButtonHandler(repo, brm))
+
+	brdh.slashCommandRegistry.RegisterCommand([]string{"boostrequest", "autosignup", "stop"}, command_handlers.NewAutoSignupDisableHandler(bundle, repo, brm).Handle)
 
 	discord.AddHandler(func(discord *discordgo.Session, event *discordgo.Connect) {
 		_, err := discord.ApplicationCommandBulkOverwrite(

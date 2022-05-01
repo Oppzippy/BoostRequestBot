@@ -47,7 +47,7 @@ func (r *InteractionRegistry) Destroy() {
 func (r *InteractionRegistry) onInteractionCreate(discord *discordgo.Session, event *discordgo.InteractionCreate) {
 	for _, handler := range r.handlers {
 		if handler.Matches(discord, event) {
-			localizer := i18n.NewLocalizer(r.bundle, "en")
+			localizer := i18n.NewLocalizer(r.bundle, string(event.Locale))
 			err := handler.Handle(discord, event, localizer)
 			if err != nil {
 				log.Printf("error handling interaction: %v", err)
