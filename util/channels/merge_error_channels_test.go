@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/oppzippy/BoostRequestBot/channels"
+	"github.com/oppzippy/BoostRequestBot/util/channels"
 )
 
 func TestMergeClosedErrorChannels(t *testing.T) {

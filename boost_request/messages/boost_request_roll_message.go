@@ -8,7 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
-	"github.com/oppzippy/BoostRequestBot/roll"
+	"github.com/oppzippy/BoostRequestBot/util/roll"
 )
 
 type BoostRequestRollMessage struct {

@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/oppzippy/BoostRequestBot/roll"
+	"github.com/oppzippy/BoostRequestBot/util/roll"
 )
 
 func TestWeightedRollWithNoItems(t *testing.T) {

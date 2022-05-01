@@ -13,8 +13,8 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
-	"github.com/oppzippy/BoostRequestBot/channels"
-	"github.com/oppzippy/BoostRequestBot/roll"
+	"github.com/oppzippy/BoostRequestBot/util/channels"
+	"github.com/oppzippy/BoostRequestBot/util/roll"
 )
 
 type BoostRequestMessenger struct {
