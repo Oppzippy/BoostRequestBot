@@ -61,7 +61,7 @@ func (h *AutoSignupButtonHandler) Handle(discord *discordgo.Session, event *disc
 						Other: "You are not allowed to use this button.",
 					},
 				}),
-				Flags: 1 << 6, // Ephemeral
+				Flags: uint64(discordgo.MessageFlagsEphemeral),
 			},
 		})
 		return err
@@ -86,7 +86,7 @@ func (h *AutoSignupButtonHandler) Handle(discord *discordgo.Session, event *disc
 					"Duration": duration,
 				},
 			}),
-			Flags: 1 << 6, // Ephemeral
+			Flags: uint64(discordgo.MessageFlagsEphemeral),
 		},
 	})
 

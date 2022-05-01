@@ -49,7 +49,7 @@ func (h *BoostRequestStealHandler) Handle(discord *discordgo.Session, event *dis
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Content: fmt.Sprintf("You now have %v boost request steal credits.", newCredits),
-					Flags:   1 << 6, // Ephemeral
+					Flags:   uint64(discordgo.MessageFlagsEphemeral),
 				},
 			})
 			return err
@@ -58,7 +58,7 @@ func (h *BoostRequestStealHandler) Handle(discord *discordgo.Session, event *dis
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Content: fmt.Sprintf("No boost request steal credits were spent. You have %v credits.", newCredits),
-					Flags:   1 << 6, // Ephemeral
+					Flags:   uint64(discordgo.MessageFlagsEphemeral),
 				},
 			})
 			return err

@@ -35,7 +35,7 @@ func (h *AutoSignupDisableHandler) Handle(discord *discordgo.Session, event *dis
 						Other: "This command can only be used in guilds.",
 					},
 				}),
-				Flags: 1 << 6, // Ephemeral
+				Flags: uint64(discordgo.MessageFlagsEphemeral),
 			},
 		})
 		return err
@@ -55,7 +55,7 @@ func (h *AutoSignupDisableHandler) Handle(discord *discordgo.Session, event *dis
 						Other: "You do not currently have auto sign up active.",
 					},
 				}),
-				Flags: 1 << 6, // Ephemeral
+				Flags: uint64(discordgo.MessageFlagsEphemeral),
 			},
 		})
 		return nil
@@ -75,7 +75,7 @@ func (h *AutoSignupDisableHandler) Handle(discord *discordgo.Session, event *dis
 					Other: "You will no longer automatically sign up for boost requests.",
 				},
 			}),
-			Flags: 1 << 6, // Ephemeral
+			Flags: uint64(discordgo.MessageFlagsEphemeral),
 		},
 	})
 	return err

@@ -37,7 +37,7 @@ func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *disc
 						Other: "This command can only be used in guilds.",
 					},
 				}),
-				Flags: 1 << 6, // Ephemeral
+				Flags: uint64(discordgo.MessageFlagsEphemeral),
 			},
 		})
 		return err
@@ -55,7 +55,7 @@ func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *disc
 						Other: "You are not allowed to use this command.",
 					},
 				}),
-				Flags: 1 << 6, // Ephemeral
+				Flags: uint64(discordgo.MessageFlagsEphemeral),
 			},
 		})
 		return err
@@ -90,7 +90,7 @@ func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *disc
 					"Duration": duration,
 				},
 			}),
-			Flags: 1 << 6, // Ephemeral
+			Flags: uint64(discordgo.MessageFlagsEphemeral),
 		},
 	})
 	return err

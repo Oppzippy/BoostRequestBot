@@ -62,7 +62,7 @@ func (h *BoostRequestSignupHandler) Handle(discord *discordgo.Session, event *di
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: content,
-				Flags:   1 << 6, // Ephemeral
+				Flags:   uint64(discordgo.MessageFlagsEphemeral),
 			},
 		})
 		return err

@@ -45,7 +45,7 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "An advertiser was already chosen for this boost request.",
-				Flags:   1 << 6, // Ephemeral
+				Flags:   uint64(discordgo.MessageFlagsEphemeral),
 			},
 		})
 		return err

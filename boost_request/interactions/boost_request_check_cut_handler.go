@@ -71,7 +71,7 @@ func (h *BoostRequestCheckCutHandler) Handle(discord *discordgo.Session, event *
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: content,
-			Flags:   1 << 6, // Ephemeral
+			Flags:   uint64(discordgo.MessageFlagsEphemeral),
 		},
 	})
 	return err
