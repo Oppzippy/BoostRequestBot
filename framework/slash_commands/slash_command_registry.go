@@ -36,7 +36,7 @@ func (r *SlashCommandRegistry) RegisterMidleware(middleware SlashCommandMiddlewa
 	r.middleware = append(r.middleware, middleware)
 }
 
-func (r *SlashCommandRegistry) OnInteraction(responder interactionResponder, i *discordgo.InteractionCreate) {
+func (r *SlashCommandRegistry) OnInteraction(responder InteractionResponder, i *discordgo.InteractionCreate) {
 	if i.Type != discordgo.InteractionApplicationCommand {
 		return
 	}
