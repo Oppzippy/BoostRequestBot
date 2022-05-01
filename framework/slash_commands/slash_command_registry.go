@@ -56,6 +56,7 @@ func (r *SlashCommandRegistry) OnInteraction(responder InteractionResponder, i *
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "An error has occurred.",
+				Flags:   uint64(discordgo.MessageFlagsEphemeral),
 			},
 		}
 	}
