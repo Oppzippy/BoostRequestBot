@@ -65,9 +65,9 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestSignupHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignupHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCheckCutHandler(repo))
-	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupEnableHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupButtonHandler(repo, brm))
 
+	brdh.slashCommandRegistry.RegisterCommand([]string{"boostrequest", "autosignup", "start"}, command_handlers.NewAutoSignupEnableHandler(bundle, repo, brm).Handle)
 	brdh.slashCommandRegistry.RegisterCommand([]string{"boostrequest", "autosignup", "stop"}, command_handlers.NewAutoSignupDisableHandler(bundle, repo, brm).Handle)
 
 	discord.AddHandler(func(discord *discordgo.Session, event *discordgo.Connect) {

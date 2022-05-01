@@ -1,4 +1,4 @@
-package interactions
+package command_handlers
 
 import (
 	"time"
@@ -10,43 +10,25 @@ import (
 )
 
 type AutoSignupEnableHandler struct {
-	brm  *boost_request_manager.BoostRequestManager
-	repo repository.Repository
+	bundle *i18n.Bundle
+	brm    *boost_request_manager.BoostRequestManager
+	repo   repository.Repository
 }
 
-func NewAutoSignupEnableHandler(repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *AutoSignupEnableHandler {
+func NewAutoSignupEnableHandler(bundle *i18n.Bundle, repo repository.Repository, brm *boost_request_manager.BoostRequestManager) *AutoSignupEnableHandler {
 	return &AutoSignupEnableHandler{
-		brm:  brm,
-		repo: repo,
+		bundle: bundle,
+		brm:    brm,
+		repo:   repo,
 	}
 }
 
-func (h *AutoSignupEnableHandler) Matches(discord *discordgo.Session, event *discordgo.InteractionCreate) bool {
-	return event.Type == discordgo.InteractionApplicationCommand &&
-		MatchesCommandPath(event.ApplicationCommandData(), "boostrequest", "autosignup", "start")
-}
-
-func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *discordgo.InteractionCreate, localizer *i18n.Localizer) error {
-	if event.Member == nil {
-		err := discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: localizer.MustLocalize(&i18n.LocalizeConfig{
-					DefaultMessage: &i18n.Message{
-						ID:    "CommandGuildOnly",
-						Other: "This command can only be used in guilds.",
-					},
-				}),
-				Flags: uint64(discordgo.MessageFlagsEphemeral),
-			},
-		})
-		return err
-	}
-
+func (h *AutoSignupEnableHandler) Handle(event *discordgo.InteractionCreate, options map[string]*discordgo.ApplicationCommandInteractionDataOption) (*discordgo.InteractionResponse, error) {
+	localizer := i18n.NewLocalizer(h.bundle, string(event.Locale))
 	privileges := h.brm.GetBestRolePrivileges(event.GuildID, event.Member.Roles)
 
 	if privileges == nil || privileges.AutoSignupDuration == 0 {
-		err := discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
+		return &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -57,15 +39,13 @@ func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *disc
 				}),
 				Flags: uint64(discordgo.MessageFlagsEphemeral),
 			},
-		})
-		return err
+		}, nil
 	}
 
 	maxDuration := time.Duration(privileges.AutoSignupDuration) * time.Second
 	duration := maxDuration
-	options := event.ApplicationCommandData().Options[0].Options[0].Options
-	if len(options) == 1 {
-		duration = time.Duration(options[0].IntValue()) * time.Minute
+	if durationArgument, ok := options["duration"]; ok {
+		duration = time.Duration(durationArgument.IntValue()) * time.Minute
 		if duration < 1*time.Minute {
 			duration = 1 * time.Minute
 		} else if duration > maxDuration {
@@ -75,10 +55,10 @@ func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *disc
 
 	err := h.brm.EnableAutoSignup(event.GuildID, event.Member.User.ID, duration)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
+	return &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -92,6 +72,5 @@ func (h *AutoSignupEnableHandler) Handle(discord *discordgo.Session, event *disc
 			}),
 			Flags: uint64(discordgo.MessageFlagsEphemeral),
 		},
-	})
-	return err
+	}, nil
 }
