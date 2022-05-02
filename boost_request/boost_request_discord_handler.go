@@ -5,7 +5,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/oppzippy/BoostRequestBot/boost_request/application_commands"
+	"github.com/oppzippy/BoostRequestBot/boost_request/application_commands/admin_commands"
+	"github.com/oppzippy/BoostRequestBot/boost_request/application_commands/user_commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/command_handlers"
@@ -74,7 +75,16 @@ func NewBoostRequestDiscordHandler(
 			discord.State.User.ID,
 			"",
 			[]*discordgo.ApplicationCommand{
-				application_commands.BoostRequestCommand,
+				// User
+				user_commands.BoostRequestCommand,
+
+				// Admin
+				admin_commands.ChannelsCommand,
+				admin_commands.LogChannelCommand,
+				admin_commands.PrivilegesCommand,
+				admin_commands.RollChannelCommand,
+				admin_commands.CreditsCommand,
+				admin_commands.WebhookCommand,
 			},
 		)
 		if err != nil {

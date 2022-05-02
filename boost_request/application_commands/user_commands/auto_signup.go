@@ -1,4 +1,4 @@
-package application_commands
+package user_commands
 
 import "github.com/bwmarrin/discordgo"
 
