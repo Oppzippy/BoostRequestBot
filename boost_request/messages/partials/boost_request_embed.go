@@ -19,7 +19,6 @@ type BoostRequestEmbedConfiguration struct {
 	PreferredAdvertisers bool
 	Description          string
 	Price                bool
-	AdvertiserCut        bool
 	Discount             bool
 	DiscountTotals       bool
 	ID                   bool

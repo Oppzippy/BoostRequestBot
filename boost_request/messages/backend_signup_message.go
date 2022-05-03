@@ -40,7 +40,6 @@ func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 	br := m.boostRequest
 	embed, err := m.embedPartial.Embed(partials.BoostRequestEmbedConfiguration{
 		Price:          true,
-		AdvertiserCut:  true,
 		Discount:       true,
 		DiscountTotals: true,
 		ID:             true,
