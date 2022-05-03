@@ -26,7 +26,7 @@ type BoostRequestPartial struct {
 	Message               string               `json:"message" validate:"required"`
 	Price                 int64                `json:"price,string,omitempty"`
 	PreferredClaimerIDs   []string             `json:"preferredClaimerIds,omitempty"`
-	AdditionalEmbedFields []*MessageEmbedField `json:"additionalEmbedFields,omitempty"`
+	AdditionalEmbedFields []*MessageEmbedField `json:"additionalEmbedFields,omitempty" validate:"dive"`
 }
 
 type MessageEmbedField struct {
