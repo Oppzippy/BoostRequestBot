@@ -14,13 +14,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
-	"github.com/lus/dgc"
 	"github.com/oppzippy/BoostRequestBot/api"
 	"github.com/oppzippy/BoostRequestBot/boost_request"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
-	"github.com/oppzippy/BoostRequestBot/boost_request/commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
-	"github.com/oppzippy/BoostRequestBot/boost_request/middleware"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	db_repository "github.com/oppzippy/BoostRequestBot/boost_request/repository/database"
 	"github.com/oppzippy/BoostRequestBot/initialization"
@@ -59,7 +56,6 @@ func main() {
 
 	brdh := boost_request.NewBoostRequestDiscordHandler(discord, repo, brm, localeBundle, messenger)
 	defer brdh.Destroy()
-	registerCommandRouter(discord, repo)
 
 	server := api.NewWebAPI(repo, brm, os.Getenv("HTTP_LISTEN_ADDRESS"))
 
@@ -106,29 +102,4 @@ func setUpDiscord() (*discordgo.Session, error) {
 		fmt.Println("Disconnected from discord")
 	})
 	return discord, nil
-}
-
-func registerCommandRouter(discord *discordgo.Session, repo repository.Repository) {
-	router := dgc.Create(&dgc.Router{
-		Prefixes: []string{
-			"!",
-		},
-		IgnorePrefixCase: true,
-		BotsAllowed:      false,
-		Commands: []*dgc.Command{
-			&commands.MainCommand,
-		},
-		Middlewares: []dgc.Middleware{},
-	})
-	router.RegisterMiddleware(func(next dgc.ExecutionHandler) dgc.ExecutionHandler {
-		return func(ctx *dgc.Ctx) {
-			ctx.CustomObjects.Set("repo", repo)
-			next(ctx)
-		}
-	})
-	adminOnlyMiddleware := middleware.AdminOnlyMiddleware{}
-	router.RegisterMiddleware(adminOnlyMiddleware.Exec)
-	router.RegisterMiddleware(middleware.GuildOnlyMiddleware)
-
-	router.Initialize(discord)
 }

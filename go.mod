@@ -12,7 +12,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.4.0
-	github.com/lus/dgc v1.1.0
 	github.com/nicksnyder/go-i18n/v2 v2.2.0
 	github.com/shopspring/decimal v1.3.1
 	golang.org/x/text v0.3.7
@@ -24,11 +23,9 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/karrick/tparse/v2 v2.8.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/zekroTJA/timedmap v1.4.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
-	golang.org/x/sys v0.0.0-20220429233432-b5fbb4746d32 // indirect
+	golang.org/x/sys v0.0.0-20220502124256-b6088ccd6cba // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
