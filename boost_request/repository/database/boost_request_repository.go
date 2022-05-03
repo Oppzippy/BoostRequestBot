@@ -182,7 +182,7 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 				external_id, boost_request_channel_id, guild_id, backend_channel_id, requester_id, advertiser_id, message, embed_fields,
 				price, created_at
 			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		br.ExternalID,
 		channelID,
 		br.GuildID,

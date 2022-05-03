@@ -38,7 +38,7 @@ func (m *BoostRequestCreatedDM) Message() (*discordgo.MessageSend, error) {
 			&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "BoostRequestPleaseWait",
-					Other: "Please wait while we find an advertiser to complete your request.",
+					Other: "Please wait while we find a booster to complete your request.",
 				},
 			},
 		)
@@ -47,7 +47,7 @@ func (m *BoostRequestCreatedDM) Message() (*discordgo.MessageSend, error) {
 			&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "BoostRequestPleaseWaitPreferredAdvertiser",
-					Other: "Please wait for your preferred advertiser to claim the boost request. If you wish to remove your preference and accept any advertiser, you may use the button below. ",
+					Other: "Please wait for your preferred claimer to claim the boost request. If you wish to remove your preference and accept any claimer, you may use the button below. ",
 				},
 			},
 		)

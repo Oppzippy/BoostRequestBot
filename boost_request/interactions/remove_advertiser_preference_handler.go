@@ -44,7 +44,7 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 		err := discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "An advertiser was already chosen for this boost request.",
+				Content: "A claimer was already chosen for this boost request.",
 				Flags:   uint64(discordgo.MessageFlagsEphemeral),
 			},
 		})
@@ -59,7 +59,7 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 	err = discord.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
-			Content:    "**This boost request had a preferred advertiser and was cancelled.**\n\n" + event.Message.Content,
+			Content:    "**This boost request had a preferred claimer and was cancelled.**\n\n" + event.Message.Content,
 			Embeds:     event.Message.Embeds,
 			Components: []discordgo.MessageComponent{},
 		},
@@ -82,7 +82,7 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 		return err
 	}
 	_, err = discord.FollowupMessageCreate(event.Interaction, true, &discordgo.WebhookParams{
-		Content: "A new boost request was created with no advertiser preference.",
+		Content: "A new boost request was created with no claimer preference.",
 	})
 	if err != nil {
 		return err

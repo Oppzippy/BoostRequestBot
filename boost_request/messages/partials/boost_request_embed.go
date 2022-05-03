@@ -3,6 +3,7 @@ package partials
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -44,6 +45,7 @@ func (m *BoostRequestEmbedTemplate) Embed(config BoostRequestEmbedConfiguration)
 		Description: m.boostRequest.Message,
 		Fields:      make([]*discordgo.MessageEmbedField, 0, 10),
 		Color:       0x0000FF,
+		Timestamp:   m.boostRequest.CreatedAt.UTC().Format(time.RFC3339),
 	}
 
 	if preferredAdvertisers := m.preferredAdvertisersField(); config.PreferredAdvertisers && preferredAdvertisers != nil {
@@ -113,9 +115,8 @@ func (m *BoostRequestEmbedTemplate) messageField() *discordgo.MessageEmbedField 
 func (m *BoostRequestEmbedTemplate) priceField() *discordgo.MessageEmbedField {
 	if m.boostRequest.Price != 0 {
 		return &discordgo.MessageEmbedField{
-			Name:   "Price",
-			Value:  message_utils.FormatCopper(m.localizer, m.boostRequest.Price),
-			Inline: true,
+			Name:  "Price",
+			Value: message_utils.FormatCopper(m.localizer, m.boostRequest.Price),
 		}
 	}
 	return nil
