@@ -57,7 +57,6 @@ func (m *BoostRequestCreatedDM) Message() (*discordgo.MessageSend, error) {
 		PreferredAdvertisers: true,
 		Description:          content,
 		Price:                true,
-		Discount:             true,
 	})
 	if err != nil {
 		return nil, err

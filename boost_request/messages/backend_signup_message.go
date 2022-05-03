@@ -39,10 +39,8 @@ func NewBackendSignupMessage(
 func (m *BackendSignupMessage) Message() (*discordgo.MessageSend, error) {
 	br := m.boostRequest
 	embed, err := m.embedPartial.Embed(partials.BoostRequestEmbedConfiguration{
-		Price:          true,
-		Discount:       true,
-		DiscountTotals: true,
-		ID:             true,
+		Price: true,
+		ID:    true,
 	})
 	if err != nil {
 		return nil, err
