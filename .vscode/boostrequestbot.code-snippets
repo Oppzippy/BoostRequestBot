@@ -1,24 +1,4 @@
 {
-  "Command": {
-    "scope": "go",
-    "prefix": "command",
-    "description": "!boostrequest command",
-    "body": [
-      "var $1Command = dgc.Command{",
-      "\tName: \"$2\",",
-      "\tDescription: \"$3\",",
-      "\tUsage:       \"!boostrequest $2 $4\",",
-      "\tExample:     \"!boostrequest $2 $5\",",
-      "\tIgnoreCase:  true,",
-      "\tHandler:     $1Handler,",
-      "\tFlags:       []string{\"ADMIN\", \"GUILD\"},",
-      "}",
-      "",
-      "func $1Handler(ctx *dgc.Ctx) {",
-      "\t$6",
-      "}"
-    ]
-  },
   "Message": {
     "scope": "go",
     "prefix": "message",
@@ -46,6 +26,24 @@
       "",
       "func (m *$1) Message() (*discordgo.MessageSend, error) {",
       "}"
+    ]
+  },
+  "Localized Interaction Response": {
+    "scope": "go",
+    "prefix": "localized-response",
+    "description": "Localized interaction response",
+    "body": [
+      "return &discordgo.InteractionResponse{",
+      "\tType: discordgo.InteractionResponseChannelMessageWithSource,",
+      "\tData: &discordgo.InteractionResponseData{",
+      "\t\tContent: localizer.MustLocalize(&i18n.LocalizeConfig{",
+      "\t\t\tDefaultMessage: &i18n.Message{",
+      "\t\t\t\tID: \"$1\",",
+      "\t\t\t},",
+      "\t\t}),",
+      "\t\tFlags: uint64(discordgo.MessageFlagsEphemeral),",
+      "\t},",
+      "}, nil"
     ]
   }
 }

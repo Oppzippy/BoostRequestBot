@@ -9,7 +9,6 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/application_commands/user_commands"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_emojis"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
-	"github.com/oppzippy/BoostRequestBot/boost_request/command_handlers"
 	"github.com/oppzippy/BoostRequestBot/boost_request/interactions"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messenger"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
@@ -67,8 +66,7 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignupHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupButtonHandler(repo, brm))
 
-	brdh.slashCommandRegistry.RegisterCommand([]string{"boostrequest", "autosignup", "start"}, command_handlers.NewAutoSignupEnableHandler(bundle, repo, brm).Handle)
-	brdh.slashCommandRegistry.RegisterCommand([]string{"boostrequest", "autosignup", "stop"}, command_handlers.NewAutoSignupDisableHandler(bundle, repo, brm).Handle)
+	registerSlashCommandHandlers(brdh.slashCommandRegistry, bundle, repo, discord, brm)
 
 	discord.AddHandler(func(discord *discordgo.Session, event *discordgo.Connect) {
 		_, err := discord.ApplicationCommandBulkOverwrite(
