@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/oppzippy/BoostRequestBot/api"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository/database"
 	"github.com/oppzippy/BoostRequestBot/initialization"

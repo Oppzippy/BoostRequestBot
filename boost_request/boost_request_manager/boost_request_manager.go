@@ -143,15 +143,26 @@ func (brm *BoostRequestManager) dispatchBoostRequest(br *repository.BoostRequest
 			sequenceArgs.BackendMessageChannelIDs[br.BackendChannelID] = struct{}{}
 		}
 	}
-	if br.EmbedFields == nil {
-		err := sequences.RunCreateHumanRequesterSequence(sequenceArgs)
+
+	isBot := br.RequesterID == ""
+	if !isBot {
+		requester, err := brm.discord.User(br.RequesterID)
 		if err != nil {
-			return fmt.Errorf("boost request creation failed with human requester: %v", err)
+			log.Printf("error fetching requester: %v", br.RequesterID)
 		}
-	} else {
+		if err != nil || requester.Bot {
+			isBot = true
+		}
+	}
+	if isBot {
 		err := sequences.RunCreateBotRequesterSequence(sequenceArgs)
 		if err != nil {
 			return fmt.Errorf("boost request creation failed with bot requester: %v", err)
+		}
+	} else {
+		err := sequences.RunCreateHumanRequesterSequence(sequenceArgs)
+		if err != nil {
+			return fmt.Errorf("boost request creation failed with human requester: %v", err)
 		}
 	}
 	return nil

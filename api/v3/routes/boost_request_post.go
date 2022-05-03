@@ -36,7 +36,13 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	body := models.BoostRequestPartial{}
 	err := h.unmarshaler.UnmarshalReader(r.Body, &body)
 	if err != nil {
-		badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
+		if validationError, ok := err.(json_unmarshaler.ValidationError); ok {
+			rw.WriteHeader(http.StatusBadRequest)
+			ctx = context.WithValue(ctx, middleware.MiddlewareJsonResponse, validationError.TranslatedErrors)
+			*r = *r.Clone(ctx)
+		} else {
+			badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
+		}
 		return
 	}
 

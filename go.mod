@@ -5,7 +5,9 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.1.0
 	github.com/bwmarrin/discordgo v0.25.1-0.20220428212307-9e0783c37f5d
-	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/go-playground/locales v0.14.0
+	github.com/go-playground/universal-translator v0.18.0
+	github.com/go-playground/validator/v10 v10.11.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/golang/mock v1.6.0
@@ -18,8 +20,6 @@ require (
 )
 
 require (
-	github.com/go-playground/locales v0.14.0 // indirect
-	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -27,5 +27,4 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
 	golang.org/x/sys v0.0.0-20220502124256-b6088ccd6cba // indirect
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )

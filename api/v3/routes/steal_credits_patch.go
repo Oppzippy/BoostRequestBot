@@ -39,7 +39,13 @@ func (h *StealCreditsPatch) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	body := StealCreditsPatchRequest{}
 	err := h.unmarshaler.UnmarshalReader(r.Body, &body)
 	if err != nil {
-		badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
+		if validationError, ok := err.(json_unmarshaler.ValidationError); ok {
+			rw.WriteHeader(http.StatusBadRequest)
+			ctx = context.WithValue(ctx, middleware.MiddlewareJsonResponse, validationError.TranslatedErrors)
+			*r = *r.Clone(ctx)
+		} else {
+			badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
+		}
 		return
 	}
 	operation, ok := repository.OperationFromString(*body.Operation)
