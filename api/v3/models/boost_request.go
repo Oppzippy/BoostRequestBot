@@ -7,17 +7,17 @@ import (
 )
 
 type BoostRequest struct {
-	ID                     string               `json:"id"`
-	RequesterID            string               `json:"requesterId"`
-	BackendChannelID       string               `json:"backendChannelId"`
-	IsClaimed              bool                 `json:"isClaimed"`
-	AdvertiserID           string               `json:"advertiserId,omitempty"`
-	Message                string               `json:"message"`
-	Price                  int64                `json:"price,string,omitempty"`
-	PreferredAdvertiserIDs []string             `json:"preferredAdvertiserIds,omitempty"`
-	AdditionalEmbedFields  []*MessageEmbedField `json:"additionalEmbedFields,omitempty"`
-	CreatedAt              string               `json:"createdAt"`
-	ClaimedAt              string               `json:"claimedAt,omitempty"`
+	ID                    string               `json:"id"`
+	RequesterID           string               `json:"requesterId"`
+	BackendChannelID      string               `json:"backendChannelId"`
+	IsClaimed             bool                 `json:"isClaimed"`
+	AdvertiserID          string               `json:"advertiserId,omitempty"`
+	Message               string               `json:"message"`
+	Price                 int64                `json:"price,string,omitempty"`
+	PreferredClaimerIDs   []string             `json:"preferredClaimerIds,omitempty"`
+	AdditionalEmbedFields []*MessageEmbedField `json:"additionalEmbedFields,omitempty"`
+	CreatedAt             string               `json:"createdAt"`
+	ClaimedAt             string               `json:"claimedAt,omitempty"`
 }
 
 type BoostRequestPartial struct {
@@ -63,17 +63,17 @@ func FromRepositoryBoostRequest(br *repository.BoostRequest) *BoostRequest {
 	}
 
 	return &BoostRequest{
-		ID:                     br.ExternalID.String(),
-		RequesterID:            br.RequesterID,
-		BackendChannelID:       br.BackendChannelID,
-		IsClaimed:              br.IsResolved,
-		AdvertiserID:           br.AdvertiserID,
-		Message:                br.Message,
-		Price:                  br.Price,
-		PreferredAdvertiserIDs: preferredClaimerIds,
-		AdditionalEmbedFields:  embedFields,
-		CreatedAt:              br.CreatedAt.Format(time.RFC3339),
-		ClaimedAt:              claimedAt,
+		ID:                    br.ExternalID.String(),
+		RequesterID:           br.RequesterID,
+		BackendChannelID:      br.BackendChannelID,
+		IsClaimed:             br.IsResolved,
+		AdvertiserID:          br.AdvertiserID,
+		Message:               br.Message,
+		Price:                 br.Price,
+		PreferredClaimerIDs:   preferredClaimerIds,
+		AdditionalEmbedFields: embedFields,
+		CreatedAt:             br.CreatedAt.Format(time.RFC3339),
+		ClaimedAt:             claimedAt,
 	}
 }
 
