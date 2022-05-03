@@ -17,9 +17,18 @@ type BoostRequestPartial struct {
 }
 
 func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequestPartial, error) {
-	preferredAdvertiserIDs := make(map[string]struct{})
+	preferredAdvertiserIDs := make(map[string]struct{}, len(br.PreferredClaimerIDs))
 	for _, advertiserID := range br.PreferredClaimerIDs {
 		preferredAdvertiserIDs[advertiserID] = struct{}{}
+	}
+
+	embedFields := make([]*repository.MessageEmbedField, len(br.AdditionalEmbedFields))
+	for i, embedField := range br.AdditionalEmbedFields {
+		embedFields[i] = &repository.MessageEmbedField{
+			Name:   embedField.Name,
+			Value:  embedField.Value,
+			Inline: embedField.Inline,
+		}
 	}
 
 	brPartial := &BoostRequestPartial{
@@ -28,6 +37,7 @@ func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequest
 		PreferredAdvertiserIDs: preferredAdvertiserIDs,
 		Price:                  br.Price,
 		BackendChannelID:       br.BackendChannelID,
+		EmbedFields:            embedFields,
 	}
 
 	return brPartial, nil
