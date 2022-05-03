@@ -2,13 +2,12 @@ AddedBoostRequestChannel = "Added boost request frontend {.Frontend} with backen
 AdvertiserChosenDMToRequester = "{{.AdvertiserMention}} {{.AdvertiserTag}} will reach out to you shortly. Anyone else that messages you regarding this boost request is not from Huokan Boosting Community and may attempt to scam you."
 AdvertiserConfirmReminder = "Please collect {{.Gold}} from the buyer. Then, send a direct message to <@720340847928934531> (Huokan Bot) with the screenshot attached to the following command:\n`!brconfirm {{.BoostRequestID}}`\nOtherwise, the buyer will not receive any buyer points."
 AdvertiserRollRangeChosen = "   **<-- {{.Roll}}**"
-AdvertiserSelected = "An advertiser has been selected."
-AdvertiserWillHandleBoostRequest = "{{.AdvertiserMention}} will handle the following boost request."
 AutoSignUpExpiringSoon = "In {{ .TimeLeft }}, you will no longer automatically sign up for boost requests."
 AutoSignupDisable = "You will no longer automatically sign up for boost requests."
 AutoSignupEnable = "You will automatically sign up for all boost requests for the next {{.Duration}}."
 AutoSignupExpired = "Auto signup expired."
 AutoSignupNotEnabled = "You do not currently have auto sign up active."
+BoostRequestClaimed = "This boost request has been claimed."
 BoostRequestLogChannelSet = "Boost request log channel set to {.Channel}."
 BoostRequestLoggingDisabled = "Boost request logging is disabled."
 BoostRequestPleaseWait = "Please wait while we find an advertiser to complete your request."
@@ -74,6 +73,10 @@ other = "New Boost Requests"
 [PreferredAdvertiser]
 one = "Preferred Advertiser"
 other = "Preferred Advertisers"
+
+[PreferredClaimer]
+one = "Preferred Claimer"
+other = "Preferred Claimers"
 
 [UserStealCredits]
 one = "{.User} has {.Credits} steal credit."
