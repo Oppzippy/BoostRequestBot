@@ -83,9 +83,9 @@ func (m *BoostRequestEmbedTemplate) preferredAdvertisersField() *discordgo.Messa
 		return &discordgo.MessageEmbedField{
 			Name: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
-					ID:    "PreferredAdvertiser",
-					One:   "Preferred Advertiser",
-					Other: "Preferred Advertisers",
+					ID:    "PreferredClaimer",
+					One:   "Preferred Claimer",
+					Other: "Preferred Claimers",
 				},
 				PluralCount: len(mentions),
 			}),

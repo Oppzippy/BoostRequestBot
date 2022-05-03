@@ -46,7 +46,7 @@ func (m *BoostRequestCreatedDM) Message() (*discordgo.MessageSend, error) {
 		content = m.localizer.MustLocalize(
 			&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
-					ID:    "BoostRequestPleaseWaitPreferredAdvertiser",
+					ID:    "BoostRequestPleaseWaitPreferredClaimer",
 					Other: "Please wait for your preferred claimer to claim the boost request. If you wish to remove your preference and accept any claimer, you may use the button below. ",
 				},
 			},
@@ -94,8 +94,8 @@ func (m *BoostRequestCreatedDM) components() []discordgo.MessageComponent {
 				discordgo.Button{
 					Label: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 						DefaultMessage: &i18n.Message{
-							ID:    "RemoveAdvertiserPreference",
-							Other: "Remove Advertiser Preference",
+							ID:    "RemoveClaimerPreference",
+							Other: "Remove Claimer Preference",
 						},
 					}),
 					Style: discordgo.PrimaryButton,

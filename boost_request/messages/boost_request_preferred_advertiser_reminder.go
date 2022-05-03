@@ -27,7 +27,7 @@ func (m *BoostRequestPreferredAdvertiserReminder) Message() (*discordgo.MessageS
 	return &discordgo.MessageSend{
 		Content: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
-				ID:    "PreferredAdvertiserAFK",
+				ID:    "PreferredClaimerAFK",
 				Other: "You have a preferred claimer set and 15 minutes have passed without the boost request being claimed. If you wish to remove your claimer preference for this request, please use the Remove Claimer Preference button on the message above.",
 			},
 		}),
