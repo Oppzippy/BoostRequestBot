@@ -220,33 +220,26 @@ components:
           description: Discord user id of the request of the boost request.
         backendChannelId:
           type: string
-          description: Discord channel id to post the boost request signup message in. If exactly one preferred advertiser is set, the message will go to the preferred advertiser's DMs instead. If the preferred advertiser is then removed, the boost request will be reposted in this channel.
+          description: Discord channel id to post the boost request signup message in. If exactly one preferred claimer is set, the message will go to the preferred claimer's DMs instead. If the preferred claimer is then removed, the boost request will be reposted in this channel.
         message:
           type: string
           description: What is being requested
         price:
           type: string
           format: int64
+          minimum: 0
+          exclusiveMinimum: true
           description: Price of the boost request in copper. This is a 64 bit integer represented as a string.
-        advertiserCut:
-          type: string
-          format: int64
-          description: Advertiser's cut for the boost request in copper. This is a 64 bit integer represented as a string.
-        advertiserRoleCuts:
-          type: object
-          description: Keys are role ids, values are cuts. If an advertiser has more than one listed role, the role with the highest cut will be used. If the advertiser has none of the provided roles, the cut will fall back to advertiserCut if that was provided.
-          additionalProperties:
-            type: string
-            format: int64
-        discount:
-          type: string
-          format: int64
-          description: Discount coming out of the advertiser's cut on the boost request in copper. This is a 64 bit integer represented as a string.
-        preferredAdvertiserIds:
+        preferredClaimerIds:
           type: array
           items:
             type: string
-          description: If provided, only advertisers listed here will be eligible to accept the boost request.
+          description: If provided, only claimers listed here will be eligible to accept the boost request.
+        additionalEmbedFields:
+          type: array
+          description: Extra message embed fields to be added onto the end of the boost request.
+          items:
+            $ref: "#/components/schemas/EmbedField"
       required:
         - requesterId
         - backendChannelId
@@ -262,8 +255,8 @@ components:
           description: Discord user id of the request of the boost request.
         backendChannelId:
           type: string
-          description: Discord channel id to post the boost request signup message in. If exactly one preferred advertiser is set, the message will go to the preferred advertiser's DMs instead. If the preferred advertiser is then removed, the boost request will be reposted in this channel.
-        isAdvertiserSelected:
+          description: Discord channel id to post the boost request signup message in. If exactly one preferred claimer is set, the message will go to the preferred claimer's DMs instead. If the preferred claimer is then removed, the boost request will be reposted in this channel.
+        isClaimerSelected:
           type: boolean
         message:
           type: string
@@ -271,39 +264,45 @@ components:
         price:
           type: string
           format: int64
+          minimum: 0
+          exclusiveMinimum: true
           description: Price of the boost request in copper. This is a 64 bit integer represented as a string.
-        discount:
-          type: string
-          format: int64
-          description: Discount in copper on the boost.
-        advertiserCut:
-          type: string
-          format: int64
-          description: Advertiser's cut for the boost request in copper. This is a 64 bit integer represented as a string.
-        advertiserRoleCuts:
-          type: object
-          description: Keys are role ids, values are cuts. If an advertiser has more than one listed role, the role with the highest cut will be used. If the advertiser has none of the provided roles, the cut will fall back to advertiserCut if that was provided.
-          additionalProperties:
-            type: string
-            format: int64
-        preferredAdvertiserIds:
+        preferredClaimerIds:
           type: array
           items:
             type: string
-          description: If preferredAdvertiserIds is defined, only advertisers listed here will be eligible to accept the boost request.
+          description: If preferredClaimerIds is defined, only claimers listed here will be eligible to accept the boost request.
+        additionalEmbedFields:
+          type: array
+          description: Extra message embed fields to be added onto the end of the boost request.
+          items:
+            $ref: "#/components/schemas/EmbedField"
         createdAt:
           type: string
           format: date-time
-        advertiserSelectedAt:
+        claimerSelectedAt:
           type: string
           format: date-time
       required:
         - id
         - requesterId
-        - isAdvertiserSelected
+        - isClaimerSelected
         - backendChannelId
         - message
         - createdAt
-
+    EmbedField:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 256
+        value:
+          type: string
+          maxLength: 1024
+        inline:
+          type: boolean
+      required:
+        - name
+        - value
 security:
   - ApiKeyAuth: []
