@@ -21,17 +21,17 @@ type BoostRequest struct {
 }
 
 type BoostRequestPartial struct {
-	RequesterID           string               `json:"requesterId" validate:"required"`
-	BackendChannelID      string               `json:"backendChannelId" validate:"required"`
-	Message               string               `json:"message" validate:"required"`
-	Price                 int64                `json:"price,string,omitempty"`
-	PreferredClaimerIDs   []string             `json:"preferredClaimerIds,omitempty"`
+	RequesterID           string               `json:"requesterId" validate:"required,numeric"`
+	BackendChannelID      string               `json:"backendChannelId" validate:"required,numeric"`
+	Message               string               `json:"message" validate:"required,max=1024"`
+	Price                 int64                `json:"price,string,omitempty" validate:"gte=0"`
+	PreferredClaimerIDs   []string             `json:"preferredClaimerIds,omitempty" validate:"dive,required,numeric"`
 	AdditionalEmbedFields []*MessageEmbedField `json:"additionalEmbedFields,omitempty" validate:"dive"`
 }
 
 type MessageEmbedField struct {
-	Name   string `json:"name" validate:"required"`
-	Value  string `json:"value" validate:"required"`
+	Name   string `json:"name" validate:"required,max=256"`
+	Value  string `json:"value" validate:"required,max=1024"`
 	Inline bool   `json:"inline"`
 }
 
