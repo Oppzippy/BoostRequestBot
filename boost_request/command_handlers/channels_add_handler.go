@@ -61,7 +61,7 @@ func (h *ChannelsAddHandler) Handle(event *discordgo.InteractionCreate, options 
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "AddedBoostRequestChannel",
-					Other: "Added boost request frontend {.Frontend} with backend {.Backend}.",
+					Other: "Added boost request frontend {{.Frontend}} with backend {{.Backend}}.",
 				},
 				TemplateData: map[string]string{
 					"Frontend": frontendChannel.Mention(),

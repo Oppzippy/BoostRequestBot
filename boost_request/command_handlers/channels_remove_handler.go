@@ -33,7 +33,7 @@ func (h *ChannelsRemoveHandler) Handle(event *discordgo.InteractionCreate, optio
 				Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:    "ChannelIsNotBoostRequestFrontend",
-						Other: "{.Channel} is not a boost request frontend.",
+						Other: "{{.Channel}} is not a boost request frontend.",
 					},
 					TemplateData: map[string]string{
 						"Channel": channel.Mention(),
@@ -57,7 +57,7 @@ func (h *ChannelsRemoveHandler) Handle(event *discordgo.InteractionCreate, optio
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "RemovedBoostRequestChannel",
-					Other: "Removed boost request channel {.Channel}.",
+					Other: "Removed boost request channel {{.Channel}}.",
 				},
 				TemplateData: map[string]string{
 					"Channel": channel.Mention(),

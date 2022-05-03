@@ -52,7 +52,7 @@ func (h *PrivilegesRemoveHandler) Handle(event *discordgo.InteractionCreate, opt
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "RemovedPrivilegesFromRole",
-					Other: "Removed privileges from {.Role}.",
+					Other: "Removed privileges from {{.Role}}.",
 				},
 				TemplateData: map[string]string{
 					"Role": role.Mention(),

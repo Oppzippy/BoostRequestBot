@@ -13,6 +13,7 @@ var PrivilegesCommand = &discordgo.ApplicationCommand{
 	Type:                     discordgo.ChatApplicationCommand,
 	DefaultMemberPermissions: pointers.To(int64(discordgo.PermissionAdministrator)),
 	DMPermission:             pointers.To(false),
+	DefaultPermission:        pointers.To(false),
 	Options: []*discordgo.ApplicationCommandOption{
 		listPrivilegesSubCommand,
 		removePrivilegesSubCommand,
@@ -63,7 +64,7 @@ var setPrivilegesSubCommand = &discordgo.ApplicationCommandOption{
 		{
 			Name:        "weight",
 			Description: "When randomly choosing an advertiser, the weight will be applied to advertisers of this role.",
-			Type:        discordgo.ApplicationCommandOptionInteger,
+			Type:        discordgo.ApplicationCommandOptionNumber,
 			MinValue:    pointers.To(math.SmallestNonzeroFloat64),
 			Required:    true,
 		},

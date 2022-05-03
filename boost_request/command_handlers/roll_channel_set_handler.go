@@ -51,7 +51,7 @@ func (h *RollChannelSetHandler) Handle(event *discordgo.InteractionCreate, optio
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "BoostRequestRollChannelSet",
-					Other: "Boost request roll channel set to {.Channel}.",
+					Other: "Boost request roll channel set to {{.Channel}}.",
 				},
 				TemplateData: map[string]string{
 					"Channel": channel.Mention(),

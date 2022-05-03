@@ -40,8 +40,8 @@ func (h *CreditsAddHandler) Handle(event *discordgo.InteractionCreate, options m
 				Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:    "AddedStealCredits",
-						One:   "Added {.Credits} steal credit.",
-						Other: "Added {.Credits} steal credits.",
+						One:   "Added {{.Credits}} steal credit.",
+						Other: "Added {{.Credits}} steal credits.",
 					},
 					TemplateData: map[string]int64{
 						"Credits": creditsToAdd,
@@ -58,8 +58,8 @@ func (h *CreditsAddHandler) Handle(event *discordgo.InteractionCreate, options m
 				Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:    "AddedStealCreditsWithNewTotal",
-						One:   "Added {.AddedCredits} steal credit. New total is {.TotalCredits}.",
-						Other: "Added {.AddedCredits} steal credits. New total is {.TotalCredits}.",
+						One:   "Added {{.AddedCredits}} steal credit. New total is {{.TotalCredits}}.",
+						Other: "Added {{.AddedCredits}} steal credits. New total is {{.TotalCredits}}.",
 					},
 					TemplateData: map[string]interface{}{
 						"AddedCredits": creditsToAdd,

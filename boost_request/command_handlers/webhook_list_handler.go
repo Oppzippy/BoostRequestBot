@@ -48,7 +48,7 @@ func (h *WebhookListHandler) Handle(event *discordgo.InteractionCreate, options 
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "WebhookURL",
-					Other: "Webhook URL: {.WebhookURL}",
+					Other: "Webhook URL: {{.WebhookURL}}",
 				},
 				TemplateData: map[string]string{
 					"WebhookURL": webhook.URL,

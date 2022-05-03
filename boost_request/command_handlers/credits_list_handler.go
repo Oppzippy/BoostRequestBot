@@ -38,8 +38,8 @@ func (h *StealCreditsListHandler) Handle(event *discordgo.InteractionCreate, opt
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "UserStealCredits",
-					One:   "{.User} has {.Credits} steal credit.",
-					Other: "{.User} has {.Credits} steal credits.",
+					One:   "{{.User}} has {{.Credits}} steal credit.",
+					Other: "{{.User}} has {{.Credits}} steal credits.",
 				},
 				TemplateData: map[string]interface{}{
 					"User":    user.Mention(),

@@ -47,7 +47,7 @@ func (h *PrivilegesSetHandler) Handle(event *discordgo.InteractionCreate, option
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "PrivilegesSet",
-					Other: "Set privileges for {.Role}.",
+					Other: "Set privileges for {{.Role}}.",
 				},
 				TemplateData: map[string]string{
 					"Role": role.Mention(),

@@ -66,8 +66,6 @@ func NewBoostRequestDiscordHandler(
 	brdh.interactionRegistry.AddHandler(interactions.NewBoostRequestCancelSignupHandler(repo, brm))
 	brdh.interactionRegistry.AddHandler(interactions.NewAutoSignupButtonHandler(repo, brm))
 
-	registerSlashCommandHandlers(brdh.slashCommandRegistry, bundle, repo, discord, brm)
-
 	discord.AddHandler(func(discord *discordgo.Session, event *discordgo.Connect) {
 		_, err := discord.ApplicationCommandBulkOverwrite(
 			discord.State.User.ID,
@@ -87,7 +85,10 @@ func NewBoostRequestDiscordHandler(
 		)
 		if err != nil {
 			log.Printf("Failed to create application command: %v", err)
+			return
 		}
+
+		registerSlashCommandHandlers(brdh.slashCommandRegistry, bundle, repo, discord, brm)
 	})
 
 	return brdh

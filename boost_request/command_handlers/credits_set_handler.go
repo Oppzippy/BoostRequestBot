@@ -35,9 +35,11 @@ func (h *StealCreditsSetHandler) Handle(event *discordgo.InteractionCreate, opti
 			Content: localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "StealCreditsSet",
-					Other: "Set steal credits to {.Credits}",
+					Other: "Set steal credits to {{.Credits}}",
 				},
-				PluralCount: amount,
+				TemplateData: map[string]int{
+					"Credits": amount,
+				},
 			}),
 			Flags: uint64(discordgo.MessageFlagsEphemeral),
 		},

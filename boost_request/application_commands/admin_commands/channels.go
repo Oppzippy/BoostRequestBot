@@ -11,6 +11,7 @@ var ChannelsCommand = &discordgo.ApplicationCommand{
 	Type:                     discordgo.ChatApplicationCommand,
 	DefaultMemberPermissions: pointers.To(int64(discordgo.PermissionAdministrator)),
 	DMPermission:             pointers.To(false),
+	DefaultPermission:        pointers.To(false),
 	Options: []*discordgo.ApplicationCommandOption{
 		listChannelsSubCommand,
 		addChannelSubCommand,
