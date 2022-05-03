@@ -36,10 +36,10 @@ func TestBackendAdvertiserChosenMessage(t *testing.T) {
 		t.Errorf("error generating message: %v", err)
 		return
 	}
-	if message.Embed.Thumbnail.URL == "" {
-		t.Errorf("thumbnail was not set")
+	if message.Embed.Thumbnail != nil {
+		t.Errorf("thumbnail was set but should not be to protect privacy")
 	}
-	if !strings.Contains(message.Embed.Description, "123") {
-		t.Errorf("the chosen advertiser is not mentioned in the message: %s", message.Embed.Description)
+	if strings.Contains(message.Embed.Description, "123") {
+		t.Errorf("the chosen advertiser is mentioned in the message but shoulnd't be: %s", message.Embed.Description)
 	}
 }

@@ -1,8 +1,6 @@
 package messages
 
 import (
-	"fmt"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages/partials"
@@ -12,7 +10,6 @@ import (
 type BackendAdvertiserChosenMessage struct {
 	localizer    *i18n.Localizer
 	boostRequest *repository.BoostRequest
-	userProvider userProvider
 	embedPartial *partials.BoostRequestEmbedTemplate
 }
 
@@ -22,29 +19,12 @@ func NewBackendAdvertiserChosenMessage(
 	return &BackendAdvertiserChosenMessage{
 		localizer:    localizer,
 		boostRequest: br,
-		userProvider: up,
 		embedPartial: partials.NewBoostRequestEmbedTemplate(localizer, br),
 	}
 }
 
 func (m *BackendAdvertiserChosenMessage) Message() (*discordgo.MessageSend, error) {
-	advertiser, err := m.userProvider.User(m.boostRequest.AdvertiserID)
-	if err != nil {
-		return nil, err
-	}
-
-	description := m.localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:    "AdvertiserWillHandleBoostRequest",
-			Other: "{{.AdvertiserMention}} will handle the following boost request.",
-		},
-		TemplateData: map[string]string{
-			"AdvertiserMention": fmt.Sprintf("<@%s>", m.boostRequest.AdvertiserID),
-		},
-	})
-
 	embed, err := m.embedPartial.Embed(partials.BoostRequestEmbedConfiguration{
-		Description:    description,
 		Price:          true,
 		AdvertiserCut:  true,
 		Discount:       true,
@@ -56,14 +36,11 @@ func (m *BackendAdvertiserChosenMessage) Message() (*discordgo.MessageSend, erro
 	}
 	embed.Title = m.localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
-			ID:    "AdvertiserSelected",
-			Other: "An advertiser has been selected.",
+			ID:    "BoostRequestClaimed",
+			Other: "This boost request has been claimed.",
 		},
 	})
 	embed.Color = 0xFF0000
-	embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-		URL: advertiser.AvatarURL(""),
-	}
 
 	return &discordgo.MessageSend{
 		Embed: embed,
