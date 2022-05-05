@@ -1,13 +1,13 @@
 package routes
 
 import (
-	"context"
 	"log"
 	"net/http"
 
+	"github.com/oppzippy/BoostRequestBot/api/responder"
+
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
 	"github.com/oppzippy/BoostRequestBot/api/json_unmarshaler"
-	"github.com/oppzippy/BoostRequestBot/api/middleware"
 	"github.com/oppzippy/BoostRequestBot/api/v3/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/boost_request_manager"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
@@ -37,18 +37,16 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	err := h.unmarshaler.UnmarshalReader(r.Body, &body)
 	if err != nil {
 		if validationError, ok := err.(json_unmarshaler.ValidationError); ok {
-			rw.WriteHeader(http.StatusBadRequest)
-			ctx = context.WithValue(ctx, middleware.MiddlewareJsonResponse, validationError.TranslatedErrors)
-			*r = *r.Clone(ctx)
+			responder.RespondDetailedError(rw, http.StatusBadRequest, validationError.TranslatedErrors)
 		} else {
-			badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
+			responder.RespondError(rw, http.StatusBadRequest, "Failed to parse request body. Please check the documentation.")
 		}
 		return
 	}
 
 	brPartial, err := boost_request_manager.FromModelBoostRequestPartial(&body)
 	if err != nil {
-		badRequest(rw, r, "Failed to parse request body. Please check the documentation.")
+		responder.RespondError(rw, http.StatusBadRequest, "Failed to parse request body. Please check the documentation.")
 		return
 	}
 	brPartial.GuildID = guildID
@@ -56,18 +54,17 @@ func (h *BoostRequestPost) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	br, err := h.brm.CreateBoostRequest(nil, brPartial)
 	if err != nil {
 		log.Printf("Error creating boost request via api: %v", err)
-		internalServerError(rw, r, "")
+		responder.RespondError(rw, http.StatusInternalServerError, "")
 		return
 	}
 
 	br, err = h.repo.GetBoostRequestById(br.GuildID, *br.ExternalID)
 	if err != nil {
 		log.Printf("Error fetching boost request: %v", err)
-		internalServerError(rw, r, "")
+		responder.RespondError(rw, http.StatusInternalServerError, "")
 		return
 	}
 
-	var response *models.BoostRequest = models.FromRepositoryBoostRequest(br)
-	ctx = context.WithValue(ctx, middleware.MiddlewareJsonResponse, response)
-	*r = *r.Clone(ctx)
+	response := models.FromRepositoryBoostRequest(br)
+	responder.RespondJSON(rw, response)
 }

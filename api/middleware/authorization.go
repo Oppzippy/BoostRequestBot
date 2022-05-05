@@ -1,8 +1,9 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
+
+	"github.com/oppzippy/BoostRequestBot/api/responder"
 
 	"github.com/gorilla/mux"
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
@@ -19,13 +20,12 @@ func RequireAuthorizationMiddleware() mux.MiddlewareFunc {
 				return
 			}
 			rw.WriteHeader(http.StatusUnauthorized)
-			resp := models.GenericResponse{
+			resp := models.Error{
 				StatusCode: http.StatusUnauthorized,
 				Error:      "Unauthorized",
 				Message:    "You must authenticate with the HTTP header 'X-API-Key: YOUR_API_KEY'",
 			}
-			ctx := context.WithValue(r.Context(), MiddlewareJsonResponse, resp)
-			*r = *r.Clone(ctx)
+			responder.RespondJSON(rw, resp)
 		})
 	}
 }

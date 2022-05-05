@@ -1,13 +1,13 @@
 package routes
 
 import (
-	"context"
 	"log"
 	"net/http"
 
+	"github.com/oppzippy/BoostRequestBot/api/responder"
+
 	"github.com/gorilla/mux"
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
-	"github.com/oppzippy/BoostRequestBot/api/middleware"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -37,14 +37,13 @@ func (h *StealCreditsGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	credits, err := h.repo.GetStealCreditsForUser(guildID, userID)
 	if err != nil {
 		log.Printf("Error fetching steal credits for user: %v", err)
-		internalServerError(rw, r, "")
+		responder.RespondError(rw, http.StatusInternalServerError, "")
 		return
 	}
 
-	ctx = context.WithValue(ctx, middleware.MiddlewareJsonResponse, StealCreditsGetResponse{
+	responder.RespondJSON(rw, StealCreditsGetResponse{
 		GuildID: guildID,
 		UserID:  userID,
 		Credits: credits,
 	})
-	*r = *r.Clone(ctx)
 }

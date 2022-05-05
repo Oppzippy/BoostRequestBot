@@ -39,8 +39,6 @@ func router(repo repository.Repository, brm *boost_request_manager.BoostRequestM
 	v3.Handle("/boostRequests/{boostRequestID}", routes.NewBoostRequestGetHandler(repo)).Methods("GET")
 	v3.Handle("/boostRequests", routes.NewBoostRequestPostHandler(repo, brm)).Methods("POST")
 
-	v3.Use(middleware.ContentTypeMiddleware("application/json"))
-	v3.Use(middleware.JsonResponseMiddleware())
 	v3.Use(middleware.APIKeyMiddleware(repo))
 	v3.Use(middleware.RequireAuthorizationMiddleware())
 

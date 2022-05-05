@@ -1,7 +1,7 @@
 package models
 
-type GenericResponse struct {
+type Error struct {
 	StatusCode int    `json:"statusCode"`
-	Error      string `json:"error,omitempty"`
+	Error      string `json:"error"`
 	Message    string `json:"message"`
 }

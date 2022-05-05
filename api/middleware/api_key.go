@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/oppzippy/BoostRequestBot/api/responder"
+
 	"github.com/gorilla/mux"
 	"github.com/oppzippy/BoostRequestBot/api/context_key"
-	"github.com/oppzippy/BoostRequestBot/api/v3/models"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
@@ -29,13 +30,7 @@ func APIKeyMiddleware(repo repository.Repository) mux.MiddlewareFunc {
 				}
 			}
 
-			resp := models.GenericResponse{
-				StatusCode: http.StatusUnauthorized,
-				Error:      "Unauthorized",
-				Message:    "You must specify an api key with the header X-API-Key: your_api_key",
-			}
-			ctx := context.WithValue(r.Context(), MiddlewareJsonResponse, resp)
-			*r = *r.Clone(ctx)
+			responder.RespondError(rw, http.StatusUnauthorized, "You must specify an api key with the header X-API-Key: your_api_key")
 		})
 	}
 }
