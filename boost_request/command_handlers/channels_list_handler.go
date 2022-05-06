@@ -71,7 +71,7 @@ func (h *ChannelsListHandler) Handle(event *discordgo.InteractionCreate, options
 	return &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: sb.String(),
+			Content: strings.TrimSpace(sb.String()),
 			Flags:   uint64(discordgo.MessageFlagsEphemeral),
 		},
 	}, nil

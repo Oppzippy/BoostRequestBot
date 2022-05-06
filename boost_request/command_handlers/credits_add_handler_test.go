@@ -16,71 +16,65 @@ import (
 
 func TestCreditsAddHandler_Handle(t *testing.T) {
 	t.Parallel()
-	type Test struct {
-		name             string
-		userID           string
-		creditsToAdd     int
-		newCredits       int
-		expectedResponse string
-	}
-
-	tests := []*Test{
+	tests := []*testCase{
 		{
 			name:             "add credits",
-			userID:           "1",
-			creditsToAdd:     2,
-			newCredits:       4,
 			expectedResponse: "Added 2 steal credits. New total is 4.",
-		},
-		{
-			name:             "subtract credits",
-			userID:           "1",
-			creditsToAdd:     -2,
-			newCredits:       3,
-			expectedResponse: "Added -2 steal credits. New total is 3.",
-		},
-	}
-
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			ctrl := gomock.NewController(t)
-			bundle := i18n.NewBundle(language.AmericanEnglish)
-			repo := mock_repository.NewMockRepository(ctrl)
-			handler := command_handlers.NewCreditsAddHandler(bundle, repo)
-
-			repo.EXPECT().AdjustStealCreditsForUser("GuildID", test.userID, repository.OperationAdd, test.creditsToAdd)
-			repo.EXPECT().GetStealCreditsForUser("GuildID", test.userID).Return(test.newCredits, nil)
-
-			response, err := handler.Handle(&discordgo.InteractionCreate{
-				Interaction: &discordgo.Interaction{
-					GuildID: "GuildID",
-				},
-			}, map[string]*discordgo.ApplicationCommandInteractionDataOption{
+			interaction:      &discordgo.Interaction{GuildID: "GuildID"},
+			options: map[string]*discordgo.ApplicationCommandInteractionDataOption{
 				"user": {
 					Name:    "user",
 					Type:    discordgo.ApplicationCommandOptionUser,
-					Value:   test.userID,
+					Value:   "UserID",
 					Options: nil,
 					Focused: false,
 				},
 				"credits": {
 					Name:    "credits",
 					Type:    discordgo.ApplicationCommandOptionInteger,
-					Value:   float64(test.creditsToAdd),
+					Value:   float64(2),
 					Options: nil,
 					Focused: false,
 				},
-			})
+			},
+			setup: func(t *testing.T) command_handlers.CommandHandler {
+				ctrl := gomock.NewController(t)
+				bundle := i18n.NewBundle(language.AmericanEnglish)
+				repo := mock_repository.NewMockRepository(ctrl)
 
-			if err != nil {
-				t.Errorf("error handing command: %v", err)
-			}
+				repo.EXPECT().AdjustStealCreditsForUser("GuildID", "UserID", repository.OperationAdd, 2)
+				repo.EXPECT().GetStealCreditsForUser("GuildID", "UserID").Return(4, nil)
 
-			if response.Data.Content != test.expectedResponse {
-				t.Errorf("expected %v, got %v", test.expectedResponse, response.Data.Content)
-			}
-		})
+				return command_handlers.NewCreditsAddHandler(bundle, repo)
+			},
+		},
+		{
+			name:             "subtract credits",
+			expectedResponse: "Added -2 steal credits. New total is 3.",
+			interaction:      &discordgo.Interaction{GuildID: "GuildID"},
+			options: map[string]*discordgo.ApplicationCommandInteractionDataOption{
+				"user": {
+					Name:  "user",
+					Type:  discordgo.ApplicationCommandOptionUser,
+					Value: "UserID",
+				},
+				"credits": {
+					Name:  "credits",
+					Type:  discordgo.ApplicationCommandOptionInteger,
+					Value: float64(-2),
+				},
+			},
+			setup: func(t *testing.T) command_handlers.CommandHandler {
+				ctrl := gomock.NewController(t)
+				bundle := i18n.NewBundle(language.AmericanEnglish)
+				repo := mock_repository.NewMockRepository(ctrl)
+
+				repo.EXPECT().AdjustStealCreditsForUser("GuildID", "UserID", repository.OperationAdd, -2)
+				repo.EXPECT().GetStealCreditsForUser("GuildID", "UserID").Return(3, nil)
+
+				return command_handlers.NewCreditsAddHandler(bundle, repo)
+			},
+		},
 	}
+	testCommandHandler(t, tests)
 }
