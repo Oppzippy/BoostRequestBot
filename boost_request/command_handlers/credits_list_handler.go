@@ -9,16 +9,14 @@ import (
 )
 
 type StealCreditsListHandler struct {
-	discord *discordgo.Session
-	bundle  *i18n.Bundle
-	repo    repository.Repository
+	bundle *i18n.Bundle
+	repo   repository.Repository
 }
 
-func NewCreditsListHandler(bundle *i18n.Bundle, repo repository.Repository, discord *discordgo.Session) *StealCreditsListHandler {
+func NewCreditsListHandler(bundle *i18n.Bundle, repo repository.Repository) *StealCreditsListHandler {
 	return &StealCreditsListHandler{
-		discord: discord,
-		bundle:  bundle,
-		repo:    repo,
+		bundle: bundle,
+		repo:   repo,
 	}
 }
 

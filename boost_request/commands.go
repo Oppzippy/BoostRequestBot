@@ -26,7 +26,7 @@ func registerSlashCommandHandlers(
 	scr.RegisterCommand([]string{"channels", "remove"}, command_handlers.NewChannelsRemoveHandler(bundle, repo).Handle)
 
 	scr.RegisterCommand([]string{"credits", "add"}, command_handlers.NewCreditsAddHandler(bundle, repo).Handle)
-	scr.RegisterCommand([]string{"credits", "list"}, command_handlers.NewCreditsListHandler(bundle, repo, discord).Handle)
+	scr.RegisterCommand([]string{"credits", "list"}, command_handlers.NewCreditsListHandler(bundle, repo).Handle)
 	scr.RegisterCommand([]string{"credits", "set"}, command_handlers.NewCreditsSetHandler(bundle, repo).Handle)
 
 	scr.RegisterCommand([]string{"logchannel", "set"}, command_handlers.NewLogChannelSetHandler(bundle, repo, discord).Handle)
