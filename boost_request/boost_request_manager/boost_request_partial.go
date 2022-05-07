@@ -14,6 +14,7 @@ type BoostRequestPartial struct {
 	PreferredAdvertiserIDs map[string]struct{}
 	BackendMessageID       string
 	Price                  int64
+	NameVisibility         repository.NameVisibilitySetting
 }
 
 func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequestPartial, error) {
@@ -38,6 +39,7 @@ func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequest
 		Price:                  br.Price,
 		BackendChannelID:       br.BackendChannelID,
 		EmbedFields:            embedFields,
+		NameVisibility:         repository.NameVisibilitySettingFromString(br.NameVisibility.String()),
 	}
 
 	return brPartial, nil

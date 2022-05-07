@@ -103,6 +103,7 @@ func (brm *BoostRequestManager) partialToBoostRequest(brc *repository.BoostReque
 		EmbedFields:            brPartial.EmbedFields,
 		PreferredAdvertiserIDs: brPartial.PreferredAdvertiserIDs,
 		CreatedAt:              time.Now().UTC(),
+		NameVisibility:         brPartial.NameVisibility,
 	}
 
 	if brc != nil && brc.UsesBuyerMessage {

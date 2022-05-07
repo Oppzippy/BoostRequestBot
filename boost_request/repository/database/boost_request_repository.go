@@ -61,7 +61,7 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 	row, err := repo.db.Query(`
 		SELECT
 			br.id, br.external_id, br.guild_id, br.backend_channel_id, br.requester_id, br.advertiser_id, br.message,
-			br.embed_fields, br.price, br.created_at, br.resolved_at,
+			br.embed_fields, br.price, br.created_at, br.resolved_at, br.name_visibility,
 			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM
 			boost_request br
@@ -113,6 +113,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 		resolvedAt      sql.NullTime
 		embedFieldsJSON sql.NullString
 		price           sql.NullInt64
+		nameVisibility  string
 
 		brcID                sql.NullInt64
 		brcGuildID           sql.NullString
@@ -123,7 +124,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	)
 	err := row.Scan(
 		&br.ID, &br.ExternalID, &br.GuildID, &br.BackendChannelID, &br.RequesterID, &advertiserID, &br.Message,
-		&embedFieldsJSON, &price, &br.CreatedAt, &resolvedAt,
+		&embedFieldsJSON, &price, &br.CreatedAt, &resolvedAt, &nameVisibility,
 		&brcID, &brcGuildID, &brcFrontendChannelID, &brcBackendChannelID, &brcUsesBuyerMessage, &brcSkipsBuyerDM,
 	)
 	if err != nil {
@@ -141,6 +142,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	br.AdvertiserID = advertiserID.String
 	br.IsResolved = resolvedAt.Valid
 	br.Price = price.Int64
+	br.NameVisibility = repository.NameVisibilitySettingFromString(nameVisibility)
 	if brcID.Valid {
 		br.Channel = &repository.BoostRequestChannel{
 			ID:                brcID.Int64,
@@ -180,9 +182,9 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		`INSERT INTO boost_request
 			(
 				external_id, boost_request_channel_id, guild_id, backend_channel_id, requester_id, advertiser_id, message, embed_fields,
-				price, created_at
+				price, created_at, name_visibility
 			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		br.ExternalID,
 		channelID,
 		br.GuildID,
@@ -199,6 +201,7 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 			Valid: br.Price != 0,
 		},
 		br.CreatedAt,
+		br.NameVisibility.String(),
 	)
 	err = rollbackIfErr(tx, err)
 	if err != nil {

@@ -7,26 +7,28 @@ import (
 )
 
 type BoostRequest struct {
-	ID                    string               `json:"id"`
-	RequesterID           string               `json:"requesterId"`
-	BackendChannelID      string               `json:"backendChannelId"`
-	IsClaimed             bool                 `json:"isClaimed"`
-	AdvertiserID          string               `json:"advertiserId,omitempty"`
-	Message               string               `json:"message"`
-	Price                 int64                `json:"price,string,omitempty"`
-	PreferredClaimerIDs   []string             `json:"preferredClaimerIds,omitempty"`
-	AdditionalEmbedFields []*MessageEmbedField `json:"additionalEmbedFields,omitempty"`
-	CreatedAt             string               `json:"createdAt"`
-	ClaimedAt             string               `json:"claimedAt,omitempty"`
+	ID                    string                `json:"id"`
+	RequesterID           string                `json:"requesterId"`
+	BackendChannelID      string                `json:"backendChannelId"`
+	IsClaimed             bool                  `json:"isClaimed"`
+	AdvertiserID          string                `json:"advertiserId,omitempty"`
+	Message               string                `json:"message"`
+	Price                 int64                 `json:"price,string,omitempty"`
+	PreferredClaimerIDs   []string              `json:"preferredClaimerIds,omitempty"`
+	AdditionalEmbedFields []*MessageEmbedField  `json:"additionalEmbedFields,omitempty"`
+	CreatedAt             string                `json:"createdAt"`
+	ClaimedAt             string                `json:"claimedAt,omitempty"`
+	NameVisibility        NameVisibilitySetting `json:"nameVisibility"`
 }
 
 type BoostRequestPartial struct {
-	RequesterID           string               `json:"requesterId" validate:"required,numeric"`
-	BackendChannelID      string               `json:"backendChannelId" validate:"required,numeric"`
-	Message               string               `json:"message" validate:"required,max=1024"`
-	Price                 int64                `json:"price,string,omitempty" validate:"gte=0"`
-	PreferredClaimerIDs   []string             `json:"preferredClaimerIds,omitempty" validate:"dive,required,numeric"`
-	AdditionalEmbedFields []*MessageEmbedField `json:"additionalEmbedFields,omitempty" validate:"dive"`
+	RequesterID           string                `json:"requesterId" validate:"required,numeric"`
+	BackendChannelID      string                `json:"backendChannelId" validate:"required,numeric"`
+	Message               string                `json:"message" validate:"required,max=1024"`
+	Price                 int64                 `json:"price,string,omitempty" validate:"gte=0"`
+	PreferredClaimerIDs   []string              `json:"preferredClaimerIds,omitempty" validate:"dive,required,numeric"`
+	AdditionalEmbedFields []*MessageEmbedField  `json:"additionalEmbedFields,omitempty" validate:"dive"`
+	NameVisibility        NameVisibilitySetting `json:"nameVisibility"`
 }
 
 type MessageEmbedField struct {
@@ -62,6 +64,8 @@ func FromRepositoryBoostRequest(br *repository.BoostRequest) *BoostRequest {
 		claimedAt = br.ResolvedAt.Format(time.RFC3339)
 	}
 
+	nameVisibility := NameVisibilitySettingFromString(br.NameVisibility.String())
+
 	return &BoostRequest{
 		ID:                    br.ExternalID.String(),
 		RequesterID:           br.RequesterID,
@@ -74,16 +78,6 @@ func FromRepositoryBoostRequest(br *repository.BoostRequest) *BoostRequest {
 		AdditionalEmbedFields: embedFields,
 		CreatedAt:             br.CreatedAt.Format(time.RFC3339),
 		ClaimedAt:             claimedAt,
+		NameVisibility:        nameVisibility,
 	}
-}
-
-func FromRepositoryBackendMessages(messages []*repository.BoostRequestBackendMessage) []*BoostRequestBackendMessage {
-	newMessages := make([]*BoostRequestBackendMessage, len(messages))
-	for i, m := range messages {
-		newMessages[i] = &BoostRequestBackendMessage{
-			ChannelID: m.ChannelID,
-			MessageID: m.MessageID,
-		}
-	}
-	return newMessages
 }
