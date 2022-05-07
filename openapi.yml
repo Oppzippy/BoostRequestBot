@@ -257,6 +257,10 @@ components:
           description: Extra message embed fields to be added onto the end of the boost request.
           items:
             $ref: "#/components/schemas/EmbedField"
+        nameVisibility:
+          type: string
+          description: Control when names will be displayed or hidden. Defaults to dms only. SHOW is not implemented and will behave the same as dms only.
+          enum: [SHOW, SHOW_IN_DMS_ONLY, HIDE]
       required:
         - requesterId
         - backendChannelId
@@ -300,6 +304,10 @@ components:
         claimerSelectedAt:
           type: string
           format: date-time
+        nameVisibility:
+          type: string
+          description: Control when names will be displayed or hidden. Defaults to dms only. SHOW is not implemented and will behave the same as dms only.
+          enum: [SHOW, SHOW_IN_DMS_ONLY, HIDE]
       required:
         - id
         - requesterId
@@ -307,6 +315,7 @@ components:
         - backendChannelId
         - message
         - createdAt
+        - nameVisibility
     EmbedField:
       type: object
       properties:
