@@ -8,9 +8,9 @@ import (
 type NameVisibilitySetting int
 
 const (
-	ShowInDMsOnly = NameVisibilitySetting(iota) // SHOW_IN_DMS_ONLY
-	Show                                        // SHOW
-	Hide                                        // HIDE
+	NameVisibilityShowInDMsOnly = NameVisibilitySetting(iota) // SHOW_IN_DMS_ONLY
+	NameVisibilityShow                                        // SHOW
+	NameVisibilityHide                                        // HIDE
 )
 
 func (s NameVisibilitySetting) MarshalJSON() ([]byte, error) {
@@ -30,12 +30,12 @@ func (s *NameVisibilitySetting) UnmarshalJSON(b []byte) error {
 
 func NameVisibilitySettingFromString(s string) NameVisibilitySetting {
 	switch s {
-	case Show.String():
-		return Show
-	case ShowInDMsOnly.String():
-		return ShowInDMsOnly
-	case Hide.String():
-		return Hide
+	case NameVisibilityShow.String():
+		return NameVisibilityShow
+	case NameVisibilityShowInDMsOnly.String():
+		return NameVisibilityShowInDMsOnly
+	case NameVisibilityHide.String():
+		return NameVisibilityHide
 	}
 	var def NameVisibilitySetting
 	return def
