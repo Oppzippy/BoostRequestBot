@@ -1,6 +1,7 @@
 package command_handlers
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
@@ -8,25 +9,27 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
 
-type StealCreditsListHandler struct {
+type CreditsListHandler struct {
 	bundle *i18n.Bundle
 	repo   repository.Repository
 }
 
-func NewCreditsListHandler(bundle *i18n.Bundle, repo repository.Repository) *StealCreditsListHandler {
-	return &StealCreditsListHandler{
+func NewCreditsListHandler(bundle *i18n.Bundle, repo repository.Repository) *CreditsListHandler {
+	return &CreditsListHandler{
 		bundle: bundle,
 		repo:   repo,
 	}
 }
 
-func (h *StealCreditsListHandler) Handle(event *discordgo.InteractionCreate, options map[string]*discordgo.ApplicationCommandInteractionDataOption) (*discordgo.InteractionResponse, error) {
+func (h *CreditsListHandler) Handle(event *discordgo.InteractionCreate, options map[string]*discordgo.ApplicationCommandInteractionDataOption) (*discordgo.InteractionResponse, error) {
 	localizer := i18n.NewLocalizer(h.bundle, string(event.Locale))
 
 	user := options["user"].UserValue(nil)
 
 	credits, err := h.repo.GetStealCreditsForUser(event.GuildID, user.ID)
-	if err != nil {
+	if errors.Is(err, repository.ErrNoResults) {
+		credits = 0
+	} else if err != nil {
 		return nil, fmt.Errorf("error fetching boost request steal credits for user in admin check credits command: %w", err)
 	}
 
