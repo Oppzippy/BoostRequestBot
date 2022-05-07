@@ -4,19 +4,19 @@ package repository
 type NameVisibilitySetting int
 
 const (
-	Show          = NameVisibilitySetting(iota) // SHOW
-	ShowInDMsOnly                               // SHOW_IN_DMS_ONLY
-	Hide                                        // HIDE
+	NameVisibilityShow          = NameVisibilitySetting(iota) // SHOW
+	NameVisibilityShowInDMsOnly                               // SHOW_IN_DMS_ONLY
+	NameVisibilityHide                                        // HIDE
 )
 
 func NameVisibilitySettingFromString(s string) NameVisibilitySetting {
 	switch s {
-	case Show.String():
-		return Show
-	case ShowInDMsOnly.String():
-		return ShowInDMsOnly
-	case Hide.String():
-		return Hide
+	case NameVisibilityShow.String():
+		return NameVisibilityShow
+	case NameVisibilityShowInDMsOnly.String():
+		return NameVisibilityShowInDMsOnly
+	case NameVisibilityHide.String():
+		return NameVisibilityHide
 	}
-	return Show
+	return NameVisibilityShow
 }

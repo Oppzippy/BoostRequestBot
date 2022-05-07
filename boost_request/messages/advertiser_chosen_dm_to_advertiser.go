@@ -35,7 +35,14 @@ func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, erro
 	}
 
 	var description string
-	if requester != nil {
+	if m.boostRequest.NameVisibility == repository.NameVisibilityHide {
+		description = m.localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "RequesterNameHidden",
+				Other: "The requester's name is hidden.",
+			},
+		})
+	} else if requester != nil {
 		description = m.localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "PleaseMessage",
@@ -73,7 +80,7 @@ func (m *AdvertiserChosenDMToAdvertiser) Message() (*discordgo.MessageSend, erro
 		},
 		PluralCount: 1,
 	})
-	if requester != nil {
+	if requester != nil && m.boostRequest.NameVisibility != repository.NameVisibilityHide {
 		embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
 			URL: requester.AvatarURL(""),
 		}

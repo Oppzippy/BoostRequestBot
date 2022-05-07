@@ -31,16 +31,26 @@ func (m *AdvertiserChosenDMToRequester) Message() (*discordgo.MessageSend, error
 		return nil, err
 	}
 
-	content := m.localizer.MustLocalize(&i18n.LocalizeConfig{
-		DefaultMessage: &i18n.Message{
-			ID:    "AdvertiserChosenDMToRequester",
-			Other: "{{.AdvertiserMention}} {{.AdvertiserTag}} will reach out to you shortly.",
-		},
-		TemplateData: map[string]string{
-			"AdvertiserMention": advertiser.Mention(),
-			"AdvertiserTag":     advertiser.String(),
-		},
-	})
+	var content string
+	if m.boostRequest.NameVisibility == repository.NameVisibilityHide {
+		content = m.localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "ClaimerNameHidden",
+				Other: "The claimer's name is hidden.",
+			},
+		})
+	} else {
+		content = m.localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "AdvertiserChosenDMToRequester",
+				Other: "{{.AdvertiserMention}} {{.AdvertiserTag}} will reach out to you shortly.",
+			},
+			TemplateData: map[string]string{
+				"AdvertiserMention": advertiser.Mention(),
+				"AdvertiserTag":     advertiser.String(),
+			},
+		})
+	}
 
 	embed, err := m.embedPartial.Embed(partials.BoostRequestEmbedConfiguration{
 		Description: content,
@@ -50,8 +60,10 @@ func (m *AdvertiserChosenDMToRequester) Message() (*discordgo.MessageSend, error
 		return nil, err
 	}
 	embed.Color = 0x00FF00
-	embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-		URL: advertiser.AvatarURL(""),
+	if m.boostRequest.NameVisibility != repository.NameVisibilityHide {
+		embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+			URL: advertiser.AvatarURL(""),
+		}
 	}
 
 	return &discordgo.MessageSend{

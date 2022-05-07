@@ -8,9 +8,9 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[Show-0]
-	_ = x[ShowInDMsOnly-1]
-	_ = x[Hide-2]
+	_ = x[NameVisibilityShow-0]
+	_ = x[NameVisibilityShowInDMsOnly-1]
+	_ = x[NameVisibilityHide-2]
 }
 
 const _NameVisibilitySetting_name = "SHOWSHOW_IN_DMS_ONLYHIDE"
