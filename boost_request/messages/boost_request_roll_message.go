@@ -8,17 +8,17 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
-	"github.com/oppzippy/BoostRequestBot/util/roll"
+	"github.com/oppzippy/BoostRequestBot/util/weighted_picker"
 )
 
 type BoostRequestRollMessage struct {
 	localizer    *i18n.Localizer
 	boostRequest *repository.BoostRequest
-	rollResults  *roll.WeightedRollResults[string]
+	rollResults  *weighted_picker.WeightedPickerResults[string]
 }
 
 func NewBoostRequestRollMessage(
-	localizer *i18n.Localizer, br *repository.BoostRequest, rollResults *roll.WeightedRollResults[string],
+	localizer *i18n.Localizer, br *repository.BoostRequest, rollResults *weighted_picker.WeightedPickerResults[string],
 ) *BoostRequestRollMessage {
 	return &BoostRequestRollMessage{
 		localizer:    localizer,
@@ -54,10 +54,10 @@ func (m *BoostRequestRollMessage) Message() (*discordgo.MessageSend, error) {
 			sb.WriteString(m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "AdvertiserRollRangeChosen",
-					Other: "   **<-- {{.Roll}}**",
+					Other: "   **<-- {{.Wins}}**",
 				},
 				TemplateData: map[string]float64{
-					"Roll": m.rollResults.Roll(),
+					"Wins": m.rollResults.ChosenNumber(),
 				},
 			}))
 		}
@@ -70,7 +70,7 @@ func (m *BoostRequestRollMessage) Message() (*discordgo.MessageSend, error) {
 			Title: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "RollResults",
-					Other: "Roll Results",
+					Other: "Wins Results",
 				},
 			}),
 			Description: sb.String(),

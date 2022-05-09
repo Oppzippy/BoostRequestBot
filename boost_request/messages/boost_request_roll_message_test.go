@@ -9,7 +9,7 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
-	"github.com/oppzippy/BoostRequestBot/util/roll"
+	"github.com/oppzippy/BoostRequestBot/util/weighted_picker"
 )
 
 func TestBoostRequestRollMessage(t *testing.T) {
@@ -22,11 +22,11 @@ func TestBoostRequestRollMessage(t *testing.T) {
 		Channel:    &repository.BoostRequestChannel{},
 		ExternalID: &id,
 	}
-	roll := roll.NewWeightedRoll[string](3)
+	roll := weighted_picker.NewWeightedPicker[string](3)
 	roll.AddItem("advertiser1", 1)
 	roll.AddItem("advertiser2", 2)
 	roll.AddItem("advertiser3", 3)
-	rollResults, ok := roll.Roll()
+	rollResults, ok := roll.Pick()
 	if !ok {
 		t.Error("roll wasn't ok")
 		return

@@ -13,7 +13,7 @@ import (
 	"github.com/oppzippy/BoostRequestBot/boost_request/messages"
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 	"github.com/oppzippy/BoostRequestBot/util/channels"
-	"github.com/oppzippy/BoostRequestBot/util/roll"
+	"github.com/oppzippy/BoostRequestBot/util/weighted_picker"
 )
 
 type BoostRequestMessenger struct {
@@ -213,7 +213,7 @@ func (messenger *BoostRequestMessenger) SendAdvertiserChosenDMToAdvertiser(
 }
 
 func (messenger *BoostRequestMessenger) SendRoll(
-	channelID string, br *repository.BoostRequest, rollResults *roll.WeightedRollResults[string],
+	channelID string, br *repository.BoostRequest, rollResults *weighted_picker.WeightedPickerResults[string],
 ) (*discordgo.Message, error) {
 	m := messages.NewBoostRequestRollMessage(messenger.localizer("en"), br, rollResults)
 	message, err := messenger.send(&MessageDestination{

@@ -1,24 +1,24 @@
-package roll_test
+package weighted_picker_test
 
 import (
 	"math"
 	"testing"
 
-	"github.com/oppzippy/BoostRequestBot/util/roll"
+	"github.com/oppzippy/BoostRequestBot/util/weighted_picker"
 )
 
 func TestWeightedRollWithNoItems(t *testing.T) {
 	t.Parallel()
-	roll := roll.NewWeightedRoll[string](0)
-	results, ok := roll.Roll()
+	roll := weighted_picker.NewWeightedPicker[string](0)
+	results, ok := roll.Pick()
 	checkNotOK(t, results, ok)
 }
 
 func TestWeightedRollWithOneItem(t *testing.T) {
 	t.Parallel()
-	roll := roll.NewWeightedRoll[string](1)
+	roll := weighted_picker.NewWeightedPicker[string](1)
 	roll.AddItem("test", 1)
-	results, ok := roll.Roll()
+	results, ok := roll.Pick()
 	if !checkOK(t, results, ok) {
 		return
 	}
@@ -31,18 +31,18 @@ func TestWeightedRollWithOneItem(t *testing.T) {
 
 func TestWeightedRollZeroWeight(t *testing.T) {
 	t.Parallel()
-	roll := roll.NewWeightedRoll[string](1)
+	roll := weighted_picker.NewWeightedPicker[string](1)
 	roll.AddItem("test", 0)
-	results, ok := roll.Roll()
+	results, ok := roll.Pick()
 	checkNotOK(t, results, ok)
 }
 
 func TestWeightedRollResultsIterator(t *testing.T) {
 	t.Parallel()
-	roll := roll.NewWeightedRoll[string](2)
+	roll := weighted_picker.NewWeightedPicker[string](2)
 	roll.AddItem("one", 1)
 	roll.AddItem("two", 2)
-	results, ok := roll.Roll()
+	results, ok := roll.Pick()
 	if !checkOK(t, results, ok) {
 		return
 	}
@@ -72,14 +72,14 @@ func TestRandomness(t *testing.T) {
 	iterations := 100000
 
 	items := []string{"zero", "one", "two", "three"}
-	roll := roll.NewWeightedRoll[string](len(items))
+	roll := weighted_picker.NewWeightedPicker[string](len(items))
 	for i, item := range items {
 		roll.AddItem(item, float64(i))
 	}
 
 	wins := make(map[string]int)
 	for i := 0; i < iterations; i++ {
-		results, ok := roll.Roll()
+		results, ok := roll.Pick()
 		if !ok {
 			t.Errorf("iteration %d failed, not ok", i)
 			return
@@ -108,9 +108,9 @@ func triangleNumber(n int) int {
 	return (n*n + n) / 2
 }
 
-func checkOK[T any](t *testing.T, results *roll.WeightedRollResults[T], ok bool) bool {
+func checkOK[T any](t *testing.T, results *weighted_picker.WeightedPickerResults[T], ok bool) bool {
 	if !ok {
-		t.Errorf("roll wasn't ok")
+		t.Errorf("chosenNumber wasn't ok")
 		return false
 	}
 	if results == nil {
@@ -120,9 +120,9 @@ func checkOK[T any](t *testing.T, results *roll.WeightedRollResults[T], ok bool)
 	return true
 }
 
-func checkNotOK[T any](t *testing.T, results *roll.WeightedRollResults[T], ok bool) bool {
+func checkNotOK[T any](t *testing.T, results *weighted_picker.WeightedPickerResults[T], ok bool) bool {
 	if ok {
-		t.Errorf("roll was ok, expected not ok")
+		t.Errorf("chosenNumber was ok, expected not ok")
 		return false
 	}
 	if results != nil {

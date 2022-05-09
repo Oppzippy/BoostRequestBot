@@ -1,15 +1,15 @@
-package roll
+package weighted_picker
 
-type WeightedRollResultsIterator[T any] struct {
-	results WeightedRollResults[T]
+type WeightedPickerResultsIterator[T any] struct {
+	results WeightedPickerResults[T]
 	index   int
 }
 
-func (iter *WeightedRollResultsIterator[T]) HasNext() bool {
+func (iter *WeightedPickerResultsIterator[T]) HasNext() bool {
 	return iter.index < len(iter.results.items)
 }
 
-func (iter *WeightedRollResultsIterator[T]) Next() (item T, weight float64, isChosenItem bool) {
+func (iter *WeightedPickerResultsIterator[T]) Next() (item T, weight float64, isChosenItem bool) {
 	if iter.index == len(iter.results.items) {
 		var zero T
 		return zero, 0, false

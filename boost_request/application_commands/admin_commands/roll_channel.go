@@ -28,7 +28,7 @@ var setRollChannelSubCommand = &discordgo.ApplicationCommandOption{
 	Options: []*discordgo.ApplicationCommandOption{
 		{
 			Name:        "channel",
-			Description: "Roll channel.",
+			Description: "Wins channel.",
 			Type:        discordgo.ApplicationCommandOptionChannel,
 			Required:    true,
 		},

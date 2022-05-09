@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
-	"github.com/oppzippy/BoostRequestBot/util/roll"
+	"github.com/oppzippy/BoostRequestBot/util/weighted_picker"
 )
 
 type AdvertiserChosenEvent struct {
 	BoostRequest repository.BoostRequest
 	UserID       string
-	RollResults  *roll.WeightedRollResults[string]
+	RollResults  *weighted_picker.WeightedPickerResults[string]
 }
 
 type ActiveRequest struct {
@@ -130,17 +130,17 @@ func (r *ActiveRequest) setAdvertiserWithoutLocking(event *AdvertiserChosenEvent
 }
 
 // mutex should be locked before calling this method
-func (r *ActiveRequest) chooseAdvertiser(delay int) (rollInfo *roll.WeightedRollResults[string], ok bool) {
+func (r *ActiveRequest) chooseAdvertiser(delay int) (rollInfo *weighted_picker.WeightedPickerResults[string], ok bool) {
 	users := r.signupsByDelay[delay]
 	if len(users) == 0 {
 		return nil, false
 	}
 
-	weightedRoll := roll.NewWeightedRoll[string](len(users))
+	weightedRoll := weighted_picker.NewWeightedPicker[string](len(users))
 	for _, user := range users {
 		weightedRoll.AddItem(user.userID, user.privileges.Weight)
 	}
-	results, ok := weightedRoll.Roll()
+	results, ok := weightedRoll.Pick()
 	return results, ok
 }
 
