@@ -54,10 +54,10 @@ func (m *BoostRequestRollMessage) Message() (*discordgo.MessageSend, error) {
 			sb.WriteString(m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "AdvertiserRollRangeChosen",
-					Other: "   **<-- {{.Wins}}**",
+					Other: "   **<-- {{.Roll}}**",
 				},
 				TemplateData: map[string]float64{
-					"Wins": m.rollResults.ChosenNumber(),
+					"Roll": m.rollResults.ChosenNumber(),
 				},
 			}))
 		}
@@ -70,7 +70,7 @@ func (m *BoostRequestRollMessage) Message() (*discordgo.MessageSend, error) {
 			Title: m.localizer.MustLocalize(&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "RollResults",
-					Other: "Wins Results",
+					Other: "Roll Results",
 				},
 			}),
 			Description: sb.String(),
