@@ -61,7 +61,7 @@ func (repo *dbRepository) getBoostRequests(where string, args ...interface{}) ([
 	row, err := repo.db.Query(`
 		SELECT
 			br.id, br.external_id, br.guild_id, br.backend_channel_id, br.requester_id, br.advertiser_id, br.message,
-			br.embed_fields, br.price, br.created_at, br.resolved_at, br.name_visibility,
+			br.embed_fields, br.price, br.created_at, br.resolved_at, br.name_visibility, br.collect_users_only,
 			brc.id, brc.guild_id, brc.frontend_channel_id, brc.backend_channel_id, brc.uses_buyer_message, brc.skips_buyer_dm
 		FROM
 			boost_request br
@@ -108,12 +108,13 @@ type scannable interface {
 
 func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.BoostRequest, error) {
 	var (
-		br              repository.BoostRequest
-		advertiserID    sql.NullString
-		resolvedAt      sql.NullTime
-		embedFieldsJSON sql.NullString
-		price           sql.NullInt64
-		nameVisibility  string
+		br               repository.BoostRequest
+		advertiserID     sql.NullString
+		resolvedAt       sql.NullTime
+		embedFieldsJSON  sql.NullString
+		price            sql.NullInt64
+		nameVisibility   string
+		collectUsersOnly int
 
 		brcID                sql.NullInt64
 		brcGuildID           sql.NullString
@@ -124,7 +125,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	)
 	err := row.Scan(
 		&br.ID, &br.ExternalID, &br.GuildID, &br.BackendChannelID, &br.RequesterID, &advertiserID, &br.Message,
-		&embedFieldsJSON, &price, &br.CreatedAt, &resolvedAt, &nameVisibility,
+		&embedFieldsJSON, &price, &br.CreatedAt, &resolvedAt, &nameVisibility, &collectUsersOnly,
 		&brcID, &brcGuildID, &brcFrontendChannelID, &brcBackendChannelID, &brcUsesBuyerMessage, &brcSkipsBuyerDM,
 	)
 	if err != nil {
@@ -143,6 +144,7 @@ func (repo *dbRepository) unmarshalBoostRequest(row scannable) (*repository.Boos
 	br.IsResolved = resolvedAt.Valid
 	br.Price = price.Int64
 	br.NameVisibility = repository.NameVisibilitySettingFromString(nameVisibility)
+	br.CollectUsersOnly = collectUsersOnly != 0
 	if brcID.Valid {
 		br.Channel = &repository.BoostRequestChannel{
 			ID:                brcID.Int64,
@@ -173,6 +175,10 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		channelID.Int64 = br.Channel.ID
 		channelID.Valid = true
 	}
+	var collectUsersOnly int
+	if br.CollectUsersOnly {
+		collectUsersOnly = 1
+	}
 
 	tx, err := repo.db.Begin()
 	if err != nil {
@@ -182,9 +188,9 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		`INSERT INTO boost_request
 			(
 				external_id, boost_request_channel_id, guild_id, backend_channel_id, requester_id, advertiser_id, message, embed_fields,
-				price, created_at, name_visibility
+				price, created_at, name_visibility, collect_users_only
 			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		br.ExternalID,
 		channelID,
 		br.GuildID,
@@ -202,6 +208,7 @@ func (repo *dbRepository) InsertBoostRequest(br *repository.BoostRequest) error 
 		},
 		br.CreatedAt,
 		br.NameVisibility.String(),
+		collectUsersOnly,
 	)
 	err = rollbackIfErr(tx, err)
 	if err != nil {

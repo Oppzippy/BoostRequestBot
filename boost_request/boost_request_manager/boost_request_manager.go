@@ -6,6 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/oppzippy/BoostRequestBot/util/weighted_picker"
+
+	"github.com/oppzippy/BoostRequestBot/util/weighted_roll"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -104,6 +108,7 @@ func (brm *BoostRequestManager) partialToBoostRequest(brc *repository.BoostReque
 		PreferredAdvertiserIDs: brPartial.PreferredAdvertiserIDs,
 		CreatedAt:              time.Now().UTC(),
 		NameVisibility:         brPartial.NameVisibility,
+		CollectUsersOnly:       brPartial.CollectUsersOnly,
 	}
 
 	if brc != nil && brc.UsesBuyerMessage {
@@ -288,7 +293,6 @@ func (brm *BoostRequestManager) StealBoostRequest(br *repository.BoostRequest, u
 
 func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosenEvent) {
 	br := event.BoostRequest
-	userID := event.UserID
 
 	err := brm.cancelDelayedMessages(&br)
 	if err != nil {
@@ -296,40 +300,38 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 	}
 
 	brm.activeRequests.Delete(br.ID)
-	br.AdvertiserID = userID
 	br.IsResolved = true
 	br.ResolvedAt = time.Now()
-	err = brm.repo.ResolveBoostRequest(&br)
-	if err != nil {
-		// Log the error but try to keep things running.
-		// There will be data loss, but that is better than a lost sale.
-		log.Printf("Error resolving boost request: %v", err)
-	}
+	br.AdvertiserID = event.UserID
 
 	_, err = brm.messenger.SendBackendAdvertiserChosenMessage(&br)
 	if err != nil {
 		log.Printf("Error sending message to boost request backend: %v", err)
 	}
-
-	_, err = brm.messenger.SendAdvertiserChosenDMToAdvertiser(&br)
-	if err != nil {
-		log.Printf("Error sending advertsier chosen DM to advertiser: %v", err)
-	}
-
-	if br.Channel == nil || !br.Channel.SkipsBuyerDM {
-		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(&br)
+	if !br.CollectUsersOnly {
+		err = brm.repo.ResolveBoostRequest(&br)
 		if err != nil {
-			log.Printf("Error sending advertiser chosen DM to requester: %v", err)
+			// Log the error but try to keep things running.
+			// There will be data loss, but that is better than a lost sale.
+			log.Printf("Error resolving boost request: %v", err)
 		}
+
+		brm.finalizeBoostRequest(&br, event.PickerResults)
+	} else {
+		brm.finalizeCollectOnlyBoostRequest(&br, event.PickerResults)
 	}
+}
+
+func (brm *BoostRequestManager) finalizeBoostRequest(br *repository.BoostRequest, pickerResults *weighted_picker.WeightedPickerResults[string]) {
+	brm.sendAdvertiserChosenDMs(br)
 
 	rollChannel, err := brm.repo.GetRollChannel(br.GuildID)
 	if err != nil {
 		if err != repository.ErrNoResults {
 			log.Printf("Error fetching log channel: %v", err)
 		}
-	} else if event.RollResults != nil {
-		_, err := brm.messenger.SendRoll(rollChannel, &br, event.RollResults)
+	} else if pickerResults != nil {
+		_, err := brm.messenger.SendRoll(rollChannel, br, pickerResults)
 		if err != nil {
 			log.Printf("Error sending roll message: %v", err)
 		}
@@ -338,7 +340,60 @@ func (brm *BoostRequestManager) setWinner(event *active_request.AdvertiserChosen
 	// v3
 	err = brm.webhookManager.QueueToSend(br.GuildID, &webhook.WebhookEvent{
 		Event:   webhook.AdvertiserChosenEventV3,
-		Payload: models.FromRepositoryBoostRequest(&br),
+		Payload: models.FromRepositoryBoostRequest(br),
+	})
+	if err != nil {
+		log.Printf("error queueing webhook: %v", err)
+	}
+}
+
+func (brm *BoostRequestManager) sendAdvertiserChosenDMs(br *repository.BoostRequest) {
+	_, err := brm.messenger.SendAdvertiserChosenDMToAdvertiser(br)
+	if err != nil {
+		log.Printf("Error sending advertsier chosen DM to advertiser: %v", err)
+	}
+
+	if br.Channel == nil || !br.Channel.SkipsBuyerDM {
+		_, err = brm.messenger.SendAdvertiserChosenDMToRequester(br)
+		if err != nil {
+			log.Printf("Error sending advertiser chosen DM to requester: %v", err)
+		}
+	}
+}
+
+func (brm *BoostRequestManager) finalizeCollectOnlyBoostRequest(br *repository.BoostRequest, pickerResults *weighted_picker.WeightedPickerResults[string]) {
+	roll := weighted_roll.NewWeightedRoll[string](20)
+	if pickerResults != nil {
+		for iter := pickerResults.Iterator(); iter.HasNext(); {
+			item, weight, _ := iter.Next()
+			roll.AddItem(item, weight)
+		}
+	} else {
+		roll.AddItem(br.AdvertiserID, 0)
+	}
+	result := roll.Roll()
+
+	br.AdvertiserID = result[0].Item
+	err := brm.repo.ResolveBoostRequest(br)
+	if err != nil {
+		// Log the error but try to keep things running.
+		// There will be data loss, but that is better than a lost sale.
+		log.Printf("Error resolving boost request: %v", err)
+	}
+
+	signupsWithRoll := make([]models.SignupWithRoll, len(result))
+	for i, item := range result {
+		signupsWithRoll[i] = models.SignupWithRoll{
+			UserID: item.Item,
+			Roll:   item.Roll,
+		}
+	}
+	err = brm.webhookManager.QueueToSend(br.GuildID, &webhook.WebhookEvent{
+		Event: webhook.SignupsCollectedEventV3,
+		Payload: &models.SignupsCollectedEvent{
+			BoostRequest: models.FromRepositoryBoostRequest(br),
+			Signups:      signupsWithRoll,
+		},
 	})
 	if err != nil {
 		log.Printf("error queueing webhook: %v", err)

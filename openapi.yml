@@ -261,6 +261,9 @@ components:
           type: string
           description: Control when names will be displayed or hidden. Defaults to dms only. SHOW is not implemented and will behave the same as dms only.
           enum: [SHOW, SHOW_IN_DMS_ONLY, HIDE]
+        dontPickClaimer:
+          type: boolean
+          description: Instead of picking a claimer, a list of signups will be sent to the webhook. See webhook documentation for more info.
       required:
         - requesterId
         - backendChannelId
@@ -308,6 +311,9 @@ components:
           type: string
           description: Control when names will be displayed or hidden. Defaults to dms only. SHOW is not implemented and will behave the same as dms only.
           enum: [SHOW, SHOW_IN_DMS_ONLY, HIDE]
+        dontPickClaimer:
+          type: boolean
+          description: Instead of picking a claimer, a list of signups will be sent to the webhook. See webhook documentation for more info.
       required:
         - id
         - requesterId

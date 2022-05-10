@@ -9,9 +9,9 @@ import (
 )
 
 type AdvertiserChosenEvent struct {
-	BoostRequest repository.BoostRequest
-	UserID       string
-	RollResults  *weighted_picker.WeightedPickerResults[string]
+	BoostRequest  repository.BoostRequest
+	UserID        string
+	PickerResults *weighted_picker.WeightedPickerResults[string]
 }
 
 type ActiveRequest struct {
@@ -130,17 +130,17 @@ func (r *ActiveRequest) setAdvertiserWithoutLocking(event *AdvertiserChosenEvent
 }
 
 // mutex should be locked before calling this method
-func (r *ActiveRequest) chooseAdvertiser(delay int) (rollInfo *weighted_picker.WeightedPickerResults[string], ok bool) {
+func (r *ActiveRequest) chooseAdvertiser(delay int) (pickerResults *weighted_picker.WeightedPickerResults[string], ok bool) {
 	users := r.signupsByDelay[delay]
 	if len(users) == 0 {
 		return nil, false
 	}
 
-	weightedRoll := weighted_picker.NewWeightedPicker[string](len(users))
+	weightedPicker := weighted_picker.NewWeightedPicker[string](len(users))
 	for _, user := range users {
-		weightedRoll.AddItem(user.userID, user.privileges.Weight)
+		weightedPicker.AddItem(user.userID, user.privileges.Weight)
 	}
-	results, ok := weightedRoll.Pick()
+	results, ok := weightedPicker.Pick()
 	return results, ok
 }
 
@@ -152,12 +152,12 @@ func (r *ActiveRequest) waitForDelay(delay int, endTime time.Time) {
 	}
 	r.mutex.Lock()
 	if !r.inactive {
-		if rollResults, ok := r.chooseAdvertiser(delay); ok {
-			advertiserID := rollResults.ChosenItem()
+		if pickerResults, ok := r.chooseAdvertiser(delay); ok {
+			advertiserID := pickerResults.ChosenItem()
 			r.setAdvertiserWithoutLocking(&AdvertiserChosenEvent{
-				BoostRequest: r.boostRequest,
-				UserID:       advertiserID,
-				RollResults:  rollResults,
+				BoostRequest:  r.boostRequest,
+				UserID:        advertiserID,
+				PickerResults: pickerResults,
 			})
 		}
 	}

@@ -31,6 +31,7 @@ type BoostRequest struct {
 	IsResolved             bool
 	ResolvedAt             time.Time
 	NameVisibility         NameVisibilitySetting
+	CollectUsersOnly       bool
 }
 
 func FromDiscordEmbedFields(fields []*discordgo.MessageEmbedField) []*MessageEmbedField {

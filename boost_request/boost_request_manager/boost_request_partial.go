@@ -15,6 +15,7 @@ type BoostRequestPartial struct {
 	BackendMessageID       string
 	Price                  int64
 	NameVisibility         repository.NameVisibilitySetting
+	CollectUsersOnly       bool
 }
 
 func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequestPartial, error) {
@@ -40,6 +41,7 @@ func FromModelBoostRequestPartial(br *models.BoostRequestPartial) (*BoostRequest
 		BackendChannelID:       br.BackendChannelID,
 		EmbedFields:            embedFields,
 		NameVisibility:         repository.NameVisibilitySettingFromString(br.NameVisibility.String()),
+		CollectUsersOnly:       br.DontPickClaimer,
 	}
 
 	return brPartial, nil

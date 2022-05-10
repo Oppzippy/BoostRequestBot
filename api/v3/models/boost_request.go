@@ -19,6 +19,7 @@ type BoostRequest struct {
 	CreatedAt             string                `json:"createdAt"`
 	ClaimedAt             string                `json:"claimedAt,omitempty"`
 	NameVisibility        NameVisibilitySetting `json:"nameVisibility"`
+	DontPickClaimer       bool                  `json:"dontPickClaimer"`
 }
 
 type BoostRequestPartial struct {
@@ -29,6 +30,7 @@ type BoostRequestPartial struct {
 	PreferredClaimerIDs   []string              `json:"preferredClaimerIds,omitempty" validate:"dive,required,numeric"`
 	AdditionalEmbedFields []*MessageEmbedField  `json:"additionalEmbedFields,omitempty" validate:"dive"`
 	NameVisibility        NameVisibilitySetting `json:"nameVisibility"`
+	DontPickClaimer       bool                  `json:"dontPickClaimer"`
 }
 
 type MessageEmbedField struct {
@@ -79,5 +81,6 @@ func FromRepositoryBoostRequest(br *repository.BoostRequest) *BoostRequest {
 		CreatedAt:             br.CreatedAt.Format(time.RFC3339),
 		ClaimedAt:             claimedAt,
 		NameVisibility:        nameVisibility,
+		DontPickClaimer:       br.CollectUsersOnly,
 	}
 }
