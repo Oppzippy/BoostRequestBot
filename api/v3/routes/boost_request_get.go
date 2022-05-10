@@ -49,6 +49,6 @@ func (h *BoostRequestGet) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var result *models.BoostRequest = models.FromRepositoryBoostRequest(br)
+	result := models.FromRepositoryBoostRequest(br)
 	responder.RespondJSON(rw, result)
 }
