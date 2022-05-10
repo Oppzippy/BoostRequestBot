@@ -2,6 +2,7 @@ package steps
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/oppzippy/BoostRequestBot/boost_request/repository"
 )
@@ -24,7 +25,10 @@ func (step *insertBoostRequestStep) Apply() (RevertFunction, error) {
 		return revertNoOp, fmt.Errorf("inserting new boost request in db: %w", err)
 	}
 	return func() error {
-		step.repo.DeleteBoostRequest(step.br)
+		err := step.repo.DeleteBoostRequest(step.br)
+		if err != nil {
+			log.Printf("error deleting boost request with id %v: %v", step.br.ID, err)
+		}
 		return nil
 	}, nil
 }

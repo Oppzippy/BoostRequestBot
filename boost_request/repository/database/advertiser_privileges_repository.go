@@ -43,7 +43,10 @@ func (repo *dbRepository) getAdvertiserPrivileges(where string, args ...interfac
 	privileges := make([]*repository.AdvertiserPrivileges, 0, 15)
 	for res.Next() {
 		p := repository.AdvertiserPrivileges{}
-		res.Scan(&p.ID, &p.GuildID, &p.RoleID, &p.Weight, &p.Delay, &p.AutoSignupDuration)
+		err := res.Scan(&p.ID, &p.GuildID, &p.RoleID, &p.Weight, &p.Delay, &p.AutoSignupDuration)
+		if err != nil {
+			return nil, err
+		}
 		privileges = append(privileges, &p)
 	}
 	if res.Err() != nil && err != sql.ErrNoRows {

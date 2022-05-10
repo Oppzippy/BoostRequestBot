@@ -124,9 +124,12 @@ func (wm *WebhookManager) sendQueuedWebhook(queuedWebhook *repository.QueuedWebh
 		}
 	}
 
-	wm.repo.InsertWebhookAttempt(repository.WebhookAttempt{
+	err = wm.repo.InsertWebhookAttempt(repository.WebhookAttempt{
 		QueuedWebhookRequest: *queuedWebhook,
 		StatusCode:           statusCode,
 		CreatedAt:            startTime,
 	})
+	if err != nil {
+		log.Printf("error inserting webhook attempt: %v", err)
+	}
 }

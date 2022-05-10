@@ -39,7 +39,10 @@ func NewBoostRequestMessenger(
 		rnp:                      messages.NewDiscordRoleNameProvider(discord),
 		delayedMessageRepository: delayedMessageRepository,
 	}
-	brm.loadDelayedMessages()
+	err := brm.loadDelayedMessages()
+	if err != nil {
+		log.Printf("error loading delayed messages: %v", err)
+	}
 
 	return &brm
 }
@@ -388,7 +391,10 @@ func (messenger *BoostRequestMessenger) addExistingDelayedMessage(
 		select {
 		case m, ok := <-sendDelayedMessage:
 			if ok {
-				messenger.delayedMessageRepository.FlagDelayedMessageAsSent(delayedMessageDTO)
+				err := messenger.delayedMessageRepository.FlagDelayedMessageAsSent(delayedMessageDTO)
+				if err != nil {
+					log.Printf("error flagging delayed message as sent: %v", err)
+				}
 				messageChannel <- m
 			}
 		case err, ok := <-sendDelayedErr:

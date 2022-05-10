@@ -158,7 +158,10 @@ func (brdh *BoostRequestDiscordHandler) onMessageReactionAdd(discord *discordgo.
 					log.Printf("Error fetching steal credits for user: %v", err)
 				}
 				if usedCredits {
-					brdh.messenger.SendCreditsUpdateDM(event.UserID, newCredits)
+					_, err := brdh.messenger.SendCreditsUpdateDM(event.UserID, newCredits)
+					if err != nil {
+						log.Printf("error sending credits update dm: %v", err)
+					}
 				}
 			}
 		}
