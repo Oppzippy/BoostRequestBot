@@ -53,6 +53,7 @@ func (repo *dbRepository) GetGlobalStealCreditsForUser(userID string) (map[strin
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	creditsByGuild := make(map[string]int)
 	for rows.Next() {

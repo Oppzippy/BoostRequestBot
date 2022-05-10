@@ -24,6 +24,7 @@ func (repo *dbRepository) getPreferredAdvertisers(br *repository.BoostRequest) (
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	userIDs := make(map[string]struct{})
 	for rows.Next() {

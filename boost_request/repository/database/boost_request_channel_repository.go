@@ -41,6 +41,8 @@ func (repo *dbRepository) getBoostRequestChannels(where string, args ...interfac
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	channels := make([]*repository.BoostRequestChannel, 0, 1)
 	for rows.Next() {
 		brc := repository.BoostRequestChannel{}

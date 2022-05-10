@@ -101,6 +101,8 @@ func (repo *dbRepository) GetQueuedWebhooks() ([]*repository.QueuedWebhookReques
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	queuedWebhooks := make([]*repository.QueuedWebhookRequest, 0)
 	for rows.Next() {
 		request := repository.QueuedWebhookRequest{}
