@@ -6,6 +6,6 @@ type SignupsCollectedEvent struct {
 }
 
 type SignupWithRoll struct {
-	UserID string
-	Roll   float64
+	UserID string  `json:"userId"`
+	Roll   float64 `json:"roll"`
 }

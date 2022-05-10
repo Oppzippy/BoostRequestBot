@@ -336,5 +336,24 @@ components:
       required:
         - name
         - value
+    BoostRequestSignupCollection:
+      type: object
+      properties:
+        boostRequest:
+          $ref: "#/components/schemas/BoostRequest"
+        signups:
+          type: array
+          description: List of signups sorted by their weighted random roll.
+          minItems: 1
+          items:
+            type: object
+            properties:
+              userId:
+                type: string
+              roll:
+                type: number
+            required: [userId, roll]
+      required: [boostRequest, signups]
+
 security:
   - ApiKeyAuth: []
