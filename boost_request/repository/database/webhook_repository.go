@@ -80,23 +80,22 @@ func (repo *dbRepository) GetQueuedWebhooks() ([]*repository.QueuedWebhookReques
 			webhook_queue.id,
 			webhook_queue.body,
 			webhook_queue.created_at,
-			MAX(webhook_attempt.created_at)
+			(SELECT webhook_attempt.created_at FROM webhook_attempt WHERE webhook_attempt.webhook_queue_id = webhook_queue.id LIMIT 1)	
 		FROM
 			webhook
 		INNER JOIN webhook_queue ON
 			webhook_queue.webhook_id = webhook.id
-		LEFT JOIN webhook_attempt ON
-			webhook_attempt.webhook_queue_id = webhook_queue.id
 		WHERE
 			webhook.deleted_at IS NULL AND
 			webhook_queue.created_at < ? AND
-			(
-				webhook_attempt.id IS NULL OR
-				webhook_attempt.status_code NOT BETWEEN 200 AND 299
-			)
-		GROUP BY
-			webhook.id,
-			webhook_queue.id`,
+			NOT EXISTS(
+			    SELECT 1
+			    FROM
+			        webhook_attempt
+			    WHERE
+			        webhook_attempt.webhook_queue_id = webhook_queue.id AND
+			        webhook_attempt.status_code BETWEEN 200 AND 299
+			)`,
 		time.Now().UTC().Add(time.Hour*24*7), // Give up after a week
 	)
 	if err != nil {
