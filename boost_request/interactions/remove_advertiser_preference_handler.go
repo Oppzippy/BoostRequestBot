@@ -76,6 +76,8 @@ func (h *RemoveAdvertiserPreferenceHandler) Handle(discord *discordgo.Session, e
 		Message:          br.Message,
 		EmbedFields:      br.EmbedFields,
 		Price:            br.Price,
+		NameVisibility:   br.NameVisibility,
+		CollectUsersOnly: br.CollectUsersOnly,
 	})
 	if err != nil {
 		// todo tell them to recreate the br later
