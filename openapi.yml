@@ -259,7 +259,7 @@ components:
             $ref: "#/components/schemas/EmbedField"
         nameVisibility:
           type: string
-          description: Control when names will be displayed or hidden. Defaults to dms only. SHOW is not implemented and will behave the same as dms only.
+          description: Control when names will be displayed or hidden. Defaults to dms only. SHOW is not implemented and will behave the same as dms only. Acceptable values include SHOW_IN_DMS_ONLY and HIDE.
           enum: [SHOW, SHOW_IN_DMS_ONLY, HIDE]
         dontPickClaimer:
           type: boolean
@@ -309,7 +309,7 @@ components:
           format: date-time
         nameVisibility:
           type: string
-          description: Control when names will be displayed or hidden. Defaults to dms only. SHOW is not implemented and will behave the same as dms only.
+          description: Control when names will be displayed or hidden. Defaults to dms only. SHOW is not implemented and will behave the same as dms only. Acceptable values include SHOW_IN_DMS_ONLY and HIDE.
           enum: [SHOW, SHOW_IN_DMS_ONLY, HIDE]
         dontPickClaimer:
           type: boolean
